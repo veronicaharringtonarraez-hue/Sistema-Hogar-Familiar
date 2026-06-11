@@ -1,0 +1,700 @@
+/* ===========================================================
+   App de Tareas Familiares — lógica + pantallas (React)
+   =========================================================== */
+const { useState, useEffect, useMemo, useRef } = React;
+
+/* ---------- helpers de datos ---------- */
+const STORE_KEY = 'fam_tareas_v1';
+const PPT = window.POINTS_PER_TASK;
+
+function weekKey(d = new Date()) {
+  const dt = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = (dt.getUTCDay() + 6) % 7;
+  dt.setUTCDate(dt.getUTCDate() - day + 3);
+  const firstThu = new Date(Date.UTC(dt.getUTCFullYear(), 0, 4));
+  const week = 1 + Math.round(((dt - firstThu) / 86400000 - 3 + ((firstThu.getUTCDay() + 6) % 7)) / 7);
+  return dt.getUTCFullYear() + '-W' + week;
+}
+
+let CUSTOM_TASKS = [];
+function tasksFor(pid, distKey) {
+  const a = window.DISTRIBUTIONS[distKey].assign;
+  const houseIds = (a[pid] || []);
+  const personalIds = (window.PERSONAL[pid] || []);
+  const defs = houseIds.map(id => window.TASK(id))
+    .concat(personalIds.map(id => window.PDEF(id)))
+    .concat(CUSTOM_TASKS.filter(c => c.owner === pid));
+  return defs.filter(Boolean);
+}
+function houseTasksFor(pid, distKey) {
+  const a = window.DISTRIBUTIONS[distKey].assign;
+  return (a[pid] || []).map(id => window.TASK(id)).filter(Boolean);
+}
+function ownerOf(taskId, distKey) {
+  const a = window.DISTRIBUTIONS[distKey].assign;
+  for (const pid of Object.keys(a)) {
+    if (pid === 'bebeTurnos') continue;
+    if ((a[pid] || []).includes(taskId)) return pid;
+  }
+  return null;
+}
+function pointsFor(pid, distKey, done) {
+  return tasksFor(pid, distKey).reduce((s, t) => s + (done[pid + ':' + t.id] ? PPT : 0), 0);
+}
+function maxPointsFor(pid, distKey) {
+  return tasksFor(pid, distKey).length * PPT;
+}
+function happinessFor(pid, distKey, done) {
+  const ts = tasksFor(pid, distKey);
+  if (!ts.length) return 50;
+  const c = ts.filter(t => done[pid + ':' + t.id]).length;
+  return Math.round(25 + 75 * (c / ts.length));
+}
+function moodFor(h) {
+  return window.MOODS.find(m => h >= m.min) || window.MOODS[window.MOODS.length - 1];
+}
+
+/* ---------- persistencia ---------- */
+function loadState() {
+  let s = {};
+  try { s = JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch (e) {}
+  const wk = weekKey();
+  if (s.week !== wk) { s.done = {}; s.week = wk; }
+  return {
+    profile: s.profile || 'taylor',
+    dist: s.dist || 'equitativo',
+    tab: s.tab || 'inicio',
+    week: wk,
+    done: s.done || {},
+    custom: s.custom || [],
+  };
+}
+
+/* ---------- componentes UI pequeños ---------- */
+function applyTheme(p) {
+  const r = document.querySelector('.phone');
+  if (!r || !p) return;
+  r.style.setProperty('--a', p.colors.a);
+  r.style.setProperty('--b', p.colors.b);
+  r.style.setProperty('--c', p.colors.c);
+  r.style.setProperty('--tink', p.colors.ink);
+}
+
+function Avatar({ p, size = 46, ring }) {
+  const cls = 'ava' + (ring ? ' ring' : '');
+  if (p.pet && p.pet.img) return <img className={cls} src={p.pet.img} style={{ width: size, height: size }} alt={p.name} />;
+  const glyph = (p.pet && p.pet.emoji) || p.emoji;
+  return <div className={cls} style={{ width: size, height: size, display: 'grid', placeItems: 'center', background: 'linear-gradient(135deg,' + p.colors.a + ',' + p.colors.b + ')', fontSize: size * 0.5 }}>{glyph}</div>;
+}
+
+function Confetti({ go }) {
+  if (!go) return null;
+  const cols = ['#FFC107', '#42BDEE', '#E53935', '#5CB85C', '#B98FE8', '#F48FB1'];
+  const bits = Array.from({ length: 40 }, (_, i) => i);
+  return (
+    <div className="confetti">
+      {bits.map(i => (
+        <i key={i} style={{
+          left: Math.random() * 100 + '%',
+          background: cols[i % cols.length],
+          animationDelay: (Math.random() * 0.3) + 's',
+          animationDuration: (1.1 + Math.random() * 0.8) + 's',
+        }} />
+      ))}
+    </div>
+  );
+}
+
+/* =========================================================
+   TOP BAR + PROFILE SWITCHER
+   ========================================================= */
+function TopBar({ person, points }) {
+  return (
+    <div className="topbar">
+      <div className="hi-wrap">
+        <Avatar p={person} ring />
+        <div className="hi-text">
+          <div className="sm">{greeting()},</div>
+          <div className="nm">{person.name} {person.tree || person.emoji}</div>
+        </div>
+      </div>
+      {person.isKid && (
+        <div className="pts-pill"><span className="star">⭐</span>{points}</div>
+      )}
+    </div>
+  );
+}
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Buenos días';
+  if (h < 19) return 'Buenas tardes';
+  return 'Buenas noches';
+}
+
+function ProfileSwitcher({ active, onPick, done, dist }) {
+  return (
+    <div className="who-row">
+      {window.FAMILY.map(p => (
+        <div key={p.id} className={'who' + (p.id === active ? ' on' : '')}
+          style={{ '--who-a': p.colors.a }} onClick={() => onPick(p.id)}>
+          {p.pet && p.pet.img
+            ? <img src={p.pet.img} alt={p.name} />
+            : <div className="face" style={{ background: 'linear-gradient(135deg,' + p.colors.a + ',' + p.colors.b + ')' }}>{(p.pet && p.pet.emoji) || p.emoji}</div>}
+          <div className="lbl">{p.short}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* =========================================================
+   PANTALLA: INICIO
+   ========================================================= */
+function HomeScreen({ person, dist, done, toggle, go, onDelete }) {
+  const kids = window.FAMILY.filter(p => p.isKid);
+  const ranking = kids.map(k => ({ k, pts: pointsFor(k.id, dist, done) }))
+    .sort((a, b) => b.pts - a.pts);
+  const king = ranking[0];
+
+  // misiones de hoy para el perfil activo
+  const todayIdx = new Date().getDay();
+  const mine = tasksFor(person.id, dist).filter(t => t.freq === 'diario' || t.day === todayIdx);
+  const myDoneCount = mine.filter(t => done[person.id + ':' + t.id]).length;
+
+  return (
+    <div className="pad fade">
+      {/* Rey de la semana */}
+      <div className="hero" style={{ marginTop: 6 }}>
+        <div className="crown">👑</div>
+        <div className="deco">{king.k.tree || '🏆'}</div>
+        <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 13, opacity: .9 }}>Rey / Reina de la semana</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
+          <img src={king.k.pet.img} style={{ width: 56, height: 56, borderRadius: '50%', objectFit: 'cover', border: '3px solid rgba(255,255,255,.8)' }} />
+          <div>
+            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 24, lineHeight: 1 }}>{king.k.name}</div>
+            <div style={{ fontWeight: 800, fontSize: 14, opacity: .95, whiteSpace: 'nowrap' }}>{king.pts} puntos esta semana</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 14, marginTop: 14 }}>
+          {ranking.slice(1).map((r, i) => (
+            <div key={r.k.id} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+              <span style={{ fontSize: 15 }}>{i === 0 ? '🥈' : '🥉'}</span>
+              <img src={r.k.pet.img} style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,.7)' }} />
+              <span style={{ fontWeight: 800, fontSize: 13, whiteSpace: 'nowrap' }}>{r.k.short} · {r.pts}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* tiles */}
+      <div className="tiles" style={{ marginTop: 16 }}>
+        <div className="tile" style={{ background: 'linear-gradient(140deg,#7C5CFF,#B69DFF)' }} onClick={() => go('misiones')}>
+          <div className="ic">🎯</div><div className="tl">Misiones</div>
+        </div>
+        <div className="tile" style={{ background: 'linear-gradient(140deg,#1FB6A6,#5FD3C6)' }} onClick={() => go('mascotas')}>
+          <div className="ic">🐾</div><div className="tl">Mascotas</div>
+        </div>
+        <div className="tile" style={{ background: 'linear-gradient(140deg,#FF8A3D,#FFC107)' }} onClick={() => go('familia')}>
+          <div className="ic">👨‍👩‍👧‍👦</div><div className="tl">Familia</div>
+        </div>
+      </div>
+
+      {/* misiones de hoy del perfil activo */}
+      <div className="sec-h">
+        <h2>Lo de hoy</h2>
+        <span className="link" onClick={() => go('misiones')}>Ver todo</span>
+      </div>
+
+      {mine.length === 0 && (
+        <div className="card" style={{ padding: 18, textAlign: 'center' }}>
+          <div style={{ fontSize: 30 }}>🎉</div>
+          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, marginTop: 4 }}>
+            {person.id === 'christopher' ? '¡Hoy Chris ayuda a recoger juguetes!' : 'Sin tareas asignadas hoy'}
+          </div>
+        </div>
+      )}
+
+      {mine.length > 0 && (
+        <div className="card" style={{ padding: '12px 14px 4px', marginBottom: 10 }}>
+          <div className="row between" style={{ marginBottom: 10 }}>
+            <span className="eyebrow">{myDoneCount} de {mine.length} hechas</span>
+            <span className="chip pts">+{mine.length * PPT} posibles</span>
+          </div>
+          <div className="bar" style={{ marginBottom: 12 }}>
+            <i style={{ width: (mine.length ? (myDoneCount / mine.length * 100) : 0) + '%' }} />
+          </div>
+        </div>
+      )}
+
+      {mine.map(t => (
+        <MissionRow key={t.id} task={t} owner={person} done={done} toggle={toggle} onDelete={onDelete} />
+      ))}
+
+      {person.isBaby && (
+        <div className="card" style={{ padding: 16, marginTop: 4 }}>
+          <div className="row" style={{ gap: 12 }}>
+            <div style={{ fontSize: 30 }}>🍼</div>
+            <div className="grow">
+              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700 }}>A Rachel la cuidan por turnos</div>
+              <div className="muted" style={{ fontSize: 13, fontWeight: 600 }}>Mamá, Papá, Taylor y Emmeth</div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* fila de misión reutilizable */
+function MissionRow({ task, owner, done, toggle, showOwner, onDelete }) {
+  const key = owner.id + ':' + task.id;
+  const isDone = !!done[key];
+  return (
+    <div className={'mission' + (isDone ? ' done' : '')} onClick={() => toggle(owner.id, task.id)}>
+      <div className="m-ic" style={isDone ? { background: '#eafaf2' } : null}>{task.icon}</div>
+      <div className="m-body">
+        <div className="m-title">{task.label}</div>
+        <div className="m-sub">
+          {showOwner && <span className="chip gray">{owner.short}</span>}
+          <span className="chip">{task.freq === 'diario' ? 'Cada día' : window.DAYS_SHORT[task.day]}</span>
+          {task.shared && <span className="chip out">por turnos</span>}
+          {task.custom && <span className="chip out">tuya</span>}
+          <span className="chip pts">+{PPT}</span>
+        </div>
+      </div>
+      <div className={'check' + (isDone ? ' on' : '')}>{isDone ? '✓' : ''}</div>
+      {task.custom && onDelete && (
+        <button className="del" onClick={e => { e.stopPropagation(); onDelete(task); }}>×</button>
+      )}
+    </div>
+  );
+}
+
+/* =========================================================
+   PANTALLA: MISIONES (Persona / Área / Día)
+   ========================================================= */
+function MissionsScreen({ dist, done, toggle, view, setView, onAdd, onDelete }) {
+  return (
+    <div className="pad fade">
+      <div className="sec-h" style={{ marginTop: 8 }}>
+        <h2>Misiones</h2>
+      </div>
+      <button className="add-btn" onClick={onAdd}><span style={{ fontSize: 18 }}>➕</span> Agregar una tarea</button>
+      <div className="seg" style={{ marginBottom: 16 }}>
+        {[['persona', 'Por persona'], ['area', 'Por área'], ['dia', 'Por día']].map(([k, l]) => (
+          <button key={k} className={view === k ? 'on' : ''} onClick={() => setView(k)}>{l}</button>
+        ))}
+      </div>
+      {view === 'persona' && <ByPerson dist={dist} done={done} toggle={toggle} onDelete={onDelete} />}
+      {view === 'area' && <ByArea dist={dist} done={done} toggle={toggle} />}
+      {view === 'dia' && <ByDay dist={dist} done={done} toggle={toggle} />}
+    </div>
+  );
+}
+
+function ByPerson({ dist, done, toggle, onDelete }) {
+  const people = window.FAMILY.filter(p => tasksFor(p.id, dist).length > 0);
+  return people.map(p => {
+    const ts = tasksFor(p.id, dist);
+    const c = ts.filter(t => done[p.id + ':' + t.id]).length;
+    return (
+      <div key={p.id} style={{ marginBottom: 20 }}>
+        <div className="row between" style={{ marginBottom: 10 }}>
+          <div className="row" style={{ gap: 10 }}>
+            <Avatar p={p} size={38} />
+            <div>
+              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 17, lineHeight: 1, whiteSpace: 'nowrap' }}>{p.name}{p.age ? ' (' + p.age + ')' : ''}</div>
+              <div className="muted" style={{ fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>{c}/{ts.length} tareas · {c * PPT} pts</div>
+            </div>
+          </div>
+          {p.isKid && <span className="chip pts">⭐ {pointsFor(p.id, dist, done)}</span>}
+        </div>
+        {ts.map(t => <MissionRow key={t.id} task={t} owner={p} done={done} toggle={toggle} onDelete={onDelete} />)}
+      </div>
+    );
+  });
+}
+
+function ByArea({ dist, done, toggle }) {
+  return window.TASKS.map(t => {
+    const owner = ownerOf(t.id, dist);
+    if (!owner) return null;
+    const p = window.PERSON(owner);
+    return (
+      <div key={t.id} className={'mission' + (done[owner + ':' + t.id] ? ' done' : '')} onClick={() => toggle(owner, t.id)}>
+        <div className="m-ic">{t.icon}</div>
+        <div className="m-body">
+          <div className="m-title">{t.area}</div>
+          <div className="m-sub">
+            <span className="chip gray">{p.short}</span>
+            <span className="chip">{t.freq === 'diario' ? 'Cada día' : window.DAYS_SHORT[t.day]}</span>
+          </div>
+        </div>
+        <div className={'check' + (done[owner + ':' + t.id] ? ' on' : '')}>{done[owner + ':' + t.id] ? '✓' : ''}</div>
+      </div>
+    );
+  });
+}
+
+function ByDay({ dist, done, toggle }) {
+  const daily = window.TASKS.filter(t => t.freq === 'diario');
+  const groups = [];
+  for (let d = 1; d <= 6; d++) {
+    const ts = window.TASKS.filter(t => t.freq === 'semanal' && t.day === d);
+    if (ts.length) groups.push({ day: d, ts });
+  }
+  const todayIdx = new Date().getDay();
+  const Section = ({ title, ts, hot }) => (
+    <div style={{ marginBottom: 18 }}>
+      <div className="row between" style={{ marginBottom: 8 }}>
+        <span className="eyebrow" style={hot ? { color: 'var(--a)' } : null}>{title}{hot ? ' · hoy' : ''}</span>
+      </div>
+      {ts.map(t => {
+        const owner = t.id === 'bebe' ? null : ownerOf(t.id, dist);
+        const p = owner ? window.PERSON(owner) : null;
+        const isDone = owner && done[owner + ':' + t.id];
+        return (
+          <div key={t.id} className={'mission' + (isDone ? ' done' : '')} onClick={() => owner && toggle(owner, t.id)} style={!owner ? { cursor: 'default' } : null}>
+            <div className="m-ic">{t.icon}</div>
+            <div className="m-body">
+              <div className="m-title">{t.label}</div>
+              <div className="m-sub">{p ? <span className="chip gray">{p.short}</span> : <span className="chip out">por turnos</span>}<span className="chip">{t.area}</span></div>
+            </div>
+            {owner && <div className={'check' + (isDone ? ' on' : '')}>{isDone ? '✓' : ''}</div>}
+          </div>
+        );
+      })}
+    </div>
+  );
+  return (
+    <div>
+      <Section title="Cada día" ts={daily} hot />
+      {groups.map(g => <Section key={g.day} title={window.DAYS[g.day]} ts={g.ts} hot={g.day === todayIdx} />)}
+    </div>
+  );
+}
+
+/* =========================================================
+   PANTALLA: MASCOTAS
+   ========================================================= */
+function PetsScreen({ dist, done, person, setProfile }) {
+  const owners = window.FAMILY.filter(p => p.pet && p.petCared);
+  return (
+    <div className="pad fade">
+      <div className="sec-h" style={{ marginTop: 8 }}>
+        <h2>Mascotas 🐾</h2>
+      </div>
+      <p className="muted" style={{ fontWeight: 600, fontSize: 14, margin: '2px 0 14px' }}>
+        Cada vez que limpian un área, su mascota se pone más feliz y desbloquean premios.
+      </p>
+      {owners.map(p => <PetCard key={p.id} p={p} dist={dist} done={done} />)}
+    </div>
+  );
+}
+
+function PetCard({ p, dist, done }) {
+  const h = happinessFor(p.id, dist, done);
+  const mood = moodFor(h);
+  const pts = p.isKid ? pointsFor(p.id, dist, done) : null;
+  const next = p.isKid ? window.REWARDS.find(r => r.at > pts) : null;
+  return (
+    <div className="card" style={{ padding: 14, marginBottom: 14, '--a': p.colors.a, '--b': p.colors.b, '--c': p.colors.c, '--tink': p.colors.ink }}>
+      <div className="row" style={{ gap: 14, alignItems: 'flex-start' }}>
+        <div style={{ position: 'relative', flex: '0 0 auto' }}>
+          <img className={h >= 60 ? 'float' : ''} src={p.pet.img} style={{ width: 84, height: 84, borderRadius: 22, objectFit: 'cover', boxShadow: 'var(--shadow-sm)' }} />
+          <div style={{ position: 'absolute', bottom: -6, right: -6, background: '#fff', borderRadius: '50%', width: 30, height: 30, display: 'grid', placeItems: 'center', fontSize: 18, boxShadow: 'var(--shadow-sm)' }}>{mood.face}</div>
+        </div>
+        <div className="grow">
+          <div className="row between">
+            <div>
+              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 20, lineHeight: 1 }}>{p.pet.name}</div>
+              <div className="muted" style={{ fontSize: 12.5, fontWeight: 700 }}>de {p.name} · {p.pet.species}</div>
+            </div>
+            <span className="chip" style={{ background: 'var(--c)', color: 'var(--tink)' }}>{mood.label}</span>
+          </div>
+          <div style={{ marginTop: 10 }}>
+            <div className="row between" style={{ marginBottom: 4 }}>
+              <span className="eyebrow" style={{ fontSize: 11 }}>Felicidad</span>
+              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 13, color: p.colors.ink }}>{h}%</span>
+            </div>
+            <div className="bar"><i style={{ width: h + '%' }} /></div>
+          </div>
+        </div>
+      </div>
+
+      {p.isKid && (
+        <>
+          <div className="row between" style={{ margin: '14px 2px 8px' }}>
+            <span className="eyebrow" style={{ fontSize: 11 }}>Premios para {p.pet.name}</span>
+            {next
+              ? <span className="chip" style={{ background: 'var(--c)', color: 'var(--tink)' }}>faltan {next.at - pts} pts → {next.icon}</span>
+              : <span className="chip pts">¡todo desbloqueado! 🎉</span>}
+          </div>
+          <div className="rewards">
+            {window.REWARDS.map(r => (
+              <div key={r.at} className={'reward' + (pts >= r.at ? ' unlocked' : '')}>
+                <div className="ri">{r.icon}</div>
+                <div className="rp">{pts >= r.at ? '✓' : r.at}</div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+      {p.isBaby && (
+        <div className="row" style={{ gap: 8, marginTop: 12, background: 'var(--c)', borderRadius: 14, padding: '10px 12px' }}>
+          <span style={{ fontSize: 18 }}>🍼</span>
+          <span style={{ fontWeight: 700, fontSize: 13, color: p.colors.ink }}>{p.pet.name} es feliz cuando todos cuidan a Rachel por turnos</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* =========================================================
+   PANTALLA: FAMILIA (Actual vs Equitativo)
+   ========================================================= */
+function FamilyScreen({ dist, setDist, done }) {
+  const order = ['mama', 'papa', 'taylor', 'emmeth', 'christopher'];
+  const loads = order.map(id => ({ p: window.PERSON(id), n: houseTasksFor(id, dist).length }));
+  const maxN = Math.max(...loads.map(l => l.n), 1);
+  const d = window.DISTRIBUTIONS[dist];
+
+  return (
+    <div className="pad fade">
+      <div className="sec-h" style={{ marginTop: 8 }}>
+        <h2>Reparto familiar</h2>
+      </div>
+      <div className="seg" style={{ marginBottom: 8 }}>
+        <button className={dist === 'actual' ? 'on' : ''} onClick={() => setDist('actual')}>Cómo está hoy</button>
+        <button className={dist === 'equitativo' ? 'on' : ''} onClick={() => setDist('equitativo')}>Propuesta justa</button>
+      </div>
+      <p className="muted" style={{ fontWeight: 600, fontSize: 13.5, margin: '0 0 16px' }}>{d.sub}</p>
+
+      {/* carga por persona */}
+      <div className="card" style={{ padding: '16px 16px 8px', marginBottom: 18 }}>
+        <span className="eyebrow">Cuántas áreas lleva cada quien</span>
+        <div style={{ marginTop: 12 }}>
+          {loads.map(l => (
+            <div key={l.p.id} style={{ marginBottom: 12 }}>
+              <div className="row between" style={{ marginBottom: 5 }}>
+                <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 14, whiteSpace: 'nowrap' }}>{l.p.short}{l.p.age ? ' (' + l.p.age + ')' : ''}</span>
+                <span className="muted" style={{ fontSize: 12, fontWeight: 700 }}>{l.n} {l.n === 1 ? 'área' : 'áreas'}</span>
+              </div>
+              <div className="loadbar">
+                <i style={{ width: Math.max(8, l.n / maxN * 100) + '%', background: 'linear-gradient(90deg,' + l.p.colors.a + ',' + l.p.colors.b + ')' }} />
+              </div>
+            </div>
+          ))}
+        </div>
+        {dist === 'actual'
+          ? <div style={{ background: '#fff4e6', borderRadius: 14, padding: '10px 12px', marginTop: 4, fontSize: 13, fontWeight: 700, color: '#9a5a00' }}>⚠️ Mamá carga casi todo y Christopher no tiene tareas.</div>
+          : <div style={{ background: '#eafaf2', borderRadius: 14, padding: '10px 12px', marginTop: 4, fontSize: 13, fontWeight: 700, color: '#0f7a4a' }}>✅ Más parejo: Papá ayuda más, Chris entra con 1 área y la bebé se cuida entre 4.</div>}
+      </div>
+
+      {/* detalle por persona */}
+      <span className="eyebrow" style={{ marginLeft: 4 }}>Quién hace qué</span>
+      <div style={{ marginTop: 12 }}>
+        {order.concat(['rachel']).map(id => {
+          const p = window.PERSON(id);
+          const ts = houseTasksFor(id, dist);
+          const turns = window.DISTRIBUTIONS[dist].assign.bebeTurnos || [];
+          return (
+            <div key={id} className="card" style={{ padding: 13, marginBottom: 10 }}>
+              <div className="row" style={{ gap: 11, marginBottom: ts.length || (id === 'rachel') ? 9 : 0 }}>
+                <Avatar p={p} size={40} />
+                <div className="grow">
+                  <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 16, lineHeight: 1 }}>{p.name}{p.age ? ' (' + p.age + ')' : ''}</div>
+                  <div className="muted" style={{ fontSize: 12, fontWeight: 600 }}>{p.note}</div>
+                </div>
+              </div>
+              <div className="row wrap" style={{ gap: 6 }}>
+                {id === 'rachel'
+                  ? <span className="chip" style={{ background: p.colors.c, color: p.colors.ink }}>🍼 La cuidan: {turns.map(t => window.PERSON(t).short).join(', ') || '—'}</span>
+                  : ts.length
+                    ? ts.map(t => <span key={t.id} className="chip gray">{t.icon} {t.area}</span>)
+                    : <span className="chip out">sin tareas</span>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================
+   MODAL: AGREGAR TAREA MANUAL
+   ========================================================= */
+function AddTaskModal({ onClose, onSave }) {
+  const [owner, setOwner] = useState('taylor');
+  const [label, setLabel] = useState('');
+  const [icon, setIcon] = useState('⭐');
+  const [freq, setFreq] = useState('diario');
+  const [day, setDay] = useState(1);
+  const icons = ['⭐', '🧹', '🛏️', '🪥', '🛁', '🧺', '👕', '🍽️', '🐾', '🌱', '📖', '⚽', '🎹', '💧', '🚗', '🌿', '🧸', '🧷'];
+  return (
+    <div className="modal-bg" onClick={onClose}>
+      <div className="sheet" onClick={e => e.stopPropagation()}>
+        <div className="row between" style={{ marginBottom: 4 }}>
+          <h2 style={{ fontSize: 22 }}>Nueva tarea</h2>
+          <button onClick={onClose} style={{ border: 0, background: '#f0eef8', borderRadius: 12, width: 34, height: 34, fontSize: 18, cursor: 'pointer', color: 'var(--ink-2)' }}>×</button>
+        </div>
+
+        <div className="fld">
+          <label>¿De quién es?</label>
+          <div className="pick-row">
+            {window.FAMILY.map(p => (
+              <div key={p.id} className={'pk' + (owner === p.id ? ' on' : '')} onClick={() => setOwner(p.id)}>
+                <Avatar p={p} size={42} ring={owner === p.id} />
+                <span className="lbl">{p.short}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="fld">
+          <label>¿Qué hay que hacer?</label>
+          <input className="inp" value={label} placeholder="Ej: regar las plantas" autoFocus
+            onChange={e => setLabel(e.target.value)} />
+        </div>
+
+        <div className="fld">
+          <label>Ícono</label>
+          <div className="ico-grid">
+            {icons.map(ic => (
+              <div key={ic} className={'ico' + (icon === ic ? ' on' : '')} onClick={() => setIcon(ic)}>{ic}</div>
+            ))}
+          </div>
+        </div>
+
+        <div className="fld">
+          <label>¿Cada cuándo?</label>
+          <div className="seg">
+            <button className={freq === 'diario' ? 'on' : ''} onClick={() => setFreq('diario')}>Cada día</button>
+            <button className={freq === 'semanal' ? 'on' : ''} onClick={() => setFreq('semanal')}>Un día a la semana</button>
+          </div>
+          {freq === 'semanal' && (
+            <div className="row wrap" style={{ gap: 6, marginTop: 10 }}>
+              {[1, 2, 3, 4, 5, 6, 0].map(d => (
+                <button key={d} onClick={() => setDay(d)} className={'chip' + (day === d ? ' pts' : ' gray')}
+                  style={{ border: 0, cursor: 'pointer', padding: '7px 11px', fontSize: 13 }}>{window.DAYS_SHORT[d]}</button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <button className="btn-primary" disabled={!label.trim()} style={!label.trim() ? { opacity: .5 } : null}
+          onClick={() => { if (label.trim()) onSave({ id: 'c' + Date.now(), label: label.trim(), icon, owner, freq, day: freq === 'semanal' ? Number(day) : undefined, custom: true }); }}>
+          Agregar tarea (+{PPT} pts)
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================
+   BOTTOM NAV
+   ========================================================= */
+function BottomNav({ tab, go }) {
+  const items = [['inicio', '🏠', 'Inicio'], ['misiones', '🎯', 'Misiones'], ['mascotas', '🐾', 'Mascotas'], ['familia', '👨‍👩‍👧‍👦', 'Familia']];
+  return (
+    <div className="nav">
+      {items.map(([k, ic, l]) => (
+        <button key={k} className={tab === k ? 'on' : ''} onClick={() => go(k)}>
+          <span className="ni">{ic}</span>{l}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* =========================================================
+   APP ROOT
+   ========================================================= */
+function App() {
+  const init = useMemo(loadState, []);
+  const [profile, setProfile] = useState(init.profile);
+  const [dist, setDist] = useState(init.dist);
+  const [tab, setTab] = useState(init.tab);
+  const [done, setDone] = useState(init.done);
+  const [custom, setCustom] = useState(init.custom);
+  const [missView, setMissView] = useState('persona');
+  const [showAdd, setShowAdd] = useState(false);
+  const [confetti, setConfetti] = useState(false);
+  const [toast, setToast] = useState(null);
+  const toastTimer = useRef(null);
+
+  CUSTOM_TASKS = custom;
+  const person = window.PERSON(profile);
+
+  // persistir
+  useEffect(() => {
+    localStorage.setItem(STORE_KEY, JSON.stringify({ profile, dist, tab, week: weekKey(), done, custom }));
+  }, [profile, dist, tab, done, custom]);
+
+  // tema según perfil
+  useEffect(() => { applyTheme(person); }, [profile]);
+  useEffect(() => { applyTheme(window.PERSON(profile)); }, []);
+
+  function showToast(msg) {
+    setToast(msg);
+    clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), 1800);
+  }
+
+  function toggle(pid, tid) {
+    const key = pid + ':' + tid;
+    setDone(prev => {
+      const nx = { ...prev };
+      if (nx[key]) {
+        delete nx[key];
+      } else {
+        nx[key] = true;
+        const p = window.PERSON(pid);
+        const t = window.TASK(tid);
+        setConfetti(true);
+        setTimeout(() => setConfetti(false), 1600);
+        if (p.isKid) showToast('+' + PPT + ' pts para ' + p.short + ' · ' + (p.pet ? p.pet.name + ' feliz ' : '') + '🎉');
+        else showToast('✓ ' + (t ? t.label : 'Tarea') + ' · ¡gracias ' + p.short + '!');
+      }
+      return nx;
+    });
+  }
+
+  function addTask(t) {
+    setCustom(prev => [...prev, t]);
+    setShowAdd(false);
+    const p = window.PERSON(t.owner);
+    showToast('Nueva tarea para ' + p.short + ' ✨');
+  }
+  function deleteTask(t) {
+    setCustom(prev => prev.filter(c => c.id !== t.id));
+    setDone(prev => { const nx = { ...prev }; Object.keys(nx).forEach(k => { if (k.endsWith(':' + t.id)) delete nx[k]; }); return nx; });
+  }
+
+  const points = pointsFor(profile, dist, done);
+
+  return (
+    <div className="stage">
+      <div className="phone">
+        <TopBar person={person} points={points} />
+        <ProfileSwitcher active={profile} onPick={setProfile} done={done} dist={dist} />
+        <div className="scroll">
+          {tab === 'inicio' && <HomeScreen person={person} dist={dist} done={done} toggle={toggle} go={setTab} onDelete={deleteTask} />}
+          {tab === 'misiones' && <MissionsScreen dist={dist} done={done} toggle={toggle} view={missView} setView={setMissView} onAdd={() => setShowAdd(true)} onDelete={deleteTask} />}
+          {tab === 'mascotas' && <PetsScreen dist={dist} done={done} person={person} setProfile={setProfile} />}
+          {tab === 'familia' && <FamilyScreen dist={dist} setDist={setDist} done={done} />}
+        </div>
+        {toast && <div className="toast">{toast}</div>}
+        <BottomNav tab={tab} go={setTab} />
+      </div>
+      <Confetti go={confetti} />
+      {showAdd && <AddTaskModal onClose={() => setShowAdd(false)} onSave={addTask} />}
+    </div>
+  );
+}
+
+// Esperar a la sincronización en la nube (si está activa) antes de mostrar la app.
+(window.CloudSync ? window.CloudSync.whenReady : function (cb) { cb(); })(function () {
+  ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+});
