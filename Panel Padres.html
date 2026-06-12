@@ -201,6 +201,43 @@
   .btn.primary:disabled{opacity:.5;cursor:default;}
 
   .empty{padding:40px;text-align:center;color:var(--ns);}
+
+  /* ===== estado LED (calidad/inspección) ===== */
+  .qled{width:11px;height:11px;border-radius:50%;background:#d6d3ce;flex:0 0 auto;box-shadow:0 0 0 3px rgba(0,0,0,.03);}
+  .qled.ok{background:var(--good);}
+  .qled.claim{background:#f5a623;box-shadow:0 0 0 3px rgba(245,166,35,.18);animation:pulse 1.6s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.45;}}
+  tr.clickable{cursor:pointer;}
+  .pill.review{color:#9a6b00;background:#fff1cf;}
+
+  /* ===== cola de inspección ===== */
+  .qbadge{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:#f5a623;color:#fff;font-size:12px;font-weight:700;margin-left:6px;}
+  .qrow{display:flex;align-items:center;gap:11px;padding:10px 16px;border-top:1px solid var(--nl);cursor:pointer;}
+  .qrow:hover{background:var(--nll);}
+  .btn.sm{height:28px;padding:0 12px;font-size:12.5px;}
+  .chipbtn{border:1px solid var(--nl);background:#fff;border-radius:16px;padding:6px 12px;font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--np);}
+  .chipbtn:hover{border-color:var(--primary);background:var(--accent-soft);}
+
+  /* ===== niveles / cargos ===== */
+  .lvl-badge{display:inline-flex;align-items:center;gap:4px;font-size:12.5px;font-weight:600;color:var(--primary);background:var(--accent-soft);border-radius:11px;padding:2px 9px;white-space:nowrap;}
+  .lvl-badge.sm{font-size:11px;padding:1px 7px;}
+  .rankrow .rn{font-weight:600;flex:1;line-height:1.15;}
+
+  /* ===== inspección: preguntas, sliders, total ===== */
+  .inspect-q{display:flex;flex-direction:column;gap:6px;background:var(--nla);border:1px solid var(--nl);border-radius:6px;padding:12px 14px;margin-top:4px;}
+  .inspect-q .iq{font-size:13px;color:var(--ns);font-weight:600;}
+  .rate-val{float:right;font-weight:700;color:var(--primary);}
+  .range{width:100%;accent-color:var(--primary);height:24px;cursor:pointer;}
+  .total-box{display:flex;align-items:center;justify-content:space-between;margin-top:16px;padding:12px 16px;border-radius:6px;background:var(--accent-soft);border:1px solid var(--accent-line);font-weight:600;}
+  .total-box .total-pts{font-size:24px;font-weight:700;color:var(--primary);}
+  .total-box .total-pts small{font-size:13px;color:var(--ns);font-weight:600;}
+  .quick-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;}
+
+  /* ===== bonos ===== */
+  .bonus-opt{display:flex;align-items:center;gap:10px;border:1px solid var(--nl);border-radius:6px;padding:11px 13px;margin-bottom:8px;cursor:pointer;font-size:13.5px;font-weight:600;}
+  .bonus-opt.on{border-color:var(--primary);background:var(--accent-soft);}
+  .note.info{background:#eef2ff;color:#3a3a8a;}
+
   @media(max-width:1100px){.kpis{grid-template-columns:repeat(2,1fr);}.cols{grid-template-columns:1fr;}.pgrid{grid-template-columns:repeat(2,1fr);}}
 </style>
 </head>
@@ -211,13 +248,23 @@
   <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 
-  <!-- Nube (Firebase): si firebase-config.js no está configurado, el panel guarda solo en este dispositivo -->
+  <!-- Sincronización en la nube (Firebase) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
   <script src="cloud-sync.js"></script>
 
+  <script src="images.js"></script>
   <script src="data.js"></script>
   <script type="text/babel" src="admin.jsx"></script>
+
+  <template id="__bundler_thumbnail">
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <rect width="100" height="100" rx="18" fill="#1F3A5C"/>
+      <rect x="26" y="30" width="48" height="9" rx="2" fill="#C99700"/>
+      <rect x="26" y="45" width="22" height="25" rx="3" fill="#fff"/>
+      <rect x="52" y="45" width="22" height="25" rx="3" fill="#fff"/>
+    </svg>
+  </template>
 </body>
 </html>
