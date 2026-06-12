@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plan del Hogar · Familia Harrington</title>
+<link rel="icon" type="image/png" href="icon-homeclean.png">
+<link rel="apple-touch-icon" href="icon-homeclean.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#1F3A5C;
+    --navy-2:#16293f;
+    --mostaza:#C99700;
+    --mostaza-soft:#FBF3DC;
+    --turq:#1AA89A;
+    --oliva:#7B8B3D;
+    --ink:#22272e;
+    --ink-2:#5a6470;
+    --line:#e4e0d6;
+    --paper:#ffffff;
+    --cream:#faf7f0;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Nunito Sans', system-ui, sans-serif;
+    color:var(--ink);background:#d9dce3;
+    -webkit-font-smoothing:antialiased;line-height:1.55;
+  }
+  .doc{max-width:820px;margin:0 auto;}
+  .page{
+    background:var(--paper);
+    padding:64px 68px;
+    margin:26px auto;
+    box-shadow:0 8px 30px -10px rgba(0,0,0,.25);
+    position:relative;
+  }
+  h1,h2,h3,h4{font-family:'Fraunces', Georgia, serif;color:var(--navy);margin:0;line-height:1.12;font-weight:600;}
+  p{margin:0 0 12px;}
+  .lead{font-size:18px;color:var(--ink-2);}
+  .eyebrow{font-family:'Nunito Sans';font-weight:800;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--mostaza);}
+  .sec-title{font-size:30px;margin:6px 0 18px;}
+  .rule{height:3px;width:54px;background:var(--mostaza);border-radius:2px;margin:0 0 22px;}
+  .muted{color:var(--ink-2);}
+
+  /* ---------- COVER ---------- */
+  .cover{background:linear-gradient(150deg,var(--navy),var(--navy-2));color:#fff;min-height:940px;display:flex;flex-direction:column;justify-content:space-between;}
+  .cover h1{color:#fff;font-size:54px;font-weight:700;letter-spacing:-.5px;}
+  .cover .kicker{font-family:'Nunito Sans';font-weight:800;letter-spacing:.2em;text-transform:uppercase;font-size:13px;color:var(--mostaza);}
+  .cover .sub{font-size:20px;color:#cdd6e3;max-width:520px;margin-top:18px;}
+  .cover .crest{width:74px;height:74px;border-radius:50%;border:2px solid var(--mostaza);display:grid;place-items:center;font-family:'Fraunces';font-size:30px;color:var(--mostaza);}
+  .principle{border-left:3px solid var(--mostaza);padding:8px 0 8px 22px;margin-top:30px;}
+  .principle .q{font-family:'Fraunces';font-style:italic;font-size:21px;color:#fff;line-height:1.4;}
+  .cover .meta{display:flex;gap:30px;color:#aab6c7;font-size:14px;border-top:1px solid rgba(255,255,255,.18);padding-top:20px;}
+  .cover .meta b{color:#fff;display:block;font-size:16px;font-weight:700;}
+
+  /* ---------- generic ---------- */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+  .card{border:1px solid var(--line);border-radius:12px;padding:18px 20px;background:var(--paper);}
+  .card.soft{background:var(--cream);}
+  .card h3{font-size:18px;margin-bottom:6px;}
+  .card h4{font-family:'Nunito Sans';font-weight:800;font-size:14px;color:var(--navy);margin-bottom:8px;}
+  .obj{display:flex;gap:14px;margin-bottom:14px;}
+  .obj .n{flex:0 0 auto;width:34px;height:34px;border-radius:50%;background:var(--mostaza-soft);color:var(--navy);font-family:'Fraunces';font-weight:700;display:grid;place-items:center;}
+  .obj .t b{display:block;font-weight:800;color:var(--navy);}
+  ul.clean{margin:6px 0 0;padding-left:18px;}
+  ul.clean li{margin-bottom:5px;}
+  .pill{display:inline-block;font-size:12.5px;font-weight:700;padding:3px 11px;border-radius:20px;background:var(--mostaza-soft);color:#7a5b00;margin:0 4px 6px 0;}
+  .pill.navy{background:#e7edf5;color:var(--navy);}
+  .pill.turq{background:#dcf3f0;color:#0c6b60;}
+
+  /* freq timeline */
+  .freq{display:flex;gap:14px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--line);}
+  .freq:last-child{border-bottom:0;}
+  .freq .badge{flex:0 0 auto;width:104px;font-family:'Fraunces';font-weight:700;color:#fff;background:var(--navy);border-radius:8px;padding:7px 10px;text-align:center;font-size:14px;}
+  .freq .badge.m{background:var(--mostaza);}
+  .freq .badge.t{background:var(--turq);}
+  .freq .badge.o{background:var(--oliva);}
+  .freq .items{flex:1;padding-top:3px;}
+
+  /* person cargo card */
+  .person{display:flex;gap:16px;border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:13px;}
+  .person .coin{flex:0 0 auto;width:50px;height:50px;border-radius:50%;display:grid;place-items:center;color:#fff;font-family:'Fraunces';font-weight:700;font-size:20px;}
+  .person .role{font-family:'Fraunces';font-weight:700;color:var(--navy);font-size:19px;}
+  .person .cargo{font-weight:800;font-size:12.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--mostaza);margin-bottom:6px;}
+
+  /* zones table */
+  table.z{width:100%;border-collapse:collapse;font-size:14.5px;}
+  table.z th{text-align:left;font-family:'Nunito Sans';font-weight:800;color:var(--navy);font-size:12.5px;text-transform:uppercase;letter-spacing:.06em;padding:8px 10px;border-bottom:2px solid var(--line);}
+  table.z td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top;}
+  table.z tr:last-child td{border-bottom:0;}
+
+  /* points */
+  .score{display:flex;gap:14px;}
+  .score .half{flex:1;border:1px solid var(--line);border-radius:12px;padding:16px;}
+  .score .half .big{font-family:'Fraunces';font-weight:700;font-size:34px;color:var(--navy);}
+  .levels{display:flex;gap:8px;margin-top:8px;}
+  .level{flex:1;text-align:center;border:1px solid var(--line);border-radius:10px;padding:12px 6px;}
+  .level .ic{font-size:26px;}
+  .level .nm{font-family:'Fraunces';font-weight:700;font-size:13px;color:var(--navy);margin-top:4px;line-height:1.1;}
+  .level .pt{font-size:12px;color:var(--ink-2);margin-top:2px;}
+
+  /* phases */
+  .phase{display:flex;gap:16px;margin-bottom:14px;}
+  .phase .ph{flex:0 0 auto;width:60px;height:60px;border-radius:12px;background:var(--navy);color:#fff;display:grid;place-items:center;font-family:'Fraunces';font-weight:700;text-align:center;font-size:13px;line-height:1.05;}
+
+  .goldrule{background:linear-gradient(150deg,var(--navy),var(--navy-2));color:#fff;border-radius:16px;padding:30px 32px;}
+  .goldrule .q{font-family:'Fraunces';font-size:24px;line-height:1.35;}
+  .goldrule .q b{color:var(--mostaza);}
+  .checks{list-style:none;margin:10px 0 0;padding:0;}
+  .checks li{padding:7px 0 7px 30px;position:relative;border-bottom:1px solid var(--line);}
+  .checks li::before{content:"✓";position:absolute;left:0;top:7px;color:var(--turq);font-weight:800;}
+  .footer-note{text-align:center;color:var(--ink-2);font-size:13px;margin-top:18px;}
+
+  @media print{
+    body{background:#fff;}
+    .page{box-shadow:none;margin:0;padding:48px 54px;page-break-after:always;width:100%;max-width:none;min-height:auto;}
+    .cover{min-height:96vh;}
+    .no-print{display:none;}
+  }
+  .toolbar{position:fixed;top:16px;right:16px;z-index:50;}
+  .toolbar button{font-family:'Nunito Sans';font-weight:700;font-size:14px;background:var(--navy);color:#fff;border:0;border-radius:10px;padding:10px 16px;cursor:pointer;box-shadow:0 6px 16px -6px rgba(0,0,0,.4);}
+</style>
+</head>
+<body>
+<div class="toolbar no-print"><button onclick="window.print()">🖨️ Imprimir / Guardar PDF</button></div>
+<div class="doc">
+
+  <!-- ============ COVER ============ -->
+  <section class="page cover">
+    <div>
+      <div class="crest">H</div>
+    </div>
+    <div>
+      <div class="kicker">Proyecto familiar · Casa Harrington</div>
+      <h1>Plan del Hogar</h1>
+      <p class="sub">Un hogar funcional, sostenible y de bajo estrés para una familia de seis.</p>
+      <div class="principle">
+        <div class="q">"La meta no es tener una casa perfecta. La meta es tener una casa que sirva a la familia, apoye sus metas y pueda mantenerse con paz, simplicidad y constancia."</div>
+      </div>
+    </div>
+    <div class="meta">
+      <div><span>La familia</span><b>Maykol · Verónica</b>Taylor · Emmeth · Christopher · Rachel</div>
+      <div><span>Objetivo</span><b>6 meses</b>Mantener la casa en 15–30 min al día</div>
+    </div>
+  </section>
+
+  <!-- ============ PROPÓSITO + OBJETIVOS ============ -->
+  <section class="page">
+    <div class="eyebrow">01 · Propósito</div>
+    <h2 class="sec-title">Por qué existe este plan</h2>
+    <div class="rule"></div>
+    <p class="lead">Transformar el hogar en un espacio limpio, organizado y fácil de mantener, diseñado para las necesidades reales de la familia — reduciendo la carga mental, el tiempo de limpieza, la acumulación y las plagas, mediante sistemas simples y colaborativos.</p>
+    <p class="muted">Para dedicar más tiempo a lo que importa: la familia, el autocuidado, el estudio, el trabajo y el descanso.</p>
+
+    <h3 style="margin:28px 0 16px;font-size:20px;">Objetivos generales</h3>
+    <div class="obj"><div class="n">1</div><div class="t"><b>Un sistema de limpieza sostenible</b><span class="muted">Que se mantenga con poco esfuerzo diario, sin jornadas maratónicas.</span></div></div>
+    <div class="obj"><div class="n">2</div><div class="t"><b>Un estilo de vida más minimalista</b><span class="muted">Menos objetos, sin duplicados, organizados por categorías; solo lo útil o valioso.</span></div></div>
+    <div class="obj"><div class="n">3</div><div class="t"><b>Un lugar definido para cada objeto</b><span class="muted">Para reducir el desorden visual y que los niños puedan colaborar.</span></div></div>
+    <div class="obj"><div class="n">4</div><div class="t"><b>Sistemas que funcionen sin supervisión constante</b><span class="muted">Zonas, rutinas visuales y responsabilidades por edad.</span></div></div>
+    <div class="obj"><div class="n">5</div><div class="t"><b>Eliminar y prevenir plagas</b><span class="muted">Limpieza profunda, control de humedad y menos escondites.</span></div></div>
+    <div class="obj"><div class="n">6</div><div class="t"><b>Reducir la carga mental de Verónica</b><span class="muted">Liberar tiempo para lactancia, crianza, trabajo, estudio, ejercicio y descanso.</span></div></div>
+  </section>
+
+  <!-- ============ PROBLEMAS ============ -->
+  <section class="page">
+    <div class="eyebrow">02 · Diagnóstico</div>
+    <h2 class="sec-title">Problemas identificados</h2>
+    <div class="rule"></div>
+    <div class="grid2">
+      <div class="card soft">
+        <h4>🗂️ Organización general</h4>
+        <ul class="clean muted">
+          <li>Objetos sin ubicación definida y guardados "por si acaso".</li>
+          <li>Acumulación de cajas, recuerdos y materiales.</li>
+          <li>Habitaciones con demasiadas funciones a la vez.</li>
+          <li>Desorden visual: mochilas, zapatos, ropa, papeles, cables, juguetes.</li>
+        </ul>
+      </div>
+      <div class="card soft">
+        <h4>🧹 Limpieza</h4>
+        <ul class="clean muted">
+          <li>Jornadas larguísimas (9+ horas para baño y closet).</li>
+          <li>Efecto dominó: una tarea depende de otra.</li>
+          <li>Para mover un mueble hay que vaciar otro espacio primero.</li>
+        </ul>
+      </div>
+      <div class="card soft">
+        <h4>🍳 Cocina</h4>
+        <ul class="clean muted">
+          <li>Alimentos expuestos a plagas; despensa poco optimizada.</li>
+          <li>Electrodomésticos sin zona definida.</li>
+          <li>El mesón largo es muy alto para cocinar → sirve mejor para servir.</li>
+        </ul>
+      </div>
+      <div class="card soft">
+        <h4>💻 Oficinas y plagas</h4>
+        <ul class="clean muted">
+          <li>Oficina de niños usada como closet; mochilas sin lugar fijo.</li>
+          <li>Oficina de padres con cables y papeles dispersos.</li>
+          <li>Cucarachas: focos en cocina, lavandería y drenajes.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FRECUENCIAS ============ -->
+  <section class="page">
+    <div class="eyebrow">03 · Solución · Ritmo</div>
+    <h2 class="sec-title">Sistema de frecuencias</h2>
+    <div class="rule"></div>
+    <p class="muted" style="margin-bottom:18px;">La clave de un hogar sostenible: cada cosa tiene su ritmo. Lo pequeño todos los días evita las jornadas maratónicas.</p>
+
+    <div class="freq"><div class="badge">Diario</div><div class="items">Camas · platos · barrido rápido · ropa a las cestas · juguetes a su lugar · cocina funcional.</div></div>
+    <div class="freq"><div class="badge">Semanal</div><div class="items">Baños · cocina profunda ligera · sábanas · toallas · juegos · ventanas · revisar plagas.</div></div>
+    <div class="freq"><div class="badge m">Quincenal</div><div class="items">Mercado grande · nevera · estantes de comida · alfombras.</div></div>
+    <div class="freq"><div class="badge m">Mensual</div><div class="items">Limpieza profunda por zonas · revisión de zapatos · depuración · reposición de productos.</div></div>
+    <div class="freq"><div class="badge t">Trimestral</div><div class="items">Bombillos · disfraces · donaciones · revisión de humedad.</div></div>
+    <div class="freq"><div class="badge o">Anual</div><div class="items">Revisión general · organización documental · revisión de electrodomésticos.</div></div>
+  </section>
+
+  <!-- ============ SISTEMA FAMILIAR (CARGOS) ============ -->
+  <section class="page">
+    <div class="eyebrow">04 · Solución · Equipo</div>
+    <h2 class="sec-title">Sistema familiar de cargos</h2>
+    <div class="rule"></div>
+    <p class="muted" style="margin-bottom:20px;">No todos hacen la misma cantidad: cada quien contribuye según su capacidad. En lugar de tareas sueltas, cada persona es <b>guardián de un territorio</b>.</p>
+
+    <div class="person">
+      <div class="coin" style="background:#1F3A5C;">VE</div>
+      <div><div class="cargo">Directora Estratégica</div><div class="role">Verónica</div>
+        <span class="pill navy">Supervisar sistemas</span><span class="pill navy">Cocina principal</span><span class="pill navy">Lactancia</span><span class="pill navy">Planificación</span><span class="pill">Despensa · semanal</span></div>
+    </div>
+    <div class="person">
+      <div class="coin" style="background:#C8102E;">MA</div>
+      <div><div class="cargo">Director de Mantenimiento</div><div class="role">Maykol</div>
+        <span class="pill navy">Basura y reciclaje</span><span class="pill navy">Barrido nocturno</span><span class="pill">Lavandería · semanal</span><span class="pill turq">Revisar plagas</span><span class="pill turq">Bombillos · reparaciones</span></div>
+    </div>
+    <div class="person">
+      <div class="coin" style="background:#B98FE8;">TA</div>
+      <div><div class="cargo">Guardiana del Orden</div><div class="role">Taylor · 10 años</div>
+        <span class="pill navy">Su ropa, mochila y escritorio</span><span class="pill navy">Apoyo con Rachel</span><span class="pill">Biblioteca infantil</span><span class="pill">Doblar ropa</span></div>
+    </div>
+    <div class="person">
+      <div class="coin" style="background:#2962FF;">EM</div>
+      <div><div class="cargo">Guardián de los Zapatos</div><div class="role">Emmeth · 7 años</div>
+        <span class="pill navy">Zapatos en su lugar</span><span class="pill navy">Mochilas alineadas</span><span class="pill navy">Recoger el piso</span><span class="pill">Entrada japonesa</span></div>
+    </div>
+    <div class="person">
+      <div class="coin" style="background:#F5B500;">CH</div>
+      <div><div class="cargo">Guardián de los Juguetes</div><div class="role">Christopher · 4 años</div>
+        <span class="pill navy">Guardar juguetes</span><span class="pill navy">Ropa a la cesta</span><span class="pill">Elegir juguetes para donar</span><span class="muted" style="font-size:12.5px;display:block;margin-top:4px;">Todo en formato de juego · máx. 5 min seguidos.</span></div>
+    </div>
+    <div class="person">
+      <div class="coin" style="background:#CE93D8;">RA</div>
+      <div><div class="cargo">Jefa de Ternura</div><div class="role">Rachel · 1 año</div>
+        <span class="pill turq">Ser cuidada y amada</span><span class="muted" style="font-size:12.5px;display:block;margin-top:4px;">Su única responsabilidad es ser adorable. ✔</span></div>
+    </div>
+  </section>
+
+  <!-- ============ ZONAS ============ -->
+  <section class="page">
+    <div class="eyebrow">05 · Solución · Territorios</div>
+    <h2 class="sec-title">Distribución por zonas</h2>
+    <div class="rule"></div>
+    <p class="muted" style="margin-bottom:18px;">Cada zona tiene un responsable y, cuando hace falta, ayudantes. Así nadie carga solo y los niños saben exactamente qué les toca.</p>
+    <table class="z">
+      <thead><tr><th>Zona</th><th>Responsable</th><th>Ayudantes</th></tr></thead>
+      <tbody>
+        <tr><td>🚪 Entrada japonesa</td><td><b>Emmeth</b></td><td>Taylor</td></tr>
+        <tr><td>🍳 Cocina</td><td><b>Verónica</b></td><td>Maykol · Taylor</td></tr>
+        <tr><td>🛋️ Sala</td><td><b>Taylor</b></td><td>Christopher</td></tr>
+        <tr><td>📖 Oficina de los niños</td><td><b>Taylor</b></td><td>Emmeth</td></tr>
+        <tr><td>💻 Oficina de los padres</td><td><b>Verónica</b></td><td>Maykol</td></tr>
+        <tr><td>🧺 Lavandería</td><td><b>Maykol</b></td><td>Verónica · Taylor</td></tr>
+      </tbody>
+    </table>
+
+    <h3 style="margin:30px 0 14px;font-size:19px;">Sistemas de organización</h3>
+    <div class="grid2">
+      <div class="card"><h4>🚪 Entrada japonesa</h4><p class="muted" style="margin:0;">Eliminar los zapatos dentro de la casa: zapatera, pantuflas y un área de transición.</p></div>
+      <div class="card"><h4>🧺 Cestas estratégicas</h4><p class="muted" style="margin:0;">En sala, habitaciones y áreas comunes, para capturar al vuelo ropa, juguetes y objetos fuera de lugar.</p></div>
+    </div>
+  </section>
+
+  <!-- ============ PUNTOS Y CALIDAD ============ -->
+  <section class="page">
+    <div class="eyebrow">06 · Motivación</div>
+    <h2 class="sec-title">Puntos, calidad y niveles</h2>
+    <div class="rule"></div>
+    <p class="muted" style="margin-bottom:16px;">No premiamos hacer la tarea: premiamos <b>dejar el espacio mejor de como se encontró</b>. Por eso cada área se inspecciona antes de dar los puntos.</p>
+
+    <div class="score" style="margin-bottom:8px;">
+      <div class="half"><div class="big">5</div><h4 style="margin:4px 0 6px;">📦 Orden</h4><p class="muted" style="margin:0;font-size:13.5px;">Todo en su lugar, superficies despejadas, nada de ropa, zapatos o juguetes a la vista.</p></div>
+      <div class="half"><div class="big">5</div><h4 style="margin:4px 0 6px;">🧹 Limpieza</h4><p class="muted" style="margin:0;font-size:13.5px;">Piso y superficies limpios, basura retirada, sin migas ni suciedad visible.</p></div>
+    </div>
+    <p class="muted" style="font-size:13.5px;margin-bottom:22px;"><b>Inspección de calidad:</b> antes de otorgar los 10 puntos se revisan 3 preguntas — ¿se ve ordenado?, ¿se ve limpio?, ¿todo está en su lugar? En la app, el niño marca <b>"listo"</b> y un adulto lo aprueba.</p>
+
+    <h4 style="margin-bottom:6px;">Niveles de la semana</h4>
+    <div class="levels">
+      <div class="level"><div class="ic">🌱</div><div class="nm">Aprendiz</div><div class="pt">0+</div></div>
+      <div class="level"><div class="ic">⭐</div><div class="nm">Colaborador</div><div class="pt">50+</div></div>
+      <div class="level"><div class="ic">🌟</div><div class="nm">Organizador</div><div class="pt">100+</div></div>
+      <div class="level"><div class="ic">🏆</div><div class="nm">Guardián del Hogar</div><div class="pt">150+</div></div>
+      <div class="level"><div class="ic">👑</div><div class="nm">Maestro del Orden</div><div class="pt">200+</div></div>
+    </div>
+
+    <div class="grid2" style="margin-top:22px;">
+      <div class="card soft"><h4>✨ Bonos</h4><ul class="clean muted" style="margin:0;"><li>Hacer algo sin que se lo pidan: <b>+5</b></li><li>Detectar un problema (fuga, bombillo): <b>+2</b></li><li>Ayudar a otro miembro: <b>+3</b></li></ul></div>
+      <div class="card soft"><h4>🎁 Recompensas familiares</h4><ul class="clean muted" style="margin:0;"><li>100 pts → escoger película</li><li>150 pts → escoger cena especial</li><li>200 pts → escoger actividad</li><li>250 pts → salida del fin de semana</li></ul></div>
+    </div>
+  </section>
+
+  <!-- ============ PLAGAS ============ -->
+  <section class="page">
+    <div class="eyebrow">07 · Salud del hogar</div>
+    <h2 class="sec-title">Estrategia contra plagas</h2>
+    <div class="rule"></div>
+    <p class="muted" style="margin-bottom:20px;">Un plan en cuatro fases para eliminar y prevenir cucarachas y chiripas, atacando sus focos: cocina, lavandería y drenajes.</p>
+
+    <div class="phase"><div class="ph">Fase 1</div><div><h4 style="margin-bottom:4px;">Despejar</h4><p class="muted" style="margin:0;">Retirar cartón, acumulación y basura — quitarles los escondites.</p></div></div>
+    <div class="phase"><div class="ph">Fase 2</div><div><h4 style="margin-bottom:4px;">Limpieza profunda</h4><p class="muted" style="margin:0;">Cocina, lavandería, closets y detrás de los muebles.</p></div></div>
+    <div class="phase"><div class="ph">Fase 3</div><div><h4 style="margin-bottom:4px;">Tratamiento</h4><p class="muted" style="margin:0;">Gel cebo, trampas, ácido bórico e insecticida residual en puntos estratégicos.</p></div></div>
+    <div class="phase"><div class="ph">Fase 4</div><div><h4 style="margin-bottom:4px;">Mantenimiento</h4><p class="muted" style="margin:0;">Cocina seca, comida sellada y basura controlada para que no regresen.</p></div></div>
+  </section>
+
+  <!-- ============ REGLA DE ORO + RESULTADO ============ -->
+  <section class="page">
+    <div class="eyebrow">08 · El compromiso</div>
+    <h2 class="sec-title">Regla de oro y resultado esperado</h2>
+    <div class="rule"></div>
+
+    <div class="goldrule">
+      <div class="q">Nadie se va a dormir dejando <b>zapatos</b>, <b>mochila</b> o <b>ropa en la sala</b>.</div>
+      <p style="color:#cdd6e3;margin:12px 0 0;">Esas tres cosas son las fuentes principales del desorden. Controlarlas cada noche mantiene la casa a flote.</p>
+    </div>
+
+    <h3 style="margin:30px 0 10px;font-size:20px;">En 6 meses, la familia tendrá…</h3>
+    <ul class="checks">
+      <li>Una casa que se mantiene con <b>15–30 minutos diarios</b>.</li>
+      <li>Un lugar para cada objeto, que los niños conocen sin preguntar.</li>
+      <li>Las plagas bajo control.</li>
+      <li>Espacios funcionales para estudiar, trabajar y descansar.</li>
+      <li>Menos estrés y carga mental — y una casa que <b>deja de depender solo de Verónica</b>.</li>
+    </ul>
+
+    <div class="footer-note">Plan del Hogar · Familia Harrington — un sistema para vivir con paz, simplicidad y constancia.</div>
+  </section>
+
+</div>
+
+<template id="__bundler_thumbnail">
+  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <rect width="100" height="100" fill="#1F3A5C"/>
+    <rect x="30" y="26" width="40" height="48" rx="4" fill="#faf7f0"/>
+    <rect x="37" y="36" width="26" height="3" rx="1.5" fill="#C99700"/>
+    <rect x="37" y="44" width="26" height="2.5" rx="1.25" fill="#9aa6b5"/>
+    <rect x="37" y="51" width="20" height="2.5" rx="1.25" fill="#9aa6b5"/>
+    <rect x="37" y="58" width="24" height="2.5" rx="1.25" fill="#9aa6b5"/>
+  </svg>
+</template>
+</body>
+</html>
