@@ -3,6 +3,11 @@
    Todo editable: nombres de mascotas, colores, áreas, etc.
    ============================================================ */
 
+/* ---- PIN del Panel de Padres ----
+   Para entrar al Panel de Padres desde la app de los niños se pide este PIN.
+   Cámbialo por el número que quieras (puede ser de 4 o más dígitos).        */
+window.PARENT_PIN = '1234';
+
 /* ---- PERFILES ---- */
 window.FAMILY = [
   {

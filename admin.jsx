@@ -661,6 +661,7 @@ function App() {
         <span className="sep"></span>
         <span className="env">Hogar</span>
         <span className="spacer"></span>
+        <button className="ic-btn" title="Ir a la app de los niños" onClick={() => { window.location.href = 'index.html'; }}>🏠</button>
         <button className="ic-btn" title="Configuración">⚙</button>
         <button className="ic-btn" title="Ayuda">？</button>
         <div className="seg" style={{ margin: '0 6px', height: 32 }}>

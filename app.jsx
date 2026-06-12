@@ -108,7 +108,7 @@ function Confetti({ go }) {
 /* =========================================================
    TOP BAR + PROFILE SWITCHER
    ========================================================= */
-function TopBar({ person, points }) {
+function TopBar({ person, points, onParents }) {
   return (
     <div className="topbar">
       <div className="hi-wrap">
@@ -118,9 +118,73 @@ function TopBar({ person, points }) {
           <div className="nm">{person.name} {person.tree || person.emoji}</div>
         </div>
       </div>
-      {person.isKid && (
-        <div className="pts-pill"><span className="star">⭐</span>{points}</div>
-      )}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        {person.isKid && (
+          <div className="pts-pill"><span className="star">⭐</span>{points}</div>
+        )}
+        <button onClick={onParents} title="Panel de Padres" aria-label="Panel de Padres"
+          style={{ border: 0, cursor: 'pointer', width: 38, height: 38, borderRadius: '50%',
+            background: 'rgba(255,255,255,.22)', color: '#fff', fontSize: 17, display: 'grid', placeItems: 'center' }}>🔒</button>
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================
+   MODAL: PIN PARA EL PANEL DE PADRES
+   ========================================================= */
+function PinModal({ onClose, onSuccess }) {
+  const [entry, setEntry] = useState('');
+  const [err, setErr] = useState(false);
+  const PIN = String(window.PARENT_PIN || '1234');
+
+  function push(d) {
+    if (entry.length >= PIN.length) return;
+    const v = entry + d;
+    setErr(false);
+    setEntry(v);
+    if (v.length === PIN.length) {
+      if (v === PIN) setTimeout(onSuccess, 180);
+      else setTimeout(() => { setErr(true); setEntry(''); }, 220);
+    }
+  }
+  function back() { setErr(false); setEntry(entry.slice(0, -1)); }
+
+  const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫'];
+  return (
+    <div className="modal-bg" onClick={onClose}>
+      <div className="sheet" onClick={e => e.stopPropagation()} style={{ textAlign: 'center', maxWidth: 320 }}>
+        <div className="row between" style={{ marginBottom: 4 }}>
+          <h2 style={{ fontSize: 22 }}>Panel de Padres</h2>
+          <button onClick={onClose} style={{ border: 0, background: '#f0eef8', borderRadius: 12, width: 34, height: 34, fontSize: 18, cursor: 'pointer', color: 'var(--ink-2)' }}>×</button>
+        </div>
+        <p className="muted" style={{ fontWeight: 600, fontSize: 13.5, margin: '0 0 16px' }}>
+          {err ? '❌ PIN incorrecto, inténtalo de nuevo' : 'Escribe el PIN para entrar 🔒'}
+        </p>
+
+        <div className="row" style={{ justifyContent: 'center', gap: 12, margin: '4px 0 18px' }}>
+          {Array.from({ length: PIN.length }).map((_, i) => (
+            <div key={i} style={{
+              width: 16, height: 16, borderRadius: '50%',
+              background: i < entry.length ? (err ? '#E53935' : 'var(--a, #7C5CFF)') : '#e3e0ee',
+              transition: 'background .15s'
+            }} />
+          ))}
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
+          {keys.map((k, i) => k === ''
+            ? <div key={i} />
+            : (
+              <button key={i} onClick={() => k === '⌫' ? back() : push(k)}
+                style={{
+                  border: 0, cursor: 'pointer', height: 58, borderRadius: 16,
+                  fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 22,
+                  background: k === '⌫' ? 'transparent' : '#f4f2fb', color: 'var(--ink, #2a2540)'
+                }}>{k}</button>
+            ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -620,6 +684,7 @@ function App() {
   const [custom, setCustom] = useState(init.custom);
   const [missView, setMissView] = useState('persona');
   const [showAdd, setShowAdd] = useState(false);
+  const [showPin, setShowPin] = useState(false);
   const [confetti, setConfetti] = useState(false);
   const [toast, setToast] = useState(null);
   const toastTimer = useRef(null);
@@ -677,7 +742,7 @@ function App() {
   return (
     <div className="stage">
       <div className="phone">
-        <TopBar person={person} points={points} />
+        <TopBar person={person} points={points} onParents={() => setShowPin(true)} />
         <ProfileSwitcher active={profile} onPick={setProfile} done={done} dist={dist} />
         <div className="scroll">
           {tab === 'inicio' && <HomeScreen person={person} dist={dist} done={done} toggle={toggle} go={setTab} onDelete={deleteTask} />}
@@ -690,6 +755,7 @@ function App() {
       </div>
       <Confetti go={confetti} />
       {showAdd && <AddTaskModal onClose={() => setShowAdd(false)} onSave={addTask} />}
+      {showPin && <PinModal onClose={() => setShowPin(false)} onSuccess={() => { window.location.href = 'Panel Padres.html'; }} />}
     </div>
   );
 }
