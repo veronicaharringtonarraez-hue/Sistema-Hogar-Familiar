@@ -35,7 +35,7 @@ const NAME = p => p.realName || p.name;
 const CAT_LABEL = {
   cocina: 'Cocina y comida', social: 'Áreas comunes', oficina: 'Oficinas',
   cuarto: 'Cuartos', bano: 'Baños', orden: 'Orden y ropa', exterior: 'Exteriores',
-  escuela: 'Escuela', bebe: 'Cuidado de Rachel', compras: 'Compras y despensa',
+  escuela: 'Escuela', bebe: 'Cuidado de Che-Che', compras: 'Compras y despensa',
   mantenimiento: 'Mantenimiento', gestion: 'Gestión del hogar', custom: 'Personalizada',
 };
 const COIN = {
@@ -179,9 +179,9 @@ function LoadCard({ dist }) {
   const counts = people.map(p => houseCount(p.id, dist));
   const max = Math.max(...counts, 1);
   const msg = {
-    actual: { cls: 'warn', ic: '⚠', txt: <span><b>Desbalance:</b> Verónica concentra casi toda la casa y Christopher no tiene áreas.</span> },
-    equitativo: { cls: 'ok', ic: '✓', txt: <span><b>Equilibrado:</b> Maykol asume más, Christopher entra con 1 y la bebé se cuida entre 4.</span> },
-    zonas: { cls: 'info', ic: '🏰', txt: <span><b>Por cargos:</b> cada quien es guardián de su zona (Emmeth zapatos, Taylor orden, Chris juguetes…).</span> },
+    actual: { cls: 'warn', ic: '⚠', txt: <span><b>Desbalance:</b> Yue concentra casi toda la casa y Misifu no tiene áreas.</span> },
+    equitativo: { cls: 'ok', ic: '✓', txt: <span><b>Equilibrado:</b> Max asume más, Misifu entra con 1 y la bebé se cuida entre 4.</span> },
+    zonas: { cls: 'info', ic: '🏰', txt: <span><b>Por cargos:</b> cada quien es guardián de su zona (Dondo zapatos, Tay-Yay orden, Misifu juguetes…).</span> },
   }[dist];
   return (
     <div className="card">
@@ -665,8 +665,8 @@ function App() {
         <button className="ic-btn" title="Configuración">⚙</button>
         <button className="ic-btn" title="Ayuda">？</button>
         <div className="seg" style={{ margin: '0 6px', height: 32 }}>
-          <button className={theme === 'mama' ? 'on' : ''} onClick={() => setTheme('mama')}>Verónica</button>
-          <button className={theme === 'maykol' ? 'on' : ''} onClick={() => setTheme('maykol')}>Maykol</button>
+          <button className={theme === 'mama' ? 'on' : ''} onClick={() => setTheme('mama')}>Yue</button>
+          <button className={theme === 'maykol' ? 'on' : ''} onClick={() => setTheme('maykol')}>Max</button>
         </div>
         <div className="me"><Coin p={themePerson} size={30} /></div>
       </div>

@@ -273,7 +273,7 @@ function HomeScreen({ person, dist, done, toggle, go, onDelete }) {
         <div className="card" style={{ padding: 18, textAlign: 'center' }}>
           <div style={{ fontSize: 30 }}>🎉</div>
           <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, marginTop: 4 }}>
-            {person.id === 'christopher' ? '¡Hoy Chris ayuda a recoger juguetes!' : 'Sin tareas asignadas hoy'}
+            {person.id === 'christopher' ? '¡Hoy Misifu ayuda a recoger juguetes!' : 'Sin tareas asignadas hoy'}
           </div>
         </div>
       )}
@@ -299,8 +299,8 @@ function HomeScreen({ person, dist, done, toggle, go, onDelete }) {
           <div className="row" style={{ gap: 12 }}>
             <div style={{ fontSize: 30 }}>🍼</div>
             <div className="grow">
-              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700 }}>A Rachel la cuidan por turnos</div>
-              <div className="muted" style={{ fontSize: 13, fontWeight: 600 }}>Mamá, Papá, Taylor y Emmeth</div>
+              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700 }}>A Che-Che la cuidan por turnos</div>
+              <div className="muted" style={{ fontSize: 13, fontWeight: 600 }}>Yue, Max, Tay-Yay y Dondo</div>
             </div>
           </div>
         </div>
@@ -507,7 +507,7 @@ function PetCard({ p, dist, done }) {
       {p.isBaby && (
         <div className="row" style={{ gap: 8, marginTop: 12, background: 'var(--c)', borderRadius: 14, padding: '10px 12px' }}>
           <span style={{ fontSize: 18 }}>🍼</span>
-          <span style={{ fontWeight: 700, fontSize: 13, color: p.colors.ink }}>{p.pet.name} es feliz cuando todos cuidan a Rachel por turnos</span>
+          <span style={{ fontWeight: 700, fontSize: 13, color: p.colors.ink }}>{p.pet.name} es feliz cuando todos cuidan a Che-Che por turnos</span>
         </div>
       )}
     </div>
@@ -558,8 +558,8 @@ function FamilyScreen({ dist, setDist, done }) {
           ))}
         </div>
         {dist === 'actual'
-          ? <div style={{ background: '#fff4e6', borderRadius: 14, padding: '10px 12px', marginTop: 4, fontSize: 13, fontWeight: 700, color: '#9a5a00' }}>⚠️ Mamá carga casi todo y Christopher no tiene tareas.</div>
-          : <div style={{ background: '#eafaf2', borderRadius: 14, padding: '10px 12px', marginTop: 4, fontSize: 13, fontWeight: 700, color: '#0f7a4a' }}>✅ Más parejo: Papá ayuda más, Chris entra con 1 área y la bebé se cuida entre 4.</div>}
+          ? <div style={{ background: '#fff4e6', borderRadius: 14, padding: '10px 12px', marginTop: 4, fontSize: 13, fontWeight: 700, color: '#9a5a00' }}>⚠️ Yue carga casi todo y Misifu no tiene tareas.</div>
+          : <div style={{ background: '#eafaf2', borderRadius: 14, padding: '10px 12px', marginTop: 4, fontSize: 13, fontWeight: 700, color: '#0f7a4a' }}>✅ Más parejo: Max ayuda más, Misifu entra con 1 área y la bebé se cuida entre 4.</div>}
       </div>
       </aside>
 

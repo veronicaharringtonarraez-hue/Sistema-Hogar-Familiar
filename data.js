@@ -11,21 +11,21 @@ window.PARENT_PIN = '0904';
 /* ---- PERFILES ---- */
 window.FAMILY = [
   {
-    id: 'mama', name: 'Verónica', short: 'Vero', age: null, role: 'adulto', title: 'Directora Estratégica',
+    id: 'mama', name: 'Yue', short: 'Yue', age: null, role: 'adulto', title: 'Directora Estratégica',
     note: 'Trabaja desde casa · horario flexible',
     colors: { a: '#7C5CFF', b: '#B69DFF', c: '#E9E2FF', ink: '#3A2D7A' },
     emoji: '💜', isKid: false, caresBaby: true,
     pet: { name: 'Luna', species: 'Búho', img: window.IMG.mama, emoji: '🦉' }, petCared: false,
   },
   {
-    id: 'papa', name: 'Papá', short: 'Papá', age: null, role: 'adulto', title: 'Director de Mantenimiento',
-    note: 'Trabaja 5am–2pm · oficina 2 días/semana', realName: 'Maykol',
+    id: 'papa', name: 'Max', short: 'Max', age: null, role: 'adulto', title: 'Director de Mantenimiento',
+    note: 'Trabaja 5am–2pm · oficina 2 días/semana', realName: 'Max',
     colors: { a: '#1FB6A6', b: '#5FD3C6', c: '#D7F4F0', ink: '#0C5A52' },
     emoji: '💚', isKid: false, caresBaby: true,
     pet: { name: 'Brutus', species: 'Bulldog inglés', img: window.IMG.papa, emoji: '🐶' }, petCared: false,
   },
   {
-    id: 'taylor', name: 'Taylor', short: 'Taylor', age: 10, role: 'hija', title: 'Guardiana del Orden',
+    id: 'taylor', name: 'Tay-Yay', short: 'Tay-Yay', age: 10, role: 'hija', title: 'Guardiana del Orden',
     note: 'Sakura · anime · gimnasia artística',
     tree: '🌸', treeName: 'Sakura',
     colors: { a: '#42BDEE', b: '#B98FE8', c: '#FBC4DA', ink: '#5A3E7A' },
@@ -35,7 +35,7 @@ window.FAMILY = [
     quota: 3,
   },
   {
-    id: 'emmeth', name: 'Emmeth', short: 'Emmeth', age: 7, role: 'hijo', title: 'Guardián de los Zapatos',
+    id: 'emmeth', name: 'Dondo', short: 'Dondo', age: 7, role: 'hijo', title: 'Guardián de los Zapatos',
     note: 'Pino · dinosaurios · Pokémon',
     tree: '🌲', treeName: 'Pino',
     colors: { a: '#2962FF', b: '#E53935', c: '#E2E9FF', ink: '#11235A' },
@@ -45,7 +45,7 @@ window.FAMILY = [
     quota: 2,
   },
   {
-    id: 'christopher', name: 'Christopher', short: 'Chris', age: 4, role: 'hijo', title: 'Guardián de los Juguetes',
+    id: 'christopher', name: 'Misifu', short: 'Misifu', age: 4, role: 'hijo', title: 'Guardián de los Juguetes',
     note: 'Araguaney · Octonautas · los Kratts',
     tree: '🌳', treeName: 'Araguaney',
     colors: { a: '#F5B500', b: '#5CB85C', c: '#E8D5A8', ink: '#6B5410' },
@@ -55,7 +55,7 @@ window.FAMILY = [
     quota: 1,
   },
   {
-    id: 'rachel', name: 'Rachel', short: 'Rachel', age: 1, role: 'bebé', title: 'Jefa de Ternura',
+    id: 'rachel', name: 'Che-Che', short: 'Che-Che', age: 1, role: 'bebé', title: 'Jefa de Ternura',
     note: 'Arce japonés · flor morada',
     tree: '🍁', treeName: 'Arce japonés',
     colors: { a: '#F48FB1', b: '#CE93D8', c: '#F8E7F3', ink: '#7A4A6A' },
