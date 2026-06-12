@@ -10,14 +10,14 @@ window.FAMILY = [
     note: 'Trabaja desde casa · horario flexible',
     colors: { a: '#7C5CFF', b: '#B69DFF', c: '#E9E2FF', ink: '#3A2D7A' },
     emoji: '💜', isKid: false, caresBaby: true,
-    pet: { name: 'Luna', species: 'Búho', img: 'assets/pet-mama.png', emoji: '🦉' }, petCared: false,
+    pet: { name: 'Luna', species: 'Búho', img: window.IMG.mama, emoji: '🦉' }, petCared: false,
   },
   {
     id: 'papa', name: 'Papá', short: 'Papá', age: null, role: 'adulto', title: 'Director de Mantenimiento',
     note: 'Trabaja 5am–2pm · oficina 2 días/semana', realName: 'Maykol',
     colors: { a: '#1FB6A6', b: '#5FD3C6', c: '#D7F4F0', ink: '#0C5A52' },
     emoji: '💚', isKid: false, caresBaby: true,
-    pet: { name: 'Brutus', species: 'Bulldog inglés', img: 'assets/pet-papa.png', emoji: '🐶' }, petCared: false,
+    pet: { name: 'Brutus', species: 'Bulldog inglés', img: window.IMG.papa, emoji: '🐶' }, petCared: false,
   },
   {
     id: 'taylor', name: 'Taylor', short: 'Taylor', age: 10, role: 'hija', title: 'Guardiana del Orden',
@@ -26,7 +26,7 @@ window.FAMILY = [
     colors: { a: '#42BDEE', b: '#B98FE8', c: '#FBC4DA', ink: '#5A3E7A' },
     palette: ['#42BDEE', '#B98FE8', '#FBC4DA'],
     emoji: '🌸', isKid: true, caresBaby: true, petCared: true,
-    pet: { name: 'Mochi', species: 'Perrito mini toy', img: 'assets/pet-taylor.png' },
+    pet: { name: 'Mochi', species: 'Perrito mini toy', img: window.IMG.taylor },
     quota: 3,
   },
   {
@@ -36,7 +36,7 @@ window.FAMILY = [
     colors: { a: '#2962FF', b: '#E53935', c: '#E2E9FF', ink: '#11235A' },
     palette: ['#2962FF', '#E53935', '#111111'],
     emoji: '⚡', isKid: true, caresBaby: true, petCared: true,
-    pet: { name: 'Rayo', species: 'Gato gris', img: 'assets/pet-emmeth.png' },
+    pet: { name: 'Rayo', species: 'Gato gris', img: window.IMG.emmeth },
     quota: 2,
   },
   {
@@ -46,7 +46,7 @@ window.FAMILY = [
     colors: { a: '#F5B500', b: '#5CB85C', c: '#E8D5A8', ink: '#6B5410' },
     palette: ['#FFC107', '#5CB85C', '#E8D5A8'],
     emoji: '🌻', isKid: true, caresBaby: false, petCared: true,
-    pet: { name: 'Oreo', species: 'Gato blanco y negro', img: 'assets/pet-christopher.png' },
+    pet: { name: 'Oreo', species: 'Gato blanco y negro', img: window.IMG.christopher },
     quota: 1,
   },
   {
@@ -56,7 +56,7 @@ window.FAMILY = [
     colors: { a: '#F48FB1', b: '#CE93D8', c: '#F8E7F3', ink: '#7A4A6A' },
     palette: ['#F48FB1', '#CE93D8', '#F3E5F5'],
     emoji: '🌷', isKid: false, isBaby: true, caresBaby: false, petCared: true,
-    pet: { name: 'Nube', species: 'Gato blanco peludo', img: 'assets/pet-rachel.png' },
+    pet: { name: 'Nube', species: 'Gato blanco peludo', img: window.IMG.rachel },
     quota: 0,
   },
 ];
