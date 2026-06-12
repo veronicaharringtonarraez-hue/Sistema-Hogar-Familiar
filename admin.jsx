@@ -679,6 +679,10 @@ function App() {
               <span className="ni">{n.icon}</span>{n.label}
             </a>
           ))}
+          <div className="grp">Documentos</div>
+          <a onClick={() => window.open('Plan del Hogar.html', '_blank')}>
+            <span className="ni">📄</span>Plan del Hogar
+          </a>
         </nav>
 
         <div className="main">

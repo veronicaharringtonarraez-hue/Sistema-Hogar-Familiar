@@ -534,6 +534,11 @@ function FamilyScreen({ dist, setDist, done }) {
       </div>
       <p className="muted" style={{ fontWeight: 600, fontSize: 13.5, margin: '0 0 16px' }}>{d.sub}</p>
 
+      <a className="add-btn" href="Plan del Hogar.html" target="_blank" rel="noopener"
+        style={{ textDecoration: 'none', marginBottom: 16 }}>
+        <span style={{ fontSize: 18 }}>📄</span> Ver el Plan del Hogar
+      </a>
+
       <div className="fam-layout">
       {/* 1/3 — cuántas áreas lleva cada quien */}
       <aside className="fam-aside">
