@@ -524,7 +524,7 @@ function FamilyScreen({ dist, setDist, done }) {
   const d = window.DISTRIBUTIONS[dist];
 
   return (
-    <div className="pad fade">
+    <div className="pad fade fam-screen">
       <div className="sec-h" style={{ marginTop: 8 }}>
         <h2>Reparto familiar</h2>
       </div>
@@ -534,8 +534,10 @@ function FamilyScreen({ dist, setDist, done }) {
       </div>
       <p className="muted" style={{ fontWeight: 600, fontSize: 13.5, margin: '0 0 16px' }}>{d.sub}</p>
 
-      {/* carga por persona */}
-      <div className="card" style={{ padding: '16px 16px 8px', marginBottom: 18 }}>
+      <div className="fam-layout">
+      {/* 1/3 — cuántas áreas lleva cada quien */}
+      <aside className="fam-aside">
+      <div className="card" style={{ padding: '16px 16px 8px' }}>
         <span className="eyebrow">Cuántas áreas lleva cada quien</span>
         <div style={{ marginTop: 12 }}>
           {loads.map(l => (
@@ -554,8 +556,10 @@ function FamilyScreen({ dist, setDist, done }) {
           ? <div style={{ background: '#fff4e6', borderRadius: 14, padding: '10px 12px', marginTop: 4, fontSize: 13, fontWeight: 700, color: '#9a5a00' }}>⚠️ Mamá carga casi todo y Christopher no tiene tareas.</div>
           : <div style={{ background: '#eafaf2', borderRadius: 14, padding: '10px 12px', marginTop: 4, fontSize: 13, fontWeight: 700, color: '#0f7a4a' }}>✅ Más parejo: Papá ayuda más, Chris entra con 1 área y la bebé se cuida entre 4.</div>}
       </div>
+      </aside>
 
-      {/* detalle por persona */}
+      {/* 2/3 — detalle por persona (quién hace qué) */}
+      <div className="fam-main">
       <span className="eyebrow" style={{ marginLeft: 4 }}>Quién hace qué</span>
       <div style={{ marginTop: 12 }}>
         {order.concat(['rachel']).map(id => {
@@ -581,6 +585,8 @@ function FamilyScreen({ dist, setDist, done }) {
             </div>
           );
         })}
+      </div>
+      </div>
       </div>
     </div>
   );

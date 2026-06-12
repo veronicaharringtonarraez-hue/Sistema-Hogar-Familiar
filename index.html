@@ -252,6 +252,9 @@
   .ico.on{border-color:var(--a);background:var(--c);transform:scale(1.05);}
   .btn-primary{width:100%;margin-top:20px;border:0;border-radius:16px;padding:15px;background:linear-gradient(135deg,var(--a),var(--b));color:#fff;font-family:var(--font-display);font-weight:800;font-size:16px;cursor:pointer;box-shadow:0 12px 24px -10px var(--a);}
 
+  /* ===== sección Familia: en celular apilado; en PC 2/3 + 1/3 ===== */
+  .fam-aside{margin-bottom:14px;}
+
   /* =========================================================
      VISTA DE COMPUTADORA / PANTALLAS GRANDES (responsive)
      En el celular no cambia nada. Aquí el contenido se organiza
@@ -282,6 +285,13 @@
     .pad > .add-btn,
     .pad > .seg,
     .pad > p{grid-column:1 / -1;}
+
+    /* sección Familia: perfiles (2/3) a la izquierda, carga (1/3) a la derecha */
+    .pad.fam-screen{display:block;max-width:980px;margin:0 auto;padding:10px 30px;}
+    .fam-layout{display:grid;grid-template-columns:2fr 1fr;gap:22px;align-items:start;}
+    .fam-main{grid-column:1;grid-row:1;}
+    .fam-aside{grid-column:2;grid-row:1;margin-bottom:0;}
+    .fam-aside .card{position:sticky;top:24px;}
 
     /* modales como diálogo centrado en lugar de hoja inferior */
     .modal-bg{align-items:center;}
