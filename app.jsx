@@ -263,6 +263,10 @@ function HomeScreen({ person, dist, done, toggle, go, onDelete }) {
         </div>
       </div>
 
+      <a className="add-btn" href="Microtareas.html" style={{ textDecoration: 'none', marginTop: 14 }}>
+        <span style={{ fontSize: 18 }}>🧩</span> Microtareas · 1 punto por acción
+      </a>
+
       {/* misiones de hoy del perfil activo */}
       <div className="sec-h">
         <h2>Lo de hoy</h2>
