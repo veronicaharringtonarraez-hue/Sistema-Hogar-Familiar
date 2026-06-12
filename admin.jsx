@@ -680,6 +680,9 @@ function App() {
             </a>
           ))}
           <div className="grp">Documentos</div>
+          <a onClick={() => window.open('Microtareas.html', '_blank')}>
+            <span className="ni">🧩</span>Microtareas
+          </a>
           <a onClick={() => window.open('Plan del Hogar.html', '_blank')}>
             <span className="ni">📄</span>Plan del Hogar
           </a>
