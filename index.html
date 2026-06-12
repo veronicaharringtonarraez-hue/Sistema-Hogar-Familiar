@@ -254,45 +254,51 @@
 
   /* =========================================================
      VISTA DE COMPUTADORA / PANTALLAS GRANDES (responsive)
-     En el celular no cambia nada; aquí el contenido se reparte
-     en columnas para aprovechar el ancho como una app de escritorio.
+     En el celular no cambia nada. Aquí el contenido se organiza
+     en una cuadrícula alineada (en orden de lectura), para que se
+     vea estructurado como una app de escritorio y no disperso.
      ========================================================= */
   @media(min-width:1000px){
     .stage{align-items:flex-start;padding:24px;}
     .phone{
-      max-width:1100px;width:100%;border-radius:28px;margin:0 auto;
+      max-width:1000px;width:100%;border-radius:28px;margin:0 auto;
       min-height:calc(100vh - 48px);
     }
-    /* la barra superior y el selector de perfiles, más anchos y centrados */
-    .topbar{padding:18px 28px 8px;}
-    .who-row{padding:10px 28px 6px;justify-content:center;flex-wrap:wrap;overflow-x:visible;}
+    /* barra superior y selector de perfiles centrados */
+    .topbar{padding:18px 30px 8px;}
+    .who-row{padding:10px 30px 6px;justify-content:center;flex-wrap:wrap;overflow-x:visible;}
 
-    /* contenido principal en 2 columnas */
-    .pad{columns:2;column-gap:22px;padding:6px 28px;}
-    .pad > *{break-inside:avoid;margin-bottom:14px;}
-    /* estos elementos ocupan todo el ancho (no se parten en columnas) */
+    /* cuadrícula ordenada: 2 columnas alineadas, no masonry */
+    .pad{
+      display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:14px 22px;align-items:start;align-content:start;
+      padding:10px 30px;max-width:980px;margin:0 auto;
+    }
+    .pad > *{margin-bottom:0;}
+    /* estos elementos ocupan toda la fila */
     .pad > .hero,
     .pad > .tiles,
     .pad > .sec-h,
     .pad > .add-btn,
     .pad > .seg,
-    .pad > p{column-span:all;}
+    .pad > p{grid-column:1 / -1;}
 
     /* modales como diálogo centrado en lugar de hoja inferior */
     .modal-bg{align-items:center;}
     .sheet{max-width:480px;border-radius:26px;padding:24px;
       max-height:88vh;animation:fade .2s ease;}
 
-    /* barra inferior como pastilla central flotante */
+    /* barra inferior como pastilla central */
     .nav{left:50%;right:auto;transform:translateX(-50%);
-      max-width:560px;width:auto;gap:18px;
+      max-width:520px;width:auto;gap:18px;
       border:1px solid var(--line);border-radius:22px 22px 0 0;padding:10px 26px;}
-    .nav button{flex:0 0 auto;min-width:78px;}
+    .nav button{flex:0 0 auto;min-width:76px;}
   }
 
-  /* Pantallas muy grandes: un poco más de aire */
+  /* Pantallas muy anchas: una tercera columna y algo más de ancho */
   @media(min-width:1500px){
-    .pad{columns:3;}
+    .phone{max-width:1180px;}
+    .pad{max-width:1140px;grid-template-columns:repeat(3,minmax(0,1fr));}
   }
 </style>
 </head>
