@@ -12,12 +12,12 @@
    ============================================================ */
 
 window.FIREBASE_CONFIG = {
-  apiKey:            "PEGA_AQUI_TU_API_KEY",
-  authDomain:        "PEGA_AQUI.firebaseapp.com",
-  projectId:         "PEGA_AQUI",
-  storageBucket:     "PEGA_AQUI.appspot.com",
-  messagingSenderId: "PEGA_AQUI",
-  appId:             "PEGA_AQUI",
+  apiKey:            "AIzaSyDA1FxgHPbJQAijuO7NObGaC0-xdokaUdc",
+  authDomain:        "homeclean-up-e0b00.firebaseapp.com",
+  projectId:         "homeclean-up-e0b00",
+  storageBucket:     "homeclean-up-e0b00.firebasestorage.app",
+  messagingSenderId: "331515561723",
+  appId:             "1:331515561723:web:f6891147e52971554fd25e",
 };
 
 /* Código del hogar: TODOS los dispositivos de la familia deben
