@@ -1,0 +1,21 @@
+rules_version = '2';
+
+// ============================================================
+// Reglas de Firestore — App familiar HomeClean-Up
+// ------------------------------------------------------------
+// Permite leer/escribir SOLO la colección "hogares", donde se
+// guardan los documentos de sincronización:
+//   - hogar-familiar  (sistema de tareas)
+//   - hogar-micro     (módulo de microtareas)
+// Sin fecha de caducidad (a diferencia del modo de prueba).
+//
+// Cómo aplicarlas: Firebase Console → Firestore Database →
+// pestaña "Reglas" → pega TODO esto → "Publicar".
+// ============================================================
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /hogares/{hogar} {
+      allow read, write: if true;
+    }
+  }
+}
