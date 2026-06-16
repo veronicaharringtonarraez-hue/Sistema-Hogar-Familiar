@@ -414,6 +414,13 @@ h1,h2,h3{ font-family:'Baloo 2',cursive; font-weight:700; line-height:1.1; }
 <script src="../images.js"></script>
 <script src="../data.js"></script>
 
+<!-- Nube (Firebase): sincroniza el banco entre dispositivos. Si no está
+     configurado, el banco guarda solo en este dispositivo. -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="../firebase-config.js"></script>
+<script src="bank-sync.js"></script>
+
 <script src="app/data.js"></script>
 <script type="text/babel" src="app/tweaks-panel.jsx"></script>
 <script type="text/babel" src="app/store.jsx"></script>

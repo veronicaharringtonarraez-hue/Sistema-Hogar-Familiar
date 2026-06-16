@@ -1,10 +1,11 @@
 /* Service worker de ChildBank: instalación + uso sin conexión */
-const CACHE = "childbank-v1";
+const CACHE = "childbank-v2";
 const ASSETS = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
   "./icons/childbank-512.png",
+  "./bank-sync.js",
   "./app/data.js",
   "./app/tweaks-panel.jsx",
   "./app/store.jsx",
