@@ -19,6 +19,11 @@ function weekKey(d = new Date()) {
 function dayKey(d = new Date()) {
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
+/* etiqueta legible del día de hoy, p. ej. "Sábado 16 de junio" */
+const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+function todayLabel(d = new Date()) {
+  return window.DAYS[d.getDay()] + ' ' + d.getDate() + ' de ' + MESES[d.getMonth()];
+}
 
 let CUSTOM_TASKS = [];
 let ACCUM = {};  // puntos acumulados de días anteriores (por persona)
@@ -246,6 +251,10 @@ function HomeScreen({ person, dist, done, toggle, go, onDelete, onAdd }) {
 
   return (
     <div className="pad fade">
+      {/* fecha de hoy (las tareas se reinician cada día a medianoche) */}
+      <div className="center muted" style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 13, margin: '8px 0 -2px', textTransform: 'capitalize' }}>
+        📅 {todayLabel()}
+      </div>
       {/* Rey de la semana */}
       <div className="hero" style={{ marginTop: 6 }}>
         <div className="crown">👑</div>
