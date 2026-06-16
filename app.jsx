@@ -15,8 +15,13 @@ function weekKey(d = new Date()) {
   const week = 1 + Math.round(((dt - firstThu) / 86400000 - 3 + ((firstThu.getUTCDay() + 6) % 7)) / 7);
   return dt.getUTCFullYear() + '-W' + week;
 }
+/* clave del día (hora local): cambia a la medianoche */
+function dayKey(d = new Date()) {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
 
 let CUSTOM_TASKS = [];
+let ACCUM = {};  // puntos acumulados de días anteriores (por persona)
 function tasksFor(pid, distKey) {
   const a = window.DISTRIBUTIONS[distKey].assign;
   const houseIds = (a[pid] || []);
@@ -41,6 +46,10 @@ function ownerOf(taskId, distKey) {
 function pointsFor(pid, distKey, done) {
   return tasksFor(pid, distKey).reduce((s, t) => s + (done[pid + ':' + t.id] ? PPT : 0), 0);
 }
+/* puntos totales = acumulado de días anteriores + lo de hoy */
+function totalPts(pid, distKey, done) {
+  return (ACCUM[pid] || 0) + pointsFor(pid, distKey, done);
+}
 function maxPointsFor(pid, distKey) {
   return tasksFor(pid, distKey).length * PPT;
 }
@@ -58,13 +67,21 @@ function moodFor(h) {
 function loadState() {
   let s = {};
   try { s = JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch (e) {}
-  const wk = weekKey();
-  if (s.week !== wk) { s.done = {}; s.week = wk; }
+  CUSTOM_TASKS = s.custom || [];            // para poder calcular puntos al acumular
+  const dist = s.dist || 'equitativo';
+  const today = dayKey();
+  s.accum = s.accum || {};
+  // Cambió el día → acumular los puntos de ayer y desmarcar todas las tareas
+  if (s.day && s.day !== today && s.done) {
+    window.FAMILY.forEach(p => { s.accum[p.id] = (s.accum[p.id] || 0) + pointsFor(p.id, dist, s.done); });
+    s.done = {};
+  }
   return {
     profile: s.profile || 'taylor',
-    dist: s.dist || 'equitativo',
+    dist,
     tab: s.tab || 'inicio',
-    week: wk,
+    day: today,
+    accum: s.accum || {},
     done: s.done || {},
     custom: s.custom || [],
   };
@@ -216,7 +233,7 @@ function ProfileSwitcher({ active, onPick, done, dist }) {
    ========================================================= */
 function HomeScreen({ person, dist, done, toggle, go, onDelete }) {
   const kids = window.FAMILY.filter(p => p.isKid);
-  const ranking = kids.map(k => ({ k, pts: pointsFor(k.id, dist, done) }))
+  const ranking = kids.map(k => ({ k, pts: totalPts(k.id, dist, done) }))
     .sort((a, b) => b.pts - a.pts);
   const king = ranking[0];
 
@@ -231,12 +248,12 @@ function HomeScreen({ person, dist, done, toggle, go, onDelete }) {
       <div className="hero" style={{ marginTop: 6 }}>
         <div className="crown">👑</div>
         <div className="deco">{king.k.tree || '🏆'}</div>
-        <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 13, opacity: .9 }}>Rey / Reina de la semana</div>
+        <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 13, opacity: .9 }}>Líder de puntos 🏆</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
           <img src={king.k.pet.img} style={{ width: 56, height: 56, borderRadius: '50%', objectFit: 'cover', border: '3px solid rgba(255,255,255,.8)' }} />
           <div>
             <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 24, lineHeight: 1 }}>{king.k.name}</div>
-            <div style={{ fontWeight: 800, fontSize: 14, opacity: .95, whiteSpace: 'nowrap' }}>{king.pts} puntos esta semana</div>
+            <div style={{ fontWeight: 800, fontSize: 14, opacity: .95, whiteSpace: 'nowrap' }}>{king.pts} puntos acumulados</div>
           </div>
         </div>
         <div style={{ display: 'flex', gap: 14, marginTop: 14 }}>
@@ -375,7 +392,7 @@ function ByPerson({ dist, done, toggle, onDelete }) {
               <div className="muted" style={{ fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>{c}/{ts.length} tareas · {c * PPT} pts</div>
             </div>
           </div>
-          {p.isKid && <span className="chip pts">⭐ {pointsFor(p.id, dist, done)}</span>}
+          {p.isKid && <span className="chip pts">⭐ {totalPts(p.id, dist, done)}</span>}
         </div>
         {ts.map(t => <MissionRow key={t.id} task={t} owner={p} done={done} toggle={toggle} onDelete={onDelete} />)}
       </div>
@@ -463,7 +480,7 @@ function PetsScreen({ dist, done, person, setProfile }) {
 function PetCard({ p, dist, done }) {
   const h = happinessFor(p.id, dist, done);
   const mood = moodFor(h);
-  const pts = p.isKid ? pointsFor(p.id, dist, done) : null;
+  const pts = p.isKid ? totalPts(p.id, dist, done) : null;
   const next = p.isKid ? window.REWARDS.find(r => r.at > pts) : null;
   return (
     <div className="card" style={{ padding: 14, marginBottom: 14, '--a': p.colors.a, '--b': p.colors.b, '--c': p.colors.c, '--tink': p.colors.ink }}>
@@ -697,6 +714,8 @@ function App() {
   const [tab, setTab] = useState(init.tab);
   const [done, setDone] = useState(init.done);
   const [custom, setCustom] = useState(init.custom);
+  const [accum, setAccum] = useState(init.accum);
+  const [day, setDay] = useState(init.day);
   const [missView, setMissView] = useState('persona');
   const [showAdd, setShowAdd] = useState(false);
   const [showPin, setShowPin] = useState(false);
@@ -705,12 +724,32 @@ function App() {
   const toastTimer = useRef(null);
 
   CUSTOM_TASKS = custom;
+  ACCUM = accum;
   const person = window.PERSON(profile);
 
-  // persistir
+  // persistir (fusionando con lo guardado para no pisar datos del panel de padres)
   useEffect(() => {
-    localStorage.setItem(STORE_KEY, JSON.stringify({ profile, dist, tab, week: weekKey(), done, custom }));
-  }, [profile, dist, tab, done, custom]);
+    let cur = {}; try { cur = JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch (e) {}
+    localStorage.setItem(STORE_KEY, JSON.stringify({ ...cur, profile, dist, tab, day, accum, done, custom }));
+  }, [profile, dist, tab, day, accum, done, custom]);
+
+  // reinicio a medianoche: acumula los puntos del día y desmarca todo
+  useEffect(() => {
+    const t = setInterval(() => {
+      const today = dayKey();
+      if (today !== day) {
+        setAccum(prev => {
+          const nx = { ...prev };
+          window.FAMILY.forEach(p => { nx[p.id] = (nx[p.id] || 0) + pointsFor(p.id, dist, done); });
+          return nx;
+        });
+        setDone({});
+        setDay(today);
+        showToast('¡Nuevo día! Las tareas se reiniciaron 🌅');
+      }
+    }, 30000);
+    return () => clearInterval(t);
+  }, [day, dist, done]);
 
   // tema según perfil
   useEffect(() => { applyTheme(person); }, [profile]);
@@ -752,7 +791,7 @@ function App() {
     setDone(prev => { const nx = { ...prev }; Object.keys(nx).forEach(k => { if (k.endsWith(':' + t.id)) delete nx[k]; }); return nx; });
   }
 
-  const points = pointsFor(profile, dist, done);
+  const points = totalPts(profile, dist, done);
 
   return (
     <div className="stage">
