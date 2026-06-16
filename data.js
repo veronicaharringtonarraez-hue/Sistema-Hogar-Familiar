@@ -139,38 +139,43 @@ window.TASK = id => window.TASKS.find(t => t.id === id);
    Se suman SIEMPRE, sin importar la distribución. Cada una = 10 pts.
 */
 window.PERSONAL_DEFS = [
-  // autocuidado diario (para todos)
-  { id: 'sc_banar',    label: 'Bañarse',                icon: '🛁', freq: 'diario', cat: 'autocuidado' },
-  { id: 'sc_dientes',  label: 'Cepillarse los dientes', icon: '🪥', freq: 'diario', cat: 'autocuidado' },
-  { id: 'sc_vestir',   label: 'Vestirse',               icon: '👕', freq: 'diario', cat: 'autocuidado' },
-  { id: 'sc_ropa',     label: 'Alistar la ropa',        icon: '🧺', freq: 'diario', cat: 'autocuidado' },
-  { id: 'sc_estudiar', label: 'Hacer tarea / estudiar', icon: '📚', freq: 'diario', cat: 'autocuidado' },
-  // escuela (Taylor y Emmeth)
-  { id: 'bolso',     label: 'Alistar el bolso',        icon: '🎒', freq: 'diario', cat: 'escuela' },
-  { id: 'uniforme',  label: 'Alistar el uniforme',     icon: '👔', freq: 'diario', cat: 'escuela' },
-  { id: 'tarea',     label: 'Hacer la tarea',          icon: '📚', freq: 'diario', cat: 'escuela' },
-  // rutina de la bebé (Rachel)
-  { id: 'panal',     label: 'Cambio de pañal',         icon: '🧷', freq: 'diario', cat: 'bebe' },
-  { id: 'desayuno',  label: 'Desayuno',                icon: '🥣', freq: 'diario', cat: 'bebe' },
-  { id: 'merienda1', label: 'Merienda de la mañana',   icon: '🍎', freq: 'diario', cat: 'bebe' },
-  { id: 'almuerzo',  label: 'Almuerzo',                icon: '🍲', freq: 'diario', cat: 'bebe' },
-  { id: 'merienda2', label: 'Merienda de la tarde',    icon: '🍓', freq: 'diario', cat: 'bebe' },
-  { id: 'cena',      label: 'Cena',                    icon: '🍽️', freq: 'diario', cat: 'bebe' },
-  { id: 'ducha',     label: 'La ducha',                icon: '🛁', freq: 'diario', cat: 'bebe' },
-  // domingo para todos
-  { id: 'iglesia',   label: 'Ordenar la ropa para la iglesia', icon: '⛪', freq: 'semanal', day: 0, cat: 'orden' },
+  // autocuidado diario (para todos) — 1 punto
+  { id: 'sc_banar',    label: 'Bañarse',                icon: '🛁', freq: 'diario', cat: 'autocuidado', pts: 1 },
+  { id: 'sc_dientes',  label: 'Cepillarse los dientes', icon: '🪥', freq: 'diario', cat: 'autocuidado', pts: 1 },
+  { id: 'sc_vestir',   label: 'Vestirse',               icon: '👕', freq: 'diario', cat: 'autocuidado', pts: 1 },
+  { id: 'sc_ropa',     label: 'Alistar la ropa',        icon: '🧺', freq: 'diario', cat: 'autocuidado', pts: 1 },
+  { id: 'sc_estudiar', label: 'Hacer tarea / estudiar', icon: '📚', freq: 'diario', cat: 'autocuidado', pts: 1 },
+  // responsabilidades personales (1 punto)
+  { id: 'p_plato',     label: 'Lavar su plato',         icon: '🍽️', freq: 'diario', cat: 'autocuidado', pts: 1 },
+  { id: 'p_cama',      label: 'Arreglar su cama',       icon: '🛏️', freq: 'diario', cat: 'autocuidado', pts: 1 },
+  { id: 'p_cuarto',    label: 'Limpiar su cuarto',      icon: '🧹', freq: 'diario', cat: 'autocuidado', pts: 1 },
+  { id: 'p_juguetes',  label: 'Recoger sus juguetes',   icon: '🧸', freq: 'diario', cat: 'autocuidado', pts: 1 },
+  // escuela (1 punto)
+  { id: 'bolso',     label: 'Alistar el bolso',        icon: '🎒', freq: 'diario', cat: 'escuela', pts: 1 },
+  { id: 'uniforme',  label: 'Alistar el uniforme',     icon: '👔', freq: 'diario', cat: 'escuela', pts: 1 },
+  { id: 'tarea',     label: 'Hacer la tarea',          icon: '📚', freq: 'diario', cat: 'escuela', pts: 1 },
+  // rutina de la bebé (Che-Che) — 1 punto
+  { id: 'panal',     label: 'Cambio de pañal',         icon: '🧷', freq: 'diario', cat: 'bebe', pts: 1 },
+  { id: 'desayuno',  label: 'Desayuno',                icon: '🥣', freq: 'diario', cat: 'bebe', pts: 1 },
+  { id: 'merienda1', label: 'Merienda de la mañana',   icon: '🍎', freq: 'diario', cat: 'bebe', pts: 1 },
+  { id: 'almuerzo',  label: 'Almuerzo',                icon: '🍲', freq: 'diario', cat: 'bebe', pts: 1 },
+  { id: 'merienda2', label: 'Merienda de la tarde',    icon: '🍓', freq: 'diario', cat: 'bebe', pts: 1 },
+  { id: 'cena',      label: 'Cena',                    icon: '🍽️', freq: 'diario', cat: 'bebe', pts: 1 },
+  { id: 'ducha',     label: 'La ducha',                icon: '🛁', freq: 'diario', cat: 'bebe', pts: 1 },
+  // domingo para todos — 1 punto
+  { id: 'iglesia',   label: 'Ordenar la ropa para la iglesia', icon: '⛪', freq: 'semanal', day: 0, cat: 'orden', pts: 1 },
 ];
 window.PDEF = id => (window.PERSONAL_DEFS || []).find(t => t.id === id);
 
-/* Qué tareas personales tiene cada quien (aplica en ambas distribuciones).
-   El autocuidado diario (sc_*) lo tienen todos menos la bebé. */
+/* Qué tareas personales tiene cada quien (1 punto c/u).
+   Autocuidado + responsabilidades personales según la edad. */
 window.PERSONAL = {
-  mama:        ['sc_banar', 'sc_dientes', 'sc_vestir', 'sc_ropa', 'sc_estudiar', 'iglesia'],
-  papa:        ['sc_banar', 'sc_dientes', 'sc_vestir', 'sc_ropa', 'sc_estudiar', 'iglesia'],
-  taylor:      ['sc_banar', 'sc_dientes', 'sc_vestir', 'sc_ropa', 'sc_estudiar', 'bolso', 'uniforme', 'iglesia'],
-  emmeth:      ['sc_banar', 'sc_dientes', 'sc_vestir', 'sc_ropa', 'sc_estudiar', 'bolso', 'uniforme', 'iglesia'],
-  christopher: ['sc_banar', 'sc_dientes', 'sc_vestir', 'sc_ropa', 'sc_estudiar', 'iglesia'],
-  rachel:      ['panal', 'desayuno', 'merienda1', 'almuerzo', 'merienda2', 'cena', 'ducha', 'iglesia'],
+  mama:        ['sc_banar', 'sc_dientes', 'sc_vestir', 'sc_ropa', 'sc_estudiar', 'p_plato', 'p_cama', 'p_cuarto', 'iglesia'],
+  papa:        ['sc_banar', 'sc_dientes', 'sc_vestir', 'sc_ropa', 'sc_estudiar', 'p_plato', 'p_cama', 'p_cuarto', 'iglesia'],
+  taylor:      ['sc_banar', 'sc_dientes', 'sc_vestir', 'sc_ropa', 'sc_estudiar', 'p_plato', 'p_cama', 'p_cuarto', 'bolso', 'uniforme', 'iglesia'],
+  emmeth:      ['sc_banar', 'sc_dientes', 'sc_vestir', 'sc_ropa', 'sc_estudiar', 'p_plato', 'p_cama', 'p_juguetes', 'bolso', 'uniforme', 'iglesia'],
+  christopher: ['sc_banar', 'sc_dientes', 'sc_vestir', 'p_plato', 'p_cama', 'p_juguetes', 'iglesia'],
+  rachel:      ['panal', 'desayuno', 'merienda1', 'almuerzo', 'merienda2', 'cena', 'ducha'],
 };
 
 /* ---- DISTRIBUCIONES ----
@@ -192,13 +197,13 @@ window.DISTRIBUTIONS = {
   },
   equitativo: {
     label: 'Propuesta equitativa',
-    sub: 'Repartida por edad y capacidad de cada quien',
+    sub: '3–4 áreas de la casa por persona, según su edad',
     assign: {
-      taylor:      ['sala1', 'cuartonin', 'bano1'],
-      emmeth:      ['oficina1', 'comedor'],
-      christopher: ['juguetes'],
-      papa:        ['cocinar', 'platos', 'cocina1', 'cochera', 'patio', 'pilas'],
-      mama:        ['cocina2', 'oficina2', 'sala2', 'cuartopral', 'bano2', 'closet1', 'closet2'],
+      mama:        ['cocinar', 'cocina1', 'oficina2', 'sala2'],   // 4 áreas (adulta)
+      papa:        ['platos', 'cochera', 'patio', 'pilas'],       // 4 áreas (adulto)
+      taylor:      ['sala1', 'bano1', 'closet2'],                 // 3 áreas (10 años)
+      emmeth:      ['cuartonin', 'oficina1', 'closet1'],          // 3 áreas (7 años)
+      christopher: ['juguetes', 'comedor'],                       // 2 áreas (4 años)
       bebeTurnos:  ['mama', 'papa', 'taylor', 'emmeth'],
     },
   },
