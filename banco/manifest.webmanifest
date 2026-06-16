@@ -1,0 +1,26 @@
+{
+  "name": "ChildBank",
+  "short_name": "ChildBank",
+  "description": "Banco Crece — aprende economía jugando, ahorra y administra tu dinero.",
+  "lang": "es",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FFF7FB",
+  "theme_color": "#2563EB",
+  "icons": [
+    {
+      "src": "icons/childbank-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/childbank-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
