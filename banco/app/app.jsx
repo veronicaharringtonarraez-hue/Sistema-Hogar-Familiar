@@ -14,7 +14,7 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
 
 const NAV = [
   { id: "inicio", label: "Inicio", icon: "🏠" },
-  { id: "ganar", label: "Ganar", icon: "💪" },
+  { id: "ganar", label: "Puntos", icon: "⭐" },
   { id: "pagar", label: "Pagar", icon: "🧾" },
   { id: "ahorro", label: "Ahorro", icon: "🐷" },
   { id: "logros", label: "Logros", icon: "🏅" },
@@ -189,7 +189,7 @@ function PinChecker({ onOk, onErr, error }) {
 
 function ChildScreens({ child, tab, nav, approval }) {
   switch (tab) {
-    case "ganar": return <ScreenGanar child={child} approval={approval} />;
+    case "ganar": return <ScreenGanar child={child} nav={nav} />;
     case "pagar": return <ScreenPagar child={child} />;
     case "ahorro": return <ScreenAhorro child={child} />;
     case "logros": return <ScreenLogros child={child} />;
