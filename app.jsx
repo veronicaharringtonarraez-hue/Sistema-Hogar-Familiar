@@ -43,15 +43,17 @@ function ownerOf(taskId, distKey) {
   }
   return null;
 }
+/* puntos de una tarea: personales = 1, áreas de la casa = 10 (PPT) */
+function taskPtsOf(t) { return (t && t.pts != null) ? t.pts : PPT; }
 function pointsFor(pid, distKey, done) {
-  return tasksFor(pid, distKey).reduce((s, t) => s + (done[pid + ':' + t.id] ? PPT : 0), 0);
+  return tasksFor(pid, distKey).reduce((s, t) => s + (done[pid + ':' + t.id] ? taskPtsOf(t) : 0), 0);
 }
 /* puntos totales = acumulado de días anteriores + lo de hoy */
 function totalPts(pid, distKey, done) {
   return (ACCUM[pid] || 0) + pointsFor(pid, distKey, done);
 }
 function maxPointsFor(pid, distKey) {
-  return tasksFor(pid, distKey).length * PPT;
+  return tasksFor(pid, distKey).reduce((s, t) => s + taskPtsOf(t), 0);
 }
 function happinessFor(pid, distKey, done) {
   const ts = tasksFor(pid, distKey);
@@ -231,7 +233,7 @@ function ProfileSwitcher({ active, onPick, done, dist }) {
 /* =========================================================
    PANTALLA: INICIO
    ========================================================= */
-function HomeScreen({ person, dist, done, toggle, go, onDelete }) {
+function HomeScreen({ person, dist, done, toggle, go, onDelete, onAdd }) {
   const kids = window.FAMILY.filter(p => p.isKid);
   const ranking = kids.map(k => ({ k, pts: totalPts(k.id, dist, done) }))
     .sort((a, b) => b.pts - a.pts);
@@ -280,9 +282,14 @@ function HomeScreen({ person, dist, done, toggle, go, onDelete }) {
         </div>
       </div>
 
-      <a className="add-btn" href="Microtareas.html" style={{ textDecoration: 'none', marginTop: 14 }}>
-        <span style={{ fontSize: 18 }}>🧩</span> Microtareas · 1 punto por acción
-      </a>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 14 }}>
+        <a className="add-btn" href="Microtareas.html" style={{ textDecoration: 'none', margin: 0 }}>
+          <span style={{ fontSize: 18 }}>🧩</span> Microtareas
+        </a>
+        <button className="add-btn" style={{ margin: 0 }} onClick={onAdd}>
+          <span style={{ fontSize: 18 }}>➕</span> Agregar tarea
+        </button>
+      </div>
 
       {/* misiones de hoy del perfil activo */}
       <div className="sec-h">
@@ -303,7 +310,7 @@ function HomeScreen({ person, dist, done, toggle, go, onDelete }) {
         <div className="card" style={{ padding: '12px 14px 4px', marginBottom: 10 }}>
           <div className="row between" style={{ marginBottom: 10 }}>
             <span className="eyebrow">{myDoneCount} de {mine.length} hechas</span>
-            <span className="chip pts">+{mine.length * PPT} posibles</span>
+            <span className="chip pts">+{mine.reduce((s, t) => s + taskPtsOf(t), 0)} posibles</span>
           </div>
           <div className="bar" style={{ marginBottom: 12 }}>
             <i style={{ width: (mine.length ? (myDoneCount / mine.length * 100) : 0) + '%' }} />
@@ -344,7 +351,7 @@ function MissionRow({ task, owner, done, toggle, showOwner, onDelete }) {
           <span className="chip">{task.freq === 'diario' ? 'Cada día' : window.DAYS_SHORT[task.day]}</span>
           {task.shared && <span className="chip out">por turnos</span>}
           {task.custom && <span className="chip out">tuya</span>}
-          <span className="chip pts">+{PPT}</span>
+          <span className="chip pts">+{taskPtsOf(task)}</span>
         </div>
       </div>
       <div className={'check' + (isDone ? ' on' : '')}>{isDone ? '✓' : ''}</div>
@@ -770,10 +777,11 @@ function App() {
       } else {
         nx[key] = true;
         const p = window.PERSON(pid);
-        const t = window.TASK(tid);
+        const t = window.TASK(tid) || window.PDEF(tid) || custom.find(c => c.id === tid);
+        const pts = taskPtsOf(t);
         setConfetti(true);
         setTimeout(() => setConfetti(false), 1600);
-        if (p.isKid) showToast('+' + PPT + ' pts para ' + p.short + ' · ' + (p.pet ? p.pet.name + ' feliz ' : '') + '🎉');
+        if (p.isKid) showToast('+' + pts + (pts === 1 ? ' punto para ' : ' pts para ') + p.short + ' · ' + (p.pet ? p.pet.name + ' feliz ' : '') + '🎉');
         else showToast('✓ ' + (t ? t.label : 'Tarea') + ' · ¡gracias ' + p.short + '!');
       }
       return nx;
@@ -799,7 +807,7 @@ function App() {
         <TopBar person={person} points={points} onParents={() => setShowPin(true)} />
         <ProfileSwitcher active={profile} onPick={setProfile} done={done} dist={dist} />
         <div className="scroll">
-          {tab === 'inicio' && <HomeScreen person={person} dist={dist} done={done} toggle={toggle} go={setTab} onDelete={deleteTask} />}
+          {tab === 'inicio' && <HomeScreen person={person} dist={dist} done={done} toggle={toggle} go={setTab} onDelete={deleteTask} onAdd={() => setShowAdd(true)} />}
           {tab === 'misiones' && <MissionsScreen dist={dist} done={done} toggle={toggle} view={missView} setView={setMissView} onAdd={() => setShowAdd(true)} onDelete={deleteTask} />}
           {tab === 'mascotas' && <PetsScreen dist={dist} done={done} person={person} setProfile={setProfile} />}
           {tab === 'familia' && <FamilyScreen dist={dist} setDist={setDist} done={done} />}
