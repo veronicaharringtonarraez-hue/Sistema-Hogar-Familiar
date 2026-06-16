@@ -139,6 +139,12 @@ window.TASK = id => window.TASKS.find(t => t.id === id);
    Se suman SIEMPRE, sin importar la distribución. Cada una = 10 pts.
 */
 window.PERSONAL_DEFS = [
+  // autocuidado diario (para todos)
+  { id: 'sc_banar',    label: 'Bañarse',                icon: '🛁', freq: 'diario', cat: 'autocuidado' },
+  { id: 'sc_dientes',  label: 'Cepillarse los dientes', icon: '🪥', freq: 'diario', cat: 'autocuidado' },
+  { id: 'sc_vestir',   label: 'Vestirse',               icon: '👕', freq: 'diario', cat: 'autocuidado' },
+  { id: 'sc_ropa',     label: 'Alistar la ropa',        icon: '🧺', freq: 'diario', cat: 'autocuidado' },
+  { id: 'sc_estudiar', label: 'Hacer tarea / estudiar', icon: '📚', freq: 'diario', cat: 'autocuidado' },
   // escuela (Taylor y Emmeth)
   { id: 'bolso',     label: 'Alistar el bolso',        icon: '🎒', freq: 'diario', cat: 'escuela' },
   { id: 'uniforme',  label: 'Alistar el uniforme',     icon: '👔', freq: 'diario', cat: 'escuela' },
@@ -156,13 +162,14 @@ window.PERSONAL_DEFS = [
 ];
 window.PDEF = id => (window.PERSONAL_DEFS || []).find(t => t.id === id);
 
-/* Qué tareas personales tiene cada quien (aplica en ambas distribuciones) */
+/* Qué tareas personales tiene cada quien (aplica en ambas distribuciones).
+   El autocuidado diario (sc_*) lo tienen todos menos la bebé. */
 window.PERSONAL = {
-  mama:        ['iglesia'],
-  papa:        ['iglesia'],
-  taylor:      ['bolso', 'uniforme', 'tarea', 'iglesia'],
-  emmeth:      ['bolso', 'uniforme', 'tarea', 'iglesia'],
-  christopher: ['iglesia'],
+  mama:        ['sc_banar', 'sc_dientes', 'sc_vestir', 'sc_ropa', 'sc_estudiar', 'iglesia'],
+  papa:        ['sc_banar', 'sc_dientes', 'sc_vestir', 'sc_ropa', 'sc_estudiar', 'iglesia'],
+  taylor:      ['sc_banar', 'sc_dientes', 'sc_vestir', 'sc_ropa', 'sc_estudiar', 'bolso', 'uniforme', 'iglesia'],
+  emmeth:      ['sc_banar', 'sc_dientes', 'sc_vestir', 'sc_ropa', 'sc_estudiar', 'bolso', 'uniforme', 'iglesia'],
+  christopher: ['sc_banar', 'sc_dientes', 'sc_vestir', 'sc_ropa', 'sc_estudiar', 'iglesia'],
   rachel:      ['panal', 'desayuno', 'merienda1', 'almuerzo', 'merienda2', 'cena', 'ducha', 'iglesia'],
 };
 

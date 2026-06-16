@@ -36,7 +36,7 @@ const CAT_LABEL = {
   cocina: 'Cocina y comida', social: 'Áreas comunes', oficina: 'Oficinas',
   cuarto: 'Cuartos', bano: 'Baños', orden: 'Orden y ropa', exterior: 'Exteriores',
   escuela: 'Escuela', bebe: 'Cuidado de Che-Che', compras: 'Compras y despensa',
-  mantenimiento: 'Mantenimiento', gestion: 'Gestión del hogar', custom: 'Personalizada',
+  mantenimiento: 'Mantenimiento', gestion: 'Gestión del hogar', autocuidado: 'Autocuidado', custom: 'Personalizada',
 };
 const COIN = {
   mama: '#1F3A5C', papa: '#C8102E', taylor: '#B98FE8',
@@ -641,7 +641,13 @@ function App() {
 
   useEffect(() => { document.body.parentElement.setAttribute('data-theme', theme); }, [theme]);
 
-  function persist(next) { setStore(next); localStorage.setItem(KEY, JSON.stringify(next)); }
+  function persist(next) {
+    setStore(next);
+    // Fusionar con lo guardado para no borrar datos de la app de los niños
+    // (done, accum, dist, etc.) que viven en la misma clave.
+    let cur = {}; try { cur = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) {}
+    localStorage.setItem(KEY, JSON.stringify({ ...cur, ...next }));
+  }
   function approve(k, o, c) { persist({ ...store, marks: { ...store.marks, [k]: { s: 'ok', o, c } } }); setInspect(null); }
   function resetMark(k) { const marks = { ...store.marks }; delete marks[k]; persist({ ...store, marks }); setInspect(null); }
   function addTask(t) { persist({ ...store, custom: [...store.custom, t] }); setAdding(false); }
