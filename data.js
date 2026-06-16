@@ -140,16 +140,24 @@ window.TASK = id => window.TASKS.find(t => t.id === id);
 */
 window.PERSONAL_DEFS = [
   // autocuidado diario (para todos) — 1 punto
-  { id: 'sc_banar',    label: 'Bañarse',                icon: '🛁', freq: 'diario', cat: 'autocuidado', pts: 1 },
-  { id: 'sc_dientes',  label: 'Cepillarse los dientes', icon: '🪥', freq: 'diario', cat: 'autocuidado', pts: 1 },
-  { id: 'sc_vestir',   label: 'Vestirse',               icon: '👕', freq: 'diario', cat: 'autocuidado', pts: 1 },
-  { id: 'sc_ropa',     label: 'Alistar la ropa',        icon: '🧺', freq: 'diario', cat: 'autocuidado', pts: 1 },
-  { id: 'sc_estudiar', label: 'Hacer tarea / estudiar', icon: '📚', freq: 'diario', cat: 'autocuidado', pts: 1 },
+  { id: 'sc_banar',     label: 'Bañarse',                          icon: '🛁', freq: 'diario', cat: 'autocuidado', pts: 1 },
+  { id: 'sc_dientes_m', label: 'Cepillarse los dientes (mañana)',  icon: '🪥', freq: 'diario', cat: 'autocuidado', pts: 1 },
+  { id: 'sc_dientes_t', label: 'Cepillarse los dientes (mediodía)', icon: '🪥', freq: 'diario', cat: 'autocuidado', pts: 1 },
+  { id: 'sc_dientes_n', label: 'Cepillarse los dientes (noche)',   icon: '🪥', freq: 'diario', cat: 'autocuidado', pts: 1 },
+  { id: 'sc_vestir',    label: 'Vestirse',                         icon: '👕', freq: 'diario', cat: 'autocuidado', pts: 1 },
+  { id: 'sc_ropa',      label: 'Alistar la ropa',                  icon: '🧺', freq: 'diario', cat: 'autocuidado', pts: 1 },
+  { id: 'sc_estudiar',  label: 'Hacer tarea / estudiar',           icon: '📚', freq: 'diario', cat: 'autocuidado', pts: 1 },
   // responsabilidades personales (1 punto)
-  { id: 'p_plato',     label: 'Lavar su plato',         icon: '🍽️', freq: 'diario', cat: 'autocuidado', pts: 1 },
-  { id: 'p_cama',      label: 'Arreglar su cama',       icon: '🛏️', freq: 'diario', cat: 'autocuidado', pts: 1 },
-  { id: 'p_cuarto',    label: 'Limpiar su cuarto',      icon: '🧹', freq: 'diario', cat: 'autocuidado', pts: 1 },
-  { id: 'p_juguetes',  label: 'Recoger sus juguetes',   icon: '🧸', freq: 'diario', cat: 'autocuidado', pts: 1 },
+  { id: 'p_plato_des',  label: 'Lavar su plato (desayuno)',        icon: '🍽️', freq: 'diario', cat: 'autocuidado', pts: 1 },
+  { id: 'p_plato_alm',  label: 'Lavar su plato (almuerzo)',        icon: '🍽️', freq: 'diario', cat: 'autocuidado', pts: 1 },
+  { id: 'p_plato_cen',  label: 'Lavar su plato (cena)',            icon: '🍽️', freq: 'diario', cat: 'autocuidado', pts: 1 },
+  { id: 'p_cama',       label: 'Arreglar su cama',                 icon: '🛏️', freq: 'diario', cat: 'autocuidado', pts: 1 },
+  { id: 'p_cuarto',     label: 'Limpiar su cuarto',                icon: '🧹', freq: 'diario', cat: 'autocuidado', pts: 1 },
+  { id: 'p_juguetes',   label: 'Recoger sus juguetes',             icon: '🧸', freq: 'diario', cat: 'autocuidado', pts: 1 },
+  // higiene semanal — los sábados (1 punto)
+  { id: 'sc_peinar',     label: 'Peinarse el cabello',     icon: '💇', freq: 'semanal', day: 6, cat: 'autocuidado', pts: 1 },
+  { id: 'sc_bloqueador', label: 'Ponerse bloqueador solar', icon: '🧴', freq: 'semanal', day: 6, cat: 'autocuidado', pts: 1 },
+  { id: 'sc_unas',       label: 'Cortarse las uñas',        icon: '💅', freq: 'semanal', day: 6, cat: 'autocuidado', pts: 1 },
   // escuela (1 punto)
   { id: 'bolso',     label: 'Alistar el bolso',        icon: '🎒', freq: 'diario', cat: 'escuela', pts: 1 },
   { id: 'uniforme',  label: 'Alistar el uniforme',     icon: '👔', freq: 'diario', cat: 'escuela', pts: 1 },
@@ -169,12 +177,15 @@ window.PDEF = id => (window.PERSONAL_DEFS || []).find(t => t.id === id);
 
 /* Qué tareas personales tiene cada quien (1 punto c/u).
    Autocuidado + responsabilidades personales según la edad. */
+const SC_DIENTES = ['sc_dientes_m', 'sc_dientes_t', 'sc_dientes_n'];
+const P_PLATOS   = ['p_plato_des', 'p_plato_alm', 'p_plato_cen'];
+const HIGIENE_SAB = ['sc_peinar', 'sc_bloqueador', 'sc_unas'];
 window.PERSONAL = {
-  mama:        ['sc_banar', 'sc_dientes', 'sc_vestir', 'sc_ropa', 'sc_estudiar', 'p_plato', 'p_cama', 'p_cuarto', 'iglesia'],
-  papa:        ['sc_banar', 'sc_dientes', 'sc_vestir', 'sc_ropa', 'sc_estudiar', 'p_plato', 'p_cama', 'p_cuarto', 'iglesia'],
-  taylor:      ['sc_banar', 'sc_dientes', 'sc_vestir', 'sc_ropa', 'sc_estudiar', 'p_plato', 'p_cama', 'p_cuarto', 'bolso', 'uniforme', 'iglesia'],
-  emmeth:      ['sc_banar', 'sc_dientes', 'sc_vestir', 'sc_ropa', 'sc_estudiar', 'p_plato', 'p_cama', 'p_juguetes', 'bolso', 'uniforme', 'iglesia'],
-  christopher: ['sc_banar', 'sc_dientes', 'sc_vestir', 'p_plato', 'p_cama', 'p_juguetes', 'iglesia'],
+  mama:        ['sc_banar', ...SC_DIENTES, 'sc_vestir', 'sc_ropa', 'sc_estudiar', ...P_PLATOS, 'p_cama', 'p_cuarto', ...HIGIENE_SAB, 'iglesia'],
+  papa:        ['sc_banar', ...SC_DIENTES, 'sc_vestir', 'sc_ropa', 'sc_estudiar', ...P_PLATOS, 'p_cama', 'p_cuarto', ...HIGIENE_SAB, 'iglesia'],
+  taylor:      ['sc_banar', ...SC_DIENTES, 'sc_vestir', 'sc_ropa', 'sc_estudiar', ...P_PLATOS, 'p_cama', 'p_cuarto', ...HIGIENE_SAB, 'bolso', 'uniforme', 'iglesia'],
+  emmeth:      ['sc_banar', ...SC_DIENTES, 'sc_vestir', 'sc_ropa', 'sc_estudiar', ...P_PLATOS, 'p_cama', 'p_juguetes', ...HIGIENE_SAB, 'bolso', 'uniforme', 'iglesia'],
+  christopher: ['sc_banar', ...SC_DIENTES, 'sc_vestir', ...P_PLATOS, 'p_cama', 'p_juguetes', ...HIGIENE_SAB, 'iglesia'],
   rachel:      ['panal', 'desayuno', 'merienda1', 'almuerzo', 'merienda2', 'cena', 'ducha'],
 };
 
