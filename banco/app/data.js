@@ -3,45 +3,39 @@
    1 punto = $1 (dólares ficticios)
    ============================================================ */
 (function () {
-  // ---- Niños ----
-  const CHILDREN = [
-    {
-      id: "taylor",
-      name: "Taylor",
-      age: 10,
-      avatar: "🦄",
-      color: "#FF4D88",
-      colorSoft: "#FFE3EC",
-      dailyRate: 30,      // puntos por día si limpia
-      hasSchool: true,
-      rubros: 16,
-      examAvg: 92.19,
-    },
-    {
-      id: "emmeth",
-      name: "Emmeth",
-      age: 7,
-      avatar: "🦖",
-      color: "#2E8BFF",
-      colorSoft: "#DCEBFF",
-      dailyRate: 20,
-      hasSchool: true,
-      rubros: 15,
-      examAvg: 95.9,
-    },
-    {
-      id: "christopher",
-      name: "Christopher",
-      age: 4,
-      avatar: "🦁",
-      color: "#1FB85A",
-      colorSoft: "#D6F5E1",
-      dailyRate: 10,
-      hasSchool: false,
-      rubros: 0,
-      examAvg: null,
-    },
+  // ---- Cuentas (fusión) ----
+  // Si la app del Hogar cargó window.FAMILY, las cuentas del banco se derivan
+  // de ahí (incluye a mamá y papá; excluye a la bebé, que administran los
+  // padres). Si no, se usa la lista propia de respaldo para que el banco
+  // siga funcionando por sí solo.
+  const FALLBACK_CHILDREN = [
+    { id: "taylor",      name: "Taylor",      age: 10, avatar: "🦄", color: "#FF4D88", colorSoft: "#FFE3EC", dailyRate: 30, hasSchool: true,  rubros: 16, examAvg: 92.19 },
+    { id: "emmeth",      name: "Emmeth",      age: 7,  avatar: "🦖", color: "#2E8BFF", colorSoft: "#DCEBFF", dailyRate: 20, hasSchool: true,  rubros: 15, examAvg: 95.9 },
+    { id: "christopher", name: "Christopher", age: 4,  avatar: "🦁", color: "#1FB85A", colorSoft: "#D6F5E1", dailyRate: 10, hasSchool: false, rubros: 0,  examAvg: null },
   ];
+
+  let CHILDREN;
+  if (window.FAMILY && Array.isArray(window.FAMILY)) {
+    CHILDREN = window.FAMILY
+      .filter(function (p) { return !p.isBaby; })   // todos menos la bebé
+      .map(function (p) {
+        return {
+          id: p.id,
+          name: p.short || p.name,
+          age: p.age,
+          avatar: p.emoji || "🙂",
+          color: (p.colors && p.colors.a) || "#2E8BFF",
+          colorSoft: (p.colors && p.colors.c) || "#DCEBFF",
+          dailyRate: p.isKid ? 10 : 0,
+          hasSchool: p.age != null && p.age >= 5,
+          rubros: 0,
+          examAvg: null,
+          isKid: !!p.isKid,
+        };
+      });
+  } else {
+    CHILDREN = FALLBACK_CHILDREN;
+  }
 
   // ---- Gastos fijos mensuales (proporción 3:2:1) ----
   // diezmo y ahorro se calculan como % del ingreso del mes (no fijos)
@@ -141,6 +135,6 @@
     CHILDREN, EXPENSES, PERCENT_DUES, CHORES, BADGES, evaluateBadges,
     EXAM_BONUS_MAX, examBonus, fixedTotal, money,
     MONTHS, monthKey, monthLabel,
-    DEFAULT_PIN: "181215",
+    DEFAULT_PIN: (window.PARENT_PIN || "181215"),
   };
 })();
