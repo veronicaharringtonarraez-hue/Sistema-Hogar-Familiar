@@ -25,6 +25,7 @@
   var readyResolved = false;
   var readyCbs = [];
   var lastState = null;     // último estado conocido (string JSON)
+  var lastUpdated = 0;      // marca de tiempo del último estado aplicado/escrito
   var applyingRemote = false;
   var writeTimer = null;
   var ref = null;
@@ -83,7 +84,9 @@
   function schedulePush(v) {
     clearTimeout(writeTimer);
     writeTimer = setTimeout(function () {
-      ref.set({ state: v, updated: Date.now() })
+      var ts = Date.now();
+      lastUpdated = ts;   // recordamos la marca de NUESTRA escritura (evita eco/recarga)
+      ref.set({ state: v, updated: ts })
          .catch(function (e) { console.warn('[nube] No se pudo guardar:', e); });
     }, 600);
   }
@@ -102,6 +105,7 @@
   ref.get().then(function (snap) {
     if (snap.exists && snap.data().state) {
       lastState = snap.data().state;
+      lastUpdated = snap.data().updated || 0;
       applyingRemote = true;
       rawSet(KEY, lastState);
       applyingRemote = false;
@@ -110,16 +114,24 @@
       var local = localStorage.getItem(KEY);
       if (local) {
         lastState = local;
-        ref.set({ state: local, updated: Date.now() }).catch(function () {});
+        lastUpdated = Date.now();
+        ref.set({ state: local, updated: lastUpdated }).catch(function () {});
       }
     }
   }).catch(function (e) {
     console.warn('[nube] No se pudo leer al iniciar, se usa lo local.', e);
   }).then(function () {
     callReady();
-    // 2) Escuchar cambios en vivo desde otros dispositivos
+    // 2) Escuchar cambios en vivo desde otros dispositivos.
+    //    Solo aplicamos (y recargamos) si el estado remoto es MÁS NUEVO que el
+    //    que ya tenemos. Así evitamos un bucle de recarga cuando el primer
+    //    snapshot llega con el valor previo del servidor.
     ref.onSnapshot(function (snap) {
-      if (snap.exists && snap.data().state) applyRemote(snap.data().state);
+      if (!snap.exists || !snap.data().state) return;
+      var up = snap.data().updated || 0;
+      if (up <= lastUpdated) return;   // no es más nuevo: ignorar (evita el bucle)
+      lastUpdated = up;
+      applyRemote(snap.data().state);
     }, function (e) { console.warn('[nube] Error escuchando cambios:', e); });
   });
 })();
