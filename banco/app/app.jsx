@@ -201,4 +201,9 @@ function ChildScreens({ child, tab, nav, approval }) {
 
 Object.assign(window, { useFx, FxContext });
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+// Esperamos a que la nube traiga el estado del banco antes de montar, para que
+// el saldo/ahorros se vean igual en todos los dispositivos. Si no hay nube
+// configurada, BankSync.whenReady llama de inmediato (modo local).
+(window.BankSync ? window.BankSync.whenReady : function (cb) { cb(); })(function () {
+  ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+});

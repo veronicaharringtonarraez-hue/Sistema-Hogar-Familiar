@@ -5,8 +5,9 @@ rules_version = '2';
 // ------------------------------------------------------------
 // Permite leer/escribir SOLO la colección "hogares", donde se
 // guardan los documentos de sincronización:
-//   - hogar-familiar  (sistema de tareas)
-//   - hogar-micro     (módulo de microtareas)
+//   - hogar-familiar        (sistema de tareas)
+//   - hogar-familiar-banco  (banco / dinero por puntos)
+//   - hogar-micro           (módulo de microtareas)
 // Sin fecha de caducidad (a diferencia del modo de prueba).
 //
 // Cómo aplicarlas: Firebase Console → Firestore Database →
