@@ -17,6 +17,8 @@ function defaultState() {
   return {
     pin: BC.DEFAULT_PIN,
     goals: {
+      mama: { name: "Mi meta de ahorro", target: 500, emoji: "🎯" },
+      papa: { name: "Mi meta de ahorro", target: 500, emoji: "🎯" },
       taylor: { name: "Una bicicleta nueva", target: 200, emoji: "🚲" },
       emmeth: { name: "Set de LEGO grande", target: 120, emoji: "🧱" },
       christopher: { name: "Juguete sorpresa", target: 60, emoji: "🎁" },
