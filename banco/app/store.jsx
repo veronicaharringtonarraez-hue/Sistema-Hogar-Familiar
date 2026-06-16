@@ -2,6 +2,9 @@
    Banco Crece — Store (estado + localStorage)
    ============================================================ */
 const STORE_KEY = "bancoCrece.v1";
+// Clave del módulo de tareas (Panel de Padres). El banco lee de aquí los
+// puntos ya aprobados por los padres para abonarlos 1:1 (1 punto = 1 $).
+const TASKS_KEY = "fam_tareas_v1";
 
 function freshMonth() {
   return { income: 0, paid: {}, diezmoPaid: 0, ahorroDone: 0 };
@@ -27,6 +30,10 @@ function defaultState() {
     // Si no hay valor guardado, se usa el valor por defecto de data.js (BC.EXPENSES).
     budgets: {},
     requests: [],
+    // pointsCredited[childId] = { week, amount }: puntos de tareas ya abonados
+    // al banco en la semana en curso. Sirve para no abonar dos veces y para
+    // reiniciar el conteo cuando empieza una semana nueva.
+    pointsCredited: {},
     data,
   };
 }
@@ -40,6 +47,7 @@ function mergeState(parsed) {
   base.goals = Object.assign(base.goals, parsed.goals || {});
   base.budgets = (parsed.budgets && typeof parsed.budgets === "object") ? parsed.budgets : {};
   base.requests = Array.isArray(parsed.requests) ? parsed.requests : [];
+  base.pointsCredited = (parsed.pointsCredited && typeof parsed.pointsCredited === "object") ? parsed.pointsCredited : {};
   BC.CHILDREN.forEach((c) => {
     if (parsed.data && parsed.data[c.id]) {
       base.data[c.id] = Object.assign(freshChild(), parsed.data[c.id]);
@@ -88,6 +96,83 @@ function StoreProvider({ children }) {
     child.tx.unshift(Object.assign({ id: Date.now() + "-" + Math.random().toString(36).slice(2, 7), ts: Date.now() }, tx));
     if (child.tx.length > 400) child.tx.length = 400;
   };
+
+  // ── Puentes con el módulo de tareas ───────────────────────────────
+  // Lee del Panel de Padres los puntos APROBADOS de la semana (marcas con
+  // calidad + bonos) y los abona al banco 1:1 (1 punto = 1 $). Es idempotente:
+  // solo abona la diferencia que aún no se ha pasado, así una recarga no
+  // duplica dinero. Cuando empieza una semana nueva (cambia "week"), el
+  // contador vuelve a cero y se abonan los puntos de la semana nueva.
+  function readApprovedPoints() {
+    let tasks;
+    try { tasks = JSON.parse(localStorage.getItem(TASKS_KEY)); } catch (e) { return null; }
+    if (!tasks || typeof tasks !== "object") return null;
+    const marks = tasks.marks || {};
+    const bonus = tasks.bonus || [];
+    const byChild = {};
+    Object.keys(marks).forEach((k) => {
+      const pid = k.split(":")[0];
+      const pts = (typeof window.markPoints === "function") ? window.markPoints(marks[k]) : 0;
+      if (pts) byChild[pid] = (byChild[pid] || 0) + pts;
+    });
+    bonus.forEach((b) => {
+      if (b && b.pid && b.pts) byChild[b.pid] = (byChild[b.pid] || 0) + b.pts;
+    });
+    return { week: tasks.week || "", byChild };
+  }
+
+  const reconcilePoints = useCallback(() => {
+    const info = readApprovedPoints();
+    if (!info) return;
+    setState((prev) => {
+      let changed = false;
+      const next = JSON.parse(JSON.stringify(prev));
+      if (!next.pointsCredited) next.pointsCredited = {};
+      BC.CHILDREN.forEach((c) => {
+        if (!next.data[c.id]) return;
+        const total = Math.round(info.byChild[c.id] || 0);
+        const rec = next.pointsCredited[c.id];
+        const base = (rec && rec.week === info.week) ? rec.amount : 0;
+        const add = total - base; // solo abonamos lo nuevo; nunca quitamos
+        if (add > 0) {
+          const child = next.data[c.id];
+          const mk = BC.monthKey();
+          if (!child.months[mk]) child.months[mk] = freshMonth();
+          const month = child.months[mk];
+          child.balance += add;
+          month.income += add;
+          child.tx.unshift({
+            id: Date.now() + "-" + Math.random().toString(36).slice(2, 7), ts: Date.now(),
+            type: "income", amount: add, label: "Puntos de tareas aprobados", cat: "tareas", icon: "⭐",
+          });
+          if (child.tx.length > 400) child.tx.length = 400;
+          next.pointsCredited[c.id] = { week: info.week, amount: base + add };
+          changed = true;
+        } else if (!rec || rec.week !== info.week) {
+          // Semana nueva sin puntos todavía: fija la línea base sin abonar.
+          next.pointsCredited[c.id] = { week: info.week, amount: base };
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
+    });
+  }, []);
+
+  // Reconcilia al abrir el banco y cada vez que cambian las tareas (otra
+  // pestaña/ventana escribe localStorage, o al volver a la app).
+  useEffect(() => {
+    reconcilePoints();
+    const onStorage = (e) => { if (!e || e.key === null || e.key === TASKS_KEY) reconcilePoints(); };
+    const onVisible = () => { if (!document.hidden) reconcilePoints(); };
+    window.addEventListener("storage", onStorage);
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", reconcilePoints);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", reconcilePoints);
+    };
+  }, [reconcilePoints]);
 
   const actions = {
     earn(childId, amount, label, cat = "trabajo", icon = "💪") {

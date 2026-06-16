@@ -24,8 +24,8 @@ function ScreenInicio({ child, nav }) {
 
       <div className="bc-quick-grid">
         <button className="bc-quick" style={{ "--qc": "#1FB85A" }} onClick={() => nav("ganar")}>
-          <span className="bc-quick-ic">💪</span>
-          <span>Ganar</span>
+          <span className="bc-quick-ic">⭐</span>
+          <span>Puntos</span>
         </button>
         <button className="bc-quick" style={{ "--qc": "#FF7A45" }} onClick={() => nav("pagar")}>
           <span className="bc-quick-ic">🧾</span>
@@ -84,104 +84,55 @@ function ScreenInicio({ child, nav }) {
   );
 }
 
-/* -------- GANAR -------- */
-function ScreenGanar({ child, approval = "pedidos" }) {
-  const { state, actions } = useStore();
-  const fx = useFx();
-  const [qty, setQty] = useState({});
-  const [servicioVal, setServicioVal] = useState(5);
-  const [pinOpen, setPinOpen] = useState(false);
-  const [pinErr, setPinErr] = useState("");
-
-  const setQ = (id, d) => setQty((q) => ({ ...q, [id]: Math.max(0, Math.min(20, (q[id] || 0) + d)) }));
-
-  const items = BC.CHORES.map((c) => {
-    const q = qty[c.id] || 0;
-    const unit = c.id === "servicio" ? servicioVal : c.points;
-    return { ...c, q, unit, subtotal: q * unit };
-  });
-  const total = items.reduce((s, i) => s + i.subtotal, 0);
-  const chosen = () => items.filter((i) => i.q > 0).map((i) => ({
-    cat: i.id, label: `${i.label}${i.q > 1 ? " ×" + i.q : ""}`, qty: i.q, unit: i.unit, subtotal: i.subtotal, icon: i.icon,
-  }));
-
-  const myRequests = state.requests.filter((r) => r.childId === child.id);
-
-  const clear = () => { setQty({}); setServicioVal(5); };
-
-  const sendRequest = () => {
-    actions.submitRequest(child.id, chosen(), total);
-    clear();
-    fx.toast("¡Pedido enviado a Mamá/Papá! ⏳");
-  };
-
-  const approvePin = (pin) => {
-    if (pin !== state.pin) { setPinErr("PIN incorrecto, intenta de nuevo"); return; }
-    chosen().forEach((i) => actions.earn(child.id, i.subtotal, i.label, i.cat, i.icon));
-    setPinOpen(false); setPinErr(""); clear();
-    fx.celebrate(); fx.toast(`¡Ganaste ${BC.money(total)}! 🎉`);
-  };
+/* -------- GANAR (dinero por puntos aprobados) --------
+   Ya no hay tareas manuales aquí: el dinero entra solo. Por cada punto que
+   los padres aprueban en el Panel de Padres, el banco abona 1 $ (1 punto = 1 $).
+   Esta pantalla solo explica de dónde viene el dinero y muestra lo ganado. */
+function ScreenGanar({ child, nav }) {
+  const { state } = useStore();
+  const s = childSummary(state, child.id);
+  // Últimos ingresos por puntos de tareas (los abona reconcilePoints).
+  const fromTasks = (state.data[child.id].tx || [])
+    .filter((t) => t.type === "income" && t.cat === "tareas")
+    .slice(0, 5);
 
   return (
     <div className="bc-screen">
       <div className="bc-screen-head">
-        <h2>💪 Ganar dinero</h2>
-        <p>{approval === "pedidos"
-          ? "Marca lo que hiciste y envíalo. Mamá/Papá lo aprueba. 📨"
-          : "Elige las tareas que hiciste. Un adulto las aprueba con su PIN."}</p>
+        <h2>⭐ Cómo gano dinero</h2>
+        <p>Tu dinero entra solo: por cada punto que Mamá o Papá te aprueban por tus tareas, recibes <strong>1 $</strong>. 🎉</p>
       </div>
 
-      {myRequests.length > 0 && (
-        <Card className="bc-pending-mine">
-          <div className="bc-pending-title">⏳ Esperando aprobación</div>
-          {myRequests.map((r) => (
-            <div key={r.id} className="bc-pending-row">
-              <span>{r.items.map((i) => i.icon).join(" ")}</span>
-              <span className="bc-pending-amt">{BC.money(r.total)}</span>
-            </div>
-          ))}
-        </Card>
+      <Card className="bc-goal-card">
+        <div className="bc-how-step"><span className="bc-how-ic">✅</span><div><strong>1. Haz tus tareas</strong><div className="muted">Marca "listo" cuando termines.</div></div></div>
+        <div className="bc-how-step"><span className="bc-how-ic">👀</span><div><strong>2. Mamá o Papá revisan</strong><div className="muted">Te dan puntos por orden y limpieza.</div></div></div>
+        <div className="bc-how-step"><span className="bc-how-ic">💰</span><div><strong>3. El dinero llega a tu banco</strong><div className="muted">1 punto aprobado = 1 $, automático.</div></div></div>
+      </Card>
+
+      <div className="bc-mini-grid">
+        <Stat label="Ganado este mes" value={BC.money(s.income)} color="#1FB85A" icon="⭐" />
+        <Stat label="Mi dinero ahora" value={BC.money(s.balance)} color="#2E8BFF" icon="💰" />
+      </div>
+
+      {fromTasks.length > 0 && (
+        <>
+          <div className="bc-section-title">Últimos puntos que se hicieron dinero</div>
+          <div className="bc-chore-list">
+            {fromTasks.map((t) => (
+              <Card key={t.id} className="bc-chore">
+                <span className="bc-chore-ic">{t.icon || "⭐"}</span>
+                <div className="bc-chore-info">
+                  <div className="bc-chore-label">{t.label}</div>
+                  <div className="bc-chore-pts muted">{new Date(t.ts).toLocaleDateString()}</div>
+                </div>
+                <span className="bc-pending-amt" style={{ color: "#1FB85A" }}>+{BC.money(t.amount)}</span>
+              </Card>
+            ))}
+          </div>
+        </>
       )}
 
-      <div className="bc-chore-list">
-        {items.map((c) => (
-          <Card key={c.id} className={"bc-chore " + (c.q > 0 ? "active" : "")}>
-            <span className="bc-chore-ic">{c.icon}</span>
-            <div className="bc-chore-info">
-              <div className="bc-chore-label">{c.label}</div>
-              <div className="bc-chore-pts">
-                {c.id === "servicio"
-                  ? <span className="bc-servicio-edit">
-                      Valor: 
-                      <button onClick={() => setServicioVal((v) => Math.max(1, v - 1))}>−</button>
-                      <strong>{BC.money(servicioVal)}</strong>
-                      <button onClick={() => setServicioVal((v) => Math.min(50, v + 1))}>+</button>
-                    </span>
-                  : <span>+{BC.money(c.points)} c/u</span>}
-              </div>
-            </div>
-            <div className="bc-stepper">
-              <button onClick={() => setQ(c.id, -1)} disabled={c.q === 0}>−</button>
-              <span>{c.q}</span>
-              <button onClick={() => setQ(c.id, 1)}>+</button>
-            </div>
-          </Card>
-        ))}
-      </div>
-
-      <div className="bc-earn-bar">
-        <div>
-          <div className="bc-earn-bar-label">{approval === "pedidos" ? "Vas a pedir" : "Vas a ganar"}</div>
-          <div className="bc-earn-bar-total">{BC.money(total)}</div>
-        </div>
-        {approval === "pedidos"
-          ? <button className="bc-btn-primary" disabled={total <= 0} onClick={sendRequest}>Pedir aprobación 📨</button>
-          : <button className="bc-btn-primary" disabled={total <= 0} onClick={() => { setPinErr(""); setPinOpen(true); }}>Aprobar y cobrar</button>}
-      </div>
-
-      <Modal open={pinOpen} onClose={() => setPinOpen(false)} title="Aprobación de un adulto" accent={child.color}>
-        <PinPad onSubmit={approvePin} error={pinErr} length={state.pin.length} prompt={`Confirma que ${child.name} ganó ${BC.money(total)}`} />
-      </Modal>
+      <button className="bc-btn-primary" style={{ marginTop: 14 }} onClick={() => nav && nav("registro")}>Ver todo mi registro 📜</button>
     </div>
   );
 }
