@@ -699,7 +699,7 @@ function AddTaskModal({ onClose, onSave }) {
    BOTTOM NAV
    ========================================================= */
 function BottomNav({ tab, go }) {
-  const items = [['inicio', '🏠', 'Inicio'], ['misiones', '🎯', 'Misiones'], ['mascotas', '🐾', 'Mascotas'], ['familia', '👨‍👩‍👧‍👦', 'Familia']];
+  const items = [['inicio', '🏠', 'Inicio'], ['misiones', '🎯', 'Misiones'], ['mascotas', '🐾', 'Mascotas'], ['banco', '🏦', 'Banco'], ['familia', '👨‍👩‍👧‍👦', 'Familia']];
   return (
     <div className="nav">
       {items.map(([k, ic, l]) => (
@@ -805,13 +805,15 @@ function App() {
     <div className="stage">
       <div className="phone">
         <TopBar person={person} points={points} onParents={() => setShowPin(true)} />
-        <ProfileSwitcher active={profile} onPick={setProfile} done={done} dist={dist} />
-        <div className="scroll">
-          {tab === 'inicio' && <HomeScreen person={person} dist={dist} done={done} toggle={toggle} go={setTab} onDelete={deleteTask} onAdd={() => setShowAdd(true)} />}
-          {tab === 'misiones' && <MissionsScreen dist={dist} done={done} toggle={toggle} view={missView} setView={setMissView} onAdd={() => setShowAdd(true)} onDelete={deleteTask} />}
-          {tab === 'mascotas' && <PetsScreen dist={dist} done={done} person={person} setProfile={setProfile} />}
-          {tab === 'familia' && <FamilyScreen dist={dist} setDist={setDist} done={done} />}
-        </div>
+        {tab !== 'banco' && <ProfileSwitcher active={profile} onPick={setProfile} done={done} dist={dist} />}
+        {tab === 'banco'
+          ? <iframe className="bank-frame" src="banco/index.html" title="Banco de la Familia" />
+          : <div className="scroll">
+              {tab === 'inicio' && <HomeScreen person={person} dist={dist} done={done} toggle={toggle} go={setTab} onDelete={deleteTask} onAdd={() => setShowAdd(true)} />}
+              {tab === 'misiones' && <MissionsScreen dist={dist} done={done} toggle={toggle} view={missView} setView={setMissView} onAdd={() => setShowAdd(true)} onDelete={deleteTask} />}
+              {tab === 'mascotas' && <PetsScreen dist={dist} done={done} person={person} setProfile={setProfile} />}
+              {tab === 'familia' && <FamilyScreen dist={dist} setDist={setDist} done={done} />}
+            </div>}
         {toast && <div className="toast">{toast}</div>}
         <BottomNav tab={tab} go={setTab} />
       </div>
