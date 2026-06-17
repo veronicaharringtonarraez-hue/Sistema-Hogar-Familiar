@@ -245,7 +245,7 @@ function ScreenAhorro({ child }) {
         </div>
         <ProgressBar value={s.savings} max={goal.target} color={child.color} height={18} showPct />
         {s.savings < goal.target
-          ? <div className="bc-goal-left">Te faltan <strong>{BC.money(goal.target - s.savings)}</strong> 💪</div>
+          ? <div className="bc-goal-left">Te faltan <strong>{BC.money(goal.target - s.savings)}</strong> · <strong>{weeksLabel(goalEstimate(state, child.id, s, goal).weeks)}</strong> 💪</div>
           : <div className="bc-goal-done">🎉 ¡Meta cumplida! Habla con Mamá/Papá.</div>}
       </Card>
 
@@ -531,6 +531,90 @@ function ScreenFondo({ child }) {
   );
 }
 
+/* -------- PANEL FINANCIERO -------- */
+// Estimación de una meta de ahorro: % completado y semanas para alcanzarla
+// (según el ahorro esperado por semana = % de ahorro sobre el salario esperado).
+function goalEstimate(state, childId, s, goal) {
+  const pct = goal.target > 0 ? Math.min(100, Math.round((s.savings / goal.target) * 100)) : 0;
+  const remaining = Math.max(0, goal.target - s.savings);
+  const ahorroPct = budgetPctOf(state, "ahorro");
+  const weeklySave = (s.expectedNet * ahorroPct / 100) / 2; // quincena = 2 semanas
+  const weeks = remaining <= 0 ? 0 : (weeklySave > 0 ? Math.ceil(remaining / weeklySave) : null);
+  return { pct, remaining, weeks };
+}
+function weeksLabel(weeks) {
+  if (weeks == null) return "Ahorra un poco para estimarlo";
+  if (weeks === 0) return "¡Ya la alcanzaste! 🎉";
+  if (weeks === 1) return "~1 semana";
+  if (weeks < 8) return "~" + weeks + " semanas";
+  const months = Math.round(weeks / 4.3);
+  return "~" + months + (months === 1 ? " mes" : " meses");
+}
+
+function ScreenPanel({ child }) {
+  const { state } = useStore();
+  const s = childSummary(state, child.id);
+  const tx = state.data[child.id].tx || [];
+  const goal = state.goals[child.id];
+
+  const now = new Date();
+  const startToday = new Date(now); startToday.setHours(0, 0, 0, 0);
+  const dow = now.getDay(); const diff = dow === 0 ? -6 : 1 - dow;
+  const startWeek = new Date(now); startWeek.setDate(now.getDate() + diff); startWeek.setHours(0, 0, 0, 0);
+  const incSince = (from) => tx.filter((t) => t.type === "income" && t.ts >= from).reduce((a, t) => a + t.amount, 0);
+  const daily = incSince(startToday.getTime());
+  const weekly = incSince(startWeek.getTime());
+  const totalNet = tx.filter((t) => t.type === "income").reduce((a, t) => a + t.amount, 0);
+  const f = fundSummary(state);
+  const ivaAport = f.byChild[child.id] || 0;
+  const est = goalEstimate(state, child.id, s, goal);
+
+  return (
+    <div className="bc-screen">
+      <div className="bc-screen-head">
+        <h2>📈 Mi panel financiero</h2>
+        <p>Tu dinero de un vistazo, como un adulto responsable.</p>
+      </div>
+
+      <div className="bc-mini-grid">
+        <Stat label="Ingreso de hoy" value={BC.money(daily)} color="#1FB85A" icon="☀️" />
+        <Stat label="Ingreso de la semana" value={BC.money(weekly)} color="#2E8BFF" icon="📆" />
+        <Stat label="Ingreso de la quincena" value={BC.money(s.income)} color="#A855F7" icon="🗓️" />
+        <Stat label="Salario esperado" value={BC.money(s.expectedNet)} color="#FF7A45" icon="💼" />
+      </div>
+
+      <Card className="bc-goal-card">
+        <div className="bc-goal-head">
+          <span className="bc-goal-emoji">{goal.emoji}</span>
+          <div>
+            <div className="bc-goal-name">Meta: {goal.name}</div>
+            <div className="bc-goal-nums"><MoneyText amount={s.savings} /> de <MoneyText amount={goal.target} /> · {est.pct}%</div>
+          </div>
+        </div>
+        <ProgressBar value={s.savings} max={goal.target} color={child.color} height={16} showPct />
+        <div className="bc-goal-left">
+          {est.remaining > 0
+            ? <>Te faltan <strong>{BC.money(est.remaining)}</strong> · <strong>{weeksLabel(est.weeks)}</strong></>
+            : <>🎉 ¡Meta cumplida!</>}
+        </div>
+      </Card>
+
+      <div className="bc-section-title">Mis estadísticas</div>
+      <div className="bc-mini-grid">
+        <Stat label="Saldo ahora" value={BC.money(s.balance)} color="#2E8BFF" icon="💰" />
+        <Stat label="Ahorrado total" value={BC.money(s.savings)} color="#FF7AB0" icon="🐷" />
+        <Stat label="Ganado en total" value={BC.money(totalNet)} color="#1FB85A" icon="💪" />
+        <Stat label="Aportado al fondo" value={BC.money(ivaAport)} color="#7C5CFF" icon="🏛" />
+      </div>
+
+      <Card className="bc-budget-tip">
+        💡 Obligaciones cubiertas esta quincena: <strong>{s.obligPaidCount}/{s.obligTotalCount}</strong>.
+        Recuerda: primero las obligaciones, luego el ahorro y al final tus gustos.
+      </Card>
+    </div>
+  );
+}
+
 /* -------- helpers -------- */
 function txColor(type) {
   return type === "income" ? "#1FB85A" : type === "expense" ? "#FF4D5E" : "#2E8BFF";
@@ -550,5 +634,5 @@ function shade(hex, amt) {
 
 Object.assign(window, {
   ScreenInicio, ScreenGanar, ScreenPagar, ScreenAhorro, ScreenRegistro, ScreenPresupuesto, ScreenLogros,
-  ScreenFondo, FundTeaser,
+  ScreenFondo, FundTeaser, ScreenPanel,
 });

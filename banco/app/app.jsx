@@ -18,8 +18,8 @@ const NAV = [
   { id: "pagar", label: "Pagar", icon: "🧾" },
   { id: "ahorro", label: "Ahorro", icon: "🐷" },
   { id: "logros", label: "Logros", icon: "🏅" },
-  { id: "registro", label: "Registro", icon: "📜" },
   { id: "presupuesto", label: "Plan", icon: "📊" },
+  { id: "panel", label: "Panel", icon: "📈" },
 ];
 
 function App() {
@@ -195,6 +195,7 @@ function ChildScreens({ child, tab, nav, approval }) {
     case "logros": return <ScreenLogros child={child} />;
     case "registro": return <ScreenRegistro child={child} />;
     case "presupuesto": return <ScreenPresupuesto child={child} />;
+    case "panel": return <ScreenPanel child={child} />;
     case "fondo": return <ScreenFondo child={child} />;
     default: return <ScreenInicio child={child} nav={nav} />;
   }
