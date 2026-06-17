@@ -283,6 +283,18 @@ h1,h2,h3{ font-family:'Baloo 2',cursive; font-weight:700; line-height:1.1; }
 .bc-bt-row{ display:flex; justify-content:space-between; font-weight:800; color:var(--text); font-size:.95rem; }
 .bc-bt-row strong{ font-family:'Baloo 2'; }
 .bc-budget-tip{ background:#FFB02016; border:2px solid #FFB02040; font-weight:700; color:var(--text-soft); font-size:.9rem; line-height:1.5; }
+.bc-budget-group{ font-family:'Baloo 2'; font-weight:800; font-size:.9rem; color:var(--text-soft); margin-bottom:2px; }
+.bc-pct-tag{ font-size:.7rem; font-weight:900; color:#fff; background:var(--muted); padding:1px 7px; border-radius:8px; margin-left:4px; vertical-align:middle; }
+.bc-salary-card{ text-align:center; }
+.bc-salary-label{ font-weight:800; color:var(--text-soft); font-size:.85rem; }
+.bc-salary-amount{ font-family:'Baloo 2'; font-weight:800; font-size:2.4rem; line-height:1.1; }
+.bc-salary-sub{ font-weight:700; color:var(--text-soft); font-size:.78rem; }
+.bc-receipt{ display:flex; flex-direction:column; gap:6px; }
+.bc-receipt-head{ font-family:'Baloo 2'; font-weight:800; font-size:1rem; margin-bottom:2px; }
+.bc-receipt-row{ display:flex; justify-content:space-between; font-weight:800; color:var(--text); font-size:.95rem; }
+.bc-receipt-row.sub{ color:var(--text-soft); font-weight:700; }
+.bc-receipt-row strong{ font-family:'Baloo 2'; }
+.bc-receipt-row.total{ border-top:2px solid; margin-top:4px; padding-top:6px; font-size:1.1rem; }
 
 /* ============ IVA / FONDO FAMILIAR ============ */
 .bc-iva-note{ background:#7C5CFF12; border:2px solid #7C5CFF33; font-weight:700; color:var(--text-soft); font-size:.9rem; line-height:1.5; }
@@ -431,6 +443,8 @@ h1,h2,h3{ font-family:'Baloo 2',cursive; font-weight:700; line-height:1.1; }
 <!-- Familia y PIN del Hogar (fusión): el banco deriva sus cuentas de aquí -->
 <script src="../images.js"></script>
 <script src="../data.js"></script>
+<!-- Catálogo de tareas de "Mi día": el banco calcula con él el salario esperado -->
+<script src="../micro-data.js"></script>
 
 <!-- Nube (Firebase): sincroniza el banco entre dispositivos. Si no está
      configurado, el banco guarda solo en este dispositivo. -->

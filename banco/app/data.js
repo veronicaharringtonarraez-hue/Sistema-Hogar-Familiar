@@ -108,6 +108,54 @@
     return MONTHS[m] + " " + y;
   }
 
+  // ---- Quincena: el periodo del salario y el presupuesto ----
+  // Clave "AÑO-MES-MITAD" (mitad 1 = días 1-15, mitad 2 = 16-fin de mes).
+  function quincenaKey(d) { d = d || new Date(); return d.getFullYear() + "-" + d.getMonth() + "-" + (d.getDate() <= 15 ? 1 : 2); }
+  function quincenaLabel(key) {
+    const p = key.split("-").map(Number);
+    return (p[2] === 1 ? "1ª" : "2ª") + " quincena · " + MONTHS[p[1]] + " " + p[0];
+  }
+  function quincenaBounds(d) {
+    d = d || new Date();
+    const y = d.getFullYear(), m = d.getMonth(), h = d.getDate() <= 15 ? 1 : 2;
+    const from = new Date(y, m, h === 1 ? 1 : 16, 0, 0, 0, 0);
+    const to = h === 1 ? new Date(y, m, 15, 23, 59, 59, 999) : new Date(y, m + 1, 0, 23, 59, 59, 999);
+    return { from: from.getTime(), to: to.getTime() };
+  }
+  // El periodo económico del niño es la quincena.
+  const periodKey = quincenaKey;
+  const periodLabel = quincenaLabel;
+
+  // ---- Distribución del presupuesto (% sobre el ingreso NETO) ----
+  // Editables desde configuración (state.budgetPct). Suman 100.
+  const BUDGET_CATS = [
+    { id: "vivienda",     label: "Vivienda",          icon: "🏠", pct: 30, group: "Necesidades básicas", kind: "obligacion", desc: "El techo donde vives" },
+    { id: "alimentacion", label: "Alimentación",      icon: "🍎", pct: 15, group: "Necesidades básicas", kind: "obligacion", desc: "Comida del periodo" },
+    { id: "transporte",   label: "Transporte",        icon: "🚗", pct: 10, group: "Necesidades básicas", kind: "obligacion", desc: "Carro, gasolina y viajes" },
+    { id: "diezmo",       label: "Diezmo",            icon: "⛪", pct: 10, group: "Futuro y compromisos", kind: "obligacion", desc: "Para la iglesia" },
+    { id: "ahorro",       label: "Ahorro",            icon: "💾", pct: 10, group: "Futuro y compromisos", kind: "ahorro",     desc: "Para tu meta" },
+    { id: "educacion",    label: "Educación",         icon: "📚", pct: 5,  group: "Futuro y compromisos", kind: "obligacion", desc: "Útiles y materiales" },
+    { id: "emergencias",  label: "Emergencias",       icon: "🚨", pct: 5,  group: "Protección financiera", kind: "obligacion", desc: "Para imprevistos" },
+    { id: "ropa",         label: "Ropa",              icon: "👕", pct: 5,  group: "Protección financiera", kind: "obligacion", desc: "Lo que vistes" },
+    { id: "gustos",       label: "Gustos personales", icon: "🎉", pct: 10, group: "Estilo de vida",        kind: "gustos",     desc: "Diversión y caprichos" },
+  ];
+  function budgetCat(id) { return BUDGET_CATS.find((c) => c.id === id); }
+
+  // ---- Salario esperado (auto, según responsabilidades asignadas) ----
+  // Usa el catálogo del sistema "Mi día" (window.ROUTINES). Calcula los puntos
+  // POSIBLES por quincena (14 días) según la frecuencia de cada tarea.
+  function occPerQuincena(t) {
+    if (t.days && t.days.length) return t.days.length * 2;        // días fijos de la semana
+    if (t.freq === "semanal" || t.moment === "semana") return 2;  // bolsa semanal
+    return 14;                                                     // diario
+  }
+  function expectedSalaryGross(pid) {
+    if (!window.ROUTINES) return 0;
+    const P = window.MICRO_POINTS || 10;
+    return window.ROUTINES.filter((t) => t.pid === pid)
+      .reduce((s, t) => s + occPerQuincena(t) * P, 0);
+  }
+
   // ---- Insignias / medallas (se desbloquean solas) ----
   const BADGES = [
     { id: "primer_billete", icon: "🪙", color: "#FFB020", name: "Primer billete",       desc: "Ganaste dinero por primera vez." },
@@ -149,6 +197,8 @@
     CHILDREN, EXPENSES, PERCENT_DUES, CHORES, BADGES, evaluateBadges,
     EXAM_BONUS_MAX, examBonus, fixedTotal, money,
     MONTHS, monthKey, monthLabel,
+    quincenaKey, quincenaLabel, quincenaBounds, periodKey, periodLabel,
+    BUDGET_CATS, budgetCat, expectedSalaryGross,
     IVA_DEFAULT, FUND_CATS, fundCat,
     DEFAULT_PIN: (window.PARENT_PIN || "181215"),
   };
