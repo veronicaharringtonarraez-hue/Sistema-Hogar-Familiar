@@ -100,9 +100,9 @@ function GivePoints({ child, actions, fx }) {
   const [label, setLabel] = useState("");
   return (
     <Card className="bc-padmin">
-      <div className="bc-padmin-title">💪 Dar puntos / dinero</div>
+      <div className="bc-padmin-title">💪 Dar puntos extra</div>
       <div className="bc-chip-row wrap">
-        {[5, 10, 20, 30].map((v) => (
+        {[10, 20, 50, 100].map((v) => (
           <button key={v} className="bc-chip green" onClick={() => { actions.earn(child.id, v, "Puntos extra de Mamá/Papá", "extra", "✨"); fx.toast(`+${BC.money(v)} para ${child.name}`); }}>
             +{BC.money(v)}
           </button>
@@ -146,7 +146,7 @@ function ExamBonus({ child, actions, fx }) {
         <strong style={{ color: b.amount > 0 ? "#1FB85A" : "#FF4D5E" }}>{b.pct}% · {BC.money(b.amount)}</strong>
       </div>
       <div className="bc-exam-scale">
-        ≥95 → $100 · 90-94 → $80 · 85-89 → $70 · 80-84 → $50 · &lt;80 → $0
+        ≥95 → 100 · 90-94 → 80 · 85-89 → 70 · 80-84 → 50 · &lt;80 → 0 (pts)
       </div>
       <button className="bc-btn-primary full" disabled={b.amount <= 0} onClick={() => {
         actions.earn(child.id, b.amount, `Bono de exámenes (prom. ${avg})`, "bono", "🎓");
