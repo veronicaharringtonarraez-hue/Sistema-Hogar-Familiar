@@ -328,3 +328,109 @@ window.MICRO_BONUSES = [
   { id: 'dia',        label: 'Completar todas sus tareas del día',       icon: '🏅', pts: 50 },
 ];
 window.MICRO_BONUS = id => window.MICRO_BONUSES.find(b => b.id === id);
+
+/* ============================================================
+   PRIVILEGIOS POR MÉRITO
+   ------------------------------------------------------------
+   Se desbloquean con los PUNTOS OBTENIDOS en el período (esfuerzo),
+   nunca con el saldo. Comparan lo ganado vs. lo posible (las tareas
+   asignadas ese día / esa semana).
+   ============================================================ */
+window.PRIV_DEFAULTS = {
+  screen: {
+    enabled: true,
+    kids: ['taylor', 'emmeth'],     // quiénes participan
+    minPct: 70,                     // % mínimo del día para desbloquear
+    max: 120,                       // minutos máximos absolutos
+    // [porcentaje alcanzado, minutos]
+    tiers: [[70, 30], [80, 60], [90, 90], [100, 120]],
+    days: [1, 2, 3, 4, 5],          // Lun..Vie
+  },
+  titos: {
+    enabled: true,
+    kids: ['taylor', 'emmeth'],
+    minPct: 70,                     // % de Lun..Vie
+    days: [1, 2, 3, 4, 5],
+    evalDay: 5,                     // viernes
+    phone: '+506 7231 2428',
+    message: 'Hola Tita ❤️\n\nSoy {nombre}.\n\n¡Ya cumplí con todas mis responsabilidades de esta semana y obtuve los puntos necesarios para ganar mi premio! 🥳\n\n¿Puedo ir a pasar tiempo de calidad contigo este viernes? Me emociona mucho compartir contigo, ir a la piscina y jugar juntos.\n\n¡Te quiero mucho! 💕',
+  },
+  pets: {
+    enabled: true,
+    weeklyMin: 500,                 // puntos de la semana para desbloquear
+  },
+};
+
+/* configuración efectiva = defaults + lo guardado por los padres */
+window.getPrivCfg = (store) => {
+  const d = window.PRIV_DEFAULTS;
+  const c = (store && store.privCfg) || {};
+  return {
+    screen: Object.assign({}, d.screen, c.screen),
+    titos: Object.assign({}, d.titos, c.titos),
+    pets: Object.assign({}, d.pets, c.pets),
+  };
+};
+
+/* puntos POSIBLES de un día = nº de tareas asignadas ese día × 10 */
+window.possiblePointsForDay = (pid, d = new Date()) =>
+  window.routinesFor(pid).filter(t => window.appliesToday(t, d)).length * window.MICRO_POINTS;
+
+/* puntos POSIBLES en un rango de días [from..to] (timestamps ms) */
+window.possibleInRange = (pid, from, to) => {
+  let s = 0;
+  const d = new Date(from); d.setHours(0, 0, 0, 0);
+  const end = new Date(to);
+  while (d <= end) { s += window.possiblePointsForDay(pid, d); d.setDate(d.getDate() + 1); }
+  return s;
+};
+
+/* puntos GANADOS (aprobados) en un rango [from..to] (timestamps ms).
+   includeUndated: cuenta marcas sin fecha (compat con marcas antiguas). */
+window.earnedInRange = (pid, store, from, to, includeUndated) => {
+  let s = 0;
+  const marks = (store && store.marks) || {};
+  window.routinesFor(pid).forEach(t => {
+    const m = marks[pid + ':' + t.id];
+    if (!m || m.s !== 'ok') return;
+    if (m.at) { if (m.at >= from && m.at <= to) s += window.routinePoints(t, m); }
+    else if (includeUndated) s += window.routinePoints(t, m);
+  });
+  (store && store.bonus || []).forEach(b => {
+    if (b.pid !== pid) return;
+    if (b.at) { if (b.at >= from && b.at <= to) s += b.pts || 0; }
+    else if (includeUndated) s += b.pts || 0;
+  });
+  return s;
+};
+
+/* límites de un día (de 00:00 a 23:59:59.999) */
+window.dayBounds = (d = new Date()) => {
+  const a = new Date(d); a.setHours(0, 0, 0, 0);
+  const b = new Date(d); b.setHours(23, 59, 59, 999);
+  return { from: a.getTime(), to: b.getTime() };
+};
+/* lunes 00:00 y viernes 23:59 de la semana de la fecha dada */
+window.weekMonFri = (d = new Date()) => {
+  const day = d.getDay();                 // 0=Dom..6=Sáb
+  const diff = (day === 0 ? -6 : 1 - day); // hasta el lunes
+  const mon = new Date(d); mon.setDate(d.getDate() + diff); mon.setHours(0, 0, 0, 0);
+  const fri = new Date(mon); fri.setDate(mon.getDate() + 4); fri.setHours(23, 59, 59, 999);
+  return { mon: mon.getTime(), fri: fri.getTime() };
+};
+
+/* minutos de pantalla según el % alcanzado (entero 0..100+) */
+window.screenMinutes = (cfg, pct) => {
+  const sc = cfg.screen;
+  if (pct < sc.minPct) return 0;
+  let min = 0;
+  (sc.tiers || []).forEach(([th, m]) => { if (pct >= th) min = m; });
+  return Math.min(min, sc.max);
+};
+
+/* mensaje para los Titos con el nombre del niño */
+window.titosMessage = (cfg, name) => (cfg.titos.message || '').replace(/\{nombre\}/g, name);
+window.titosWaLink = (cfg, name) => {
+  const phone = String(cfg.titos.phone || '').replace(/[^0-9]/g, '');
+  return 'https://wa.me/' + phone + '?text=' + encodeURIComponent(window.titosMessage(cfg, name));
+};

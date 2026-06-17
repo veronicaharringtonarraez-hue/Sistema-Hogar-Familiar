@@ -139,12 +139,36 @@
   .oc-row b{min-width:18px;text-align:center;font-size:15px;color:var(--ink);}
   .oc-row button{width:26px;height:26px;border-radius:8px;border:0;background:#efeaff;color:var(--a);font-weight:900;font-size:16px;cursor:pointer;}
 
+  /* ===== Privilegios por mérito ===== */
+  .priv{background:var(--card);border-radius:20px;box-shadow:var(--shadow-sm);padding:14px 16px;margin-bottom:12px;border:2px solid transparent;transition:transform .18s, box-shadow .18s;}
+  .priv.lock{opacity:.55;filter:grayscale(1);}
+  .priv.prog{border-color:#f5d58a;}
+  .priv.open{border-color:var(--good);transform:scale(1.015);box-shadow:0 14px 30px -12px rgba(34,193,120,.5);animation:privPop .5s cubic-bezier(.2,1.4,.4,1);}
+  @keyframes privPop{from{transform:scale(.96);}to{transform:scale(1.015);}}
+  .priv-h{display:flex;align-items:center;gap:12px;}
+  .priv-ic{font-size:26px;width:48px;height:48px;border-radius:14px;display:grid;place-items:center;background:#f4f2fb;flex:0 0 auto;}
+  .priv.open .priv-ic{background:#dff6e8;}
+  .priv-t{font-family:var(--font-display);font-weight:800;font-size:16px;display:flex;align-items:center;gap:8px;}
+  .priv-c{font-size:12.5px;color:var(--ink-2);font-weight:600;}
+  .priv-badge{font-family:var(--font-display);font-weight:800;font-size:10px;color:#fff;background:var(--good);padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.04em;}
+  .priv-bar{height:12px;background:#ece9f6;border-radius:10px;overflow:hidden;margin:10px 0 6px;}
+  .priv-bar>i{display:block;height:100%;border-radius:10px;background:linear-gradient(90deg,var(--a),var(--b));transition:width .5s;}
+  .priv.open .priv-bar>i{background:linear-gradient(90deg,#22c178,#48d28f);}
+  .priv-meta{display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:var(--ink-2);}
+  .priv-prize{margin-top:10px;padding:9px 12px;border-radius:12px;background:#f4f2fb;color:var(--ink-2);font-weight:700;font-size:13px;text-align:center;}
+  .priv-prize.on{background:#dff6e8;color:#0f7a4a;}
+  .priv-action{width:100%;margin-top:10px;border:0;border-radius:14px;padding:12px;background:linear-gradient(135deg,#25D366,#1db954);color:#fff;font-family:var(--font-display);font-weight:800;font-size:15px;cursor:pointer;box-shadow:0 10px 22px -10px #1db954;}
+  .toggle{margin-left:auto;border:0;border-radius:999px;padding:3px 12px;font-family:var(--font-display);font-weight:800;font-size:11px;cursor:pointer;background:#eceaf4;color:var(--muted);}
+  .toggle.on{background:var(--good);color:#fff;}
+  textarea.sel{font-size:13px;line-height:1.4;}
+
   @media(min-width:900px){
     .content{display:grid;grid-template-columns:1fr 1fr;gap:0 18px;align-items:start;}
     .content > .card{break-inside:avoid;}
     /* progress y momentos ocupan todo el ancho (flujo vertical del día) */
     .content > .card.progress{grid-column:1 / -1;}
     .content > .moment{grid-column:1 / -1;}
+    .content > .priv{grid-column:1 / -1;}
   }
 </style>
 </head>
