@@ -177,6 +177,117 @@ function MyDay({ pid, store, onClaim, onCheck, showToast }) {
 }
 
 /* =========================================================
+   PRIVILEGIOS POR MÉRITO (vista del niño)
+   ========================================================= */
+function PrivCard({ icon, title, sub, pct, state, remaining, children }) {
+  // pct: 0..100+ ; state: 'lock' | 'prog' | 'open'
+  const w = Math.max(0, Math.min(100, Math.round(pct)));
+  return (
+    <div className={'priv ' + state}>
+      <div className="priv-h">
+        <span className="priv-ic">{icon}</span>
+        <div className="grow">
+          <div className="priv-t">{title} {state === 'open' && <span className="priv-badge">Disponible</span>}</div>
+          <div className="priv-c">{sub}</div>
+        </div>
+      </div>
+      <div className="priv-bar"><i style={{ width: w + '%' }} /></div>
+      <div className="priv-meta">
+        <span>{w}%</span>
+        <span>{state === 'open' ? '¡Lo lograste! 🎉' : (remaining > 0 ? 'Faltan ' + remaining + ' pts' : '—')}</span>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function Privileges({ pid, store, showToast }) {
+  const p = window.PERSON(pid);
+  const cfg = window.getPrivCfg(store);
+  const today = new Date();
+
+  if (!p.isKid) {
+    return <div className="empty">Los premios por mérito son para los niños. Elige a Tay-Yay o Dondo arriba. 🌟</div>;
+  }
+
+  // ---- Tiempo de pantalla (hoy) ----
+  const db = window.dayBounds(today);
+  const possToday = window.possiblePointsForDay(pid, today);
+  const earnToday = window.earnedInRange(pid, store, db.from, db.to, false);
+  const pctToday = possToday ? (earnToday / possToday * 100) : 0;
+  const screenOn = cfg.screen.enabled && cfg.screen.kids.includes(pid);
+  const minutes = window.screenMinutes(cfg, pctToday);
+  const screenState = !screenOn ? 'lock' : (minutes > 0 ? 'open' : 'prog');
+  const screenThreshold = Math.ceil(possToday * cfg.screen.minPct / 100);
+  const screenRemaining = Math.max(0, screenThreshold - earnToday);
+
+  // ---- Visita a los Titos (Lun..Vie) ----
+  const wk = window.weekMonFri(today);
+  const possWeek = window.possibleInRange(pid, wk.mon, wk.fri);
+  const earnWeek = window.earnedInRange(pid, store, wk.mon, wk.fri, true);
+  const pctWeek = possWeek ? (earnWeek / possWeek * 100) : 0;
+  const titosOn = cfg.titos.enabled && cfg.titos.kids.includes(pid);
+  const titosThreshold = Math.ceil(possWeek * cfg.titos.minPct / 100);
+  const titosUnlocked = titosOn && earnWeek >= titosThreshold && titosThreshold > 0;
+  const titosState = !titosOn ? 'lock' : (titosUnlocked ? 'open' : 'prog');
+  const titosRemaining = Math.max(0, titosThreshold - earnWeek);
+
+  // ---- Mascotas (semana completa) ----
+  const earnFullWeek = personPts(pid, store);
+  const petsOn = cfg.pets.enabled;
+  const petsUnlocked = petsOn && earnFullWeek >= cfg.pets.weeklyMin;
+  const petsState = !petsOn ? 'lock' : (petsUnlocked ? 'open' : 'prog');
+  const petsPct = cfg.pets.weeklyMin ? (earnFullWeek / cfg.pets.weeklyMin * 100) : 0;
+  const petsRemaining = Math.max(0, cfg.pets.weeklyMin - earnFullWeek);
+
+  function avisarTita() {
+    const url = window.titosWaLink(cfg, REAL(p));
+    window.open(url, '_blank');
+    showToast('Abriendo mensaje para Tita… un adulto confirma el envío 💕');
+  }
+
+  return (
+    <>
+      <div className="card progress">
+        <div className="row between">
+          <span className="eyebrow">Premios por esfuerzo</span>
+          <span className="chip pts">⭐ {earnFullWeek} pts esta semana</span>
+        </div>
+        <div className="area-c" style={{ marginTop: 6 }}>Se ganan con los puntos que <b>obtienes</b>, no con tu saldo. Aunque gastes, tus premios se mantienen.</div>
+      </div>
+
+      {(cfg.screen.kids.includes(pid) || pid === 'christopher') && (
+        <PrivCard icon="📺" title="Tiempo de pantalla"
+          sub={screenOn ? ('Hoy: ' + earnToday + '/' + possToday + ' pts del día') : 'Disponible cuando tengas la edad'}
+          pct={pctToday} state={screenState} remaining={screenRemaining}>
+          {screenOn && (
+            <div className={'priv-prize' + (minutes > 0 ? ' on' : '')}>
+              {minutes > 0 ? ('🎮 ' + minutes + ' min de pantalla hoy') : ('Llega al ' + cfg.screen.minPct + '% para ganar pantalla')}
+            </div>
+          )}
+        </PrivCard>
+      )}
+
+      <PrivCard icon="🐶" title="Actividades con mascotas"
+        sub={petsOn ? ('Semana: ' + earnFullWeek + '/' + cfg.pets.weeklyMin + ' pts') : 'Desactivado'}
+        pct={petsPct} state={petsState} remaining={petsRemaining}>
+        {petsUnlocked && <div className="priv-prize on">🐾 ¡Puedes jugar, cepillar y pasear!</div>}
+      </PrivCard>
+
+      {titosOn && (
+        <PrivCard icon="👵" title="Visita a los Titos"
+          sub={'Lun a Vie: ' + earnWeek + '/' + possWeek + ' pts'}
+          pct={pctWeek} state={titosState} remaining={titosRemaining}>
+          {titosUnlocked
+            ? <button className="priv-action" onClick={avisarTita}>📩 Avisar a Tita</button>
+            : <div className="priv-prize">Junta el {cfg.titos.minPct}% de tu semana para el premio del viernes</div>}
+        </PrivCard>
+      )}
+    </>
+  );
+}
+
+/* =========================================================
    PANEL PADRES: inspección + ranking + bonos
    ========================================================= */
 function InspectRow({ pid, t, onApproveTask, onApproveArea, onReject }) {
@@ -221,7 +332,52 @@ function InspectRow({ pid, t, onApproveTask, onApproveArea, onReject }) {
   );
 }
 
-function ParentPanel({ store, onApproveTask, onApproveArea, onReject, onGrant, showToast }) {
+function NumRow({ label, value, step = 5, min = 0, onChange, suffix }) {
+  return (
+    <div className="oc-row" style={{ marginTop: 6 }}>
+      <span style={{ width: 'auto', flex: 1 }}>{label}</span>
+      <button onClick={() => onChange(Math.max(min, (value || 0) - step))}>−</button>
+      <b>{value}{suffix || ''}</b>
+      <button onClick={() => onChange((value || 0) + step)}>+</button>
+    </div>
+  );
+}
+
+function PrivConfig({ store, onCfg }) {
+  const cfg = window.getPrivCfg(store);
+  return (
+    <div className="card area">
+      <div className="area-h"><span className="area-ic">🌟</span><div><div className="area-t">Premios por mérito</div><div className="area-c">desbloqueo por esfuerzo (puntos ganados)</div></div></div>
+
+      <div className="sub">
+        <div className="sub-h">📺 Tiempo de pantalla <Toggle on={cfg.screen.enabled} onClick={() => onCfg('screen', 'enabled', !cfg.screen.enabled)} /></div>
+        <NumRow label="% mínimo del día" value={cfg.screen.minPct} step={5} onChange={v => onCfg('screen', 'minPct', v)} suffix="%" />
+        <NumRow label="Máximo diario (min)" value={cfg.screen.max} step={15} onChange={v => onCfg('screen', 'max', v)} />
+        <div className="area-c" style={{ marginTop: 6 }}>Escalones: 70%→30 · 80%→60 · 90%→90 · 100%→120 min</div>
+      </div>
+
+      <div className="sub">
+        <div className="sub-h">👵 Visita a los Titos <Toggle on={cfg.titos.enabled} onClick={() => onCfg('titos', 'enabled', !cfg.titos.enabled)} /></div>
+        <NumRow label="% requerido (Lun-Vie)" value={cfg.titos.minPct} step={5} onChange={v => onCfg('titos', 'minPct', v)} suffix="%" />
+        <div className="sub-h" style={{ marginTop: 8 }}>Teléfono (WhatsApp)</div>
+        <input className="sel" value={cfg.titos.phone} onChange={e => onCfg('titos', 'phone', e.target.value)} />
+        <div className="sub-h" style={{ marginTop: 8 }}>Mensaje (usa {'{nombre}'})</div>
+        <textarea className="sel" rows={5} value={cfg.titos.message} onChange={e => onCfg('titos', 'message', e.target.value)} style={{ resize: 'vertical' }} />
+      </div>
+
+      <div className="sub">
+        <div className="sub-h">🐶 Mascotas <Toggle on={cfg.pets.enabled} onClick={() => onCfg('pets', 'enabled', !cfg.pets.enabled)} /></div>
+        <NumRow label="Puntos de la semana" value={cfg.pets.weeklyMin} step={50} onChange={v => onCfg('pets', 'weeklyMin', v)} />
+      </div>
+    </div>
+  );
+}
+
+function Toggle({ on, onClick }) {
+  return <button className={'toggle' + (on ? ' on' : '')} onClick={onClick}>{on ? 'ON' : 'OFF'}</button>;
+}
+
+function ParentPanel({ store, onApproveTask, onApproveArea, onReject, onGrant, onCfg, showToast }) {
   const [bonusPid, setBonusPid] = useState('taylor');
   const [bonusType, setBonusType] = useState('hermano');
 
@@ -280,6 +436,8 @@ function ParentPanel({ store, onApproveTask, onApproveArea, onReject, onGrant, s
           Dar bono
         </button>
       </div>
+
+      {onCfg && <PrivConfig store={store} onCfg={onCfg} />}
     </>
   );
 }
@@ -342,10 +500,11 @@ function App() {
     checks[k] = arr;
     persist({ ...store, checks });
   }
-  function approveTask(pid, id, pts) { const v = (typeof pts === 'number') ? pts : window.MICRO_POINTS; persist({ ...store, marks: { ...store.marks, [pid + ':' + id]: { s: 'ok', pts: v } } }); showToast('Aprobada +' + v + ' ✓'); }
-  function approveArea(pid, id, o, c) { persist({ ...store, marks: { ...store.marks, [pid + ':' + id]: { s: 'ok', o, c } } }); showToast('Área aprobada +' + (o + c) + ' ✓'); }
+  function approveTask(pid, id, pts) { const v = (typeof pts === 'number') ? pts : window.MICRO_POINTS; persist({ ...store, marks: { ...store.marks, [pid + ':' + id]: { s: 'ok', pts: v, at: Date.now() } } }); showToast('Aprobada +' + v + ' ✓'); }
+  function approveArea(pid, id, o, c) { persist({ ...store, marks: { ...store.marks, [pid + ':' + id]: { s: 'ok', o, c, at: Date.now() } } }); showToast('Área aprobada +' + (o + c) + ' ✓'); }
   function reject(pid, id) { const marks = { ...store.marks }; delete marks[pid + ':' + id]; persist({ ...store, marks }); }
   function grant(b) { persist({ ...store, bonus: [...(store.bonus || []), b] }); }
+  function setPrivCfg(section, key, value) { const cfg = { ...(store.privCfg || {}) }; cfg[section] = { ...(cfg[section] || {}), [key]: value }; persist({ ...store, privCfg: cfg }); }
 
   /* ---- sincronización en la nube (documento propio: hogar-micro) ---- */
   useEffect(() => {
@@ -398,13 +557,15 @@ function App() {
 
       <div className="seg">
         <button className={tab === 'mis' ? 'on' : ''} onClick={() => setTab('mis')}>🎯 Mi día</button>
+        <button className={tab === 'priv' ? 'on' : ''} onClick={() => setTab('priv')}>🌟 Premios</button>
         <button className={tab === 'padres' ? 'on' : ''} onClick={() => setTab('padres')}>🔍 Padres</button>
       </div>
 
       <div className="content">
         {tab === 'mis' && <MyDay pid={profile} store={store} onClaim={claim} onCheck={check} showToast={showToast} />}
+        {tab === 'priv' && <Privileges pid={profile} store={store} showToast={showToast} />}
         {tab === 'padres' && (pinOk
-          ? <ParentPanel store={store} onApproveTask={approveTask} onApproveArea={approveArea} onReject={reject} onGrant={grant} showToast={showToast} />
+          ? <ParentPanel store={store} onApproveTask={approveTask} onApproveArea={approveArea} onReject={reject} onGrant={grant} onCfg={setPrivCfg} showToast={showToast} />
           : <PinGate onOk={() => setPinOk(true)} onCancel={() => setTab('mis')} />)}
       </div>
 
