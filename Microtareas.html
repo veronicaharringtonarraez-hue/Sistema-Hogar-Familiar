@@ -97,11 +97,54 @@
   /* toast */
   .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;font-family:var(--font-display);font-weight:700;font-size:14px;padding:11px 18px;border-radius:16px;box-shadow:0 12px 30px -10px rgba(0,0,0,.5);z-index:120;white-space:nowrap;}
 
+  /* nombres dobles */
+  .hi .nm .nm-real{font-size:13px;color:var(--ink-2);font-weight:700;}
+  .real{color:var(--muted);font-weight:700;font-size:12px;}
+  .who .w small{font-size:10px;color:var(--muted);font-weight:700;line-height:1;}
+  .mt-ic{font-size:18px;flex:0 0 auto;}
+
+  /* momentos del día (acordeón) */
+  .moment{background:var(--card);border-radius:20px;box-shadow:var(--shadow-sm);margin-bottom:12px;overflow:hidden;border:2px solid transparent;}
+  .moment.now{border-color:var(--a);}
+  .moment-h{width:100%;display:flex;align-items:center;gap:12px;border:0;background:transparent;cursor:pointer;padding:14px 16px;text-align:left;}
+  .moment-ic{font-size:24px;width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:#f4f2fb;flex:0 0 auto;}
+  .moment.now .moment-ic{background:linear-gradient(135deg,var(--a),var(--b));}
+  .moment-t{font-family:var(--font-display);font-weight:800;font-size:16px;display:flex;align-items:center;gap:8px;}
+  .moment-c{font-size:12px;color:var(--ink-2);font-weight:600;}
+  .nowtag{font-family:var(--font-display);font-weight:800;font-size:10px;color:#fff;background:var(--a);padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.04em;}
+  .chev{font-size:16px;color:var(--muted);}
+  .moment-body{padding:0 12px 12px;}
+  .grp{margin-top:8px;}
+  .grp-h{font-family:var(--font-display);font-weight:700;font-size:13px;color:var(--ink);margin:8px 6px 4px;}
+
+  /* área con checklist */
+  .areacard{background:#faf9ff;border:2px solid var(--line);border-radius:16px;padding:12px;margin:6px 0;}
+  .areacard.claim{border-color:#f5a623;}
+  .areacard.ok{border-color:var(--good);background:#f3fbf6;}
+  .ptbadge{font-family:var(--font-display);font-weight:800;font-size:10px;color:var(--a);background:#efeaff;padding:2px 7px;border-radius:9px;vertical-align:middle;}
+  .tagp.big{font-size:13px;padding:4px 10px;}
+  .checklist{margin:8px 0;}
+  .chk{display:flex;align-items:center;gap:10px;padding:7px 6px;border-radius:10px;cursor:pointer;font-size:13.5px;font-weight:600;color:var(--ink-2);}
+  .chk:hover{background:#fff;}
+  .chk .cbox{width:22px;height:22px;border-radius:7px;border:2.5px solid #d9d4ec;flex:0 0 auto;display:grid;place-items:center;font-size:12px;color:#fff;background:#fff;}
+  .chk.on .cbox{background:var(--good);border-color:var(--good);}
+  .chk.on{color:var(--muted);text-decoration:line-through;}
+  .area-claim{width:100%;margin-top:6px;border:0;border-radius:13px;padding:11px;background:linear-gradient(135deg,var(--a),var(--b));color:#fff;font-family:var(--font-display);font-weight:800;font-size:14px;cursor:pointer;}
+  .area-claim.claimed{background:#fff7e9;color:#9a6b00;border:2px solid #f5a623;}
+
+  /* steppers de orden/limpieza */
+  .oc{margin-top:8px;display:flex;flex-direction:column;gap:6px;}
+  .oc-row{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;color:var(--ink-2);}
+  .oc-row span{width:64px;}
+  .oc-row b{min-width:18px;text-align:center;font-size:15px;color:var(--ink);}
+  .oc-row button{width:26px;height:26px;border-radius:8px;border:0;background:#efeaff;color:var(--a);font-weight:900;font-size:16px;cursor:pointer;}
+
   @media(min-width:900px){
     .content{display:grid;grid-template-columns:1fr 1fr;gap:0 18px;align-items:start;}
     .content > .card{break-inside:avoid;}
-    /* progress ocupa todo el ancho */
+    /* progress y momentos ocupan todo el ancho (flujo vertical del día) */
     .content > .card.progress{grid-column:1 / -1;}
+    .content > .moment{grid-column:1 / -1;}
   }
 </style>
 </head>
