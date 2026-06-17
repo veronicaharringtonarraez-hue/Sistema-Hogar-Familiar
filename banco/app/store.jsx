@@ -5,6 +5,19 @@ const STORE_KEY = "bancoCrece.v1";
 // Clave del módulo de tareas (Panel de Padres). El banco lee de aquí los
 // puntos ya aprobados por los padres para abonarlos 1:1 (1 punto = 1 $).
 const TASKS_KEY = "fam_tareas_v1";
+// Clave del NUEVO sistema inteligente de tareas (módulo Microtareas / "Mi día").
+// El banco también lee de aquí los puntos aprobados: rutinas (1 punto) y áreas
+// calificadas por orden + limpieza (la marca trae o/c → puntos = o + c).
+const MICRO_KEY = "fam_micro_v1";
+
+// Puntos de una marca del nuevo sistema, sin depender del catálogo:
+//   • aprobada con orden/limpieza (área) → o + c
+//   • aprobada simple (rutina)           → 1
+function microMarkPoints(m) {
+  if (!m || m.s !== "ok") return 0;
+  if (typeof m.o === "number" || typeof m.c === "number") return (m.o || 0) + (m.c || 0);
+  return 1;
+}
 
 function freshMonth() {
   return { income: 0, paid: {}, diezmoPaid: 0, ahorroDone: 0 };
@@ -34,6 +47,9 @@ function defaultState() {
     // al banco en la semana en curso. Sirve para no abonar dos veces y para
     // reiniciar el conteo cuando empieza una semana nueva.
     pointsCredited: {},
+    // Libro mayor del NUEVO sistema (fam_micro_v1), separado del anterior para
+    // que cada fuente se abone de forma independiente y nunca se duplique.
+    pointsCreditedMicro: {},
     data,
   };
 }
@@ -48,6 +64,7 @@ function mergeState(parsed) {
   base.budgets = (parsed.budgets && typeof parsed.budgets === "object") ? parsed.budgets : {};
   base.requests = Array.isArray(parsed.requests) ? parsed.requests : [];
   base.pointsCredited = (parsed.pointsCredited && typeof parsed.pointsCredited === "object") ? parsed.pointsCredited : {};
+  base.pointsCreditedMicro = (parsed.pointsCreditedMicro && typeof parsed.pointsCreditedMicro === "object") ? parsed.pointsCreditedMicro : {};
   BC.CHILDREN.forEach((c) => {
     if (parsed.data && parsed.data[c.id]) {
       base.data[c.id] = Object.assign(freshChild(), parsed.data[c.id]);
@@ -103,16 +120,18 @@ function StoreProvider({ children }) {
   // solo abona la diferencia que aún no se ha pasado, así una recarga no
   // duplica dinero. Cuando empieza una semana nueva (cambia "week"), el
   // contador vuelve a cero y se abonan los puntos de la semana nueva.
-  function readApprovedPoints() {
+  // Lee de una fuente de tareas (su clave en localStorage) los puntos
+  // aprobados de la semana por hijo. `pointFn` traduce cada marca a puntos.
+  function readApprovedPoints(taskKey, pointFn) {
     let tasks;
-    try { tasks = JSON.parse(localStorage.getItem(TASKS_KEY)); } catch (e) { return null; }
+    try { tasks = JSON.parse(localStorage.getItem(taskKey)); } catch (e) { return null; }
     if (!tasks || typeof tasks !== "object") return null;
     const marks = tasks.marks || {};
     const bonus = tasks.bonus || [];
     const byChild = {};
     Object.keys(marks).forEach((k) => {
       const pid = k.split(":")[0];
-      const pts = (typeof window.markPoints === "function") ? window.markPoints(marks[k]) : 0;
+      const pts = pointFn(marks[k]);
       if (pts) byChild[pid] = (byChild[pid] || 0) + pts;
     });
     bonus.forEach((b) => {
@@ -121,17 +140,21 @@ function StoreProvider({ children }) {
     return { week: tasks.week || "", byChild };
   }
 
-  const reconcilePoints = useCallback(() => {
-    const info = readApprovedPoints();
+  // Abona una fuente de tareas usando su propio libro mayor (`ledgerKey`), de
+  // forma idempotente por semana: solo abona la diferencia nueva, nunca quita,
+  // y reinicia la línea base al cambiar de semana. Cada fuente lleva su libro
+  // por separado para que jamás se dupliquen entre sí.
+  function reconcileSource(taskKey, ledgerKey, pointFn, label) {
+    const info = readApprovedPoints(taskKey, pointFn);
     if (!info) return;
     setState((prev) => {
       let changed = false;
       const next = JSON.parse(JSON.stringify(prev));
-      if (!next.pointsCredited) next.pointsCredited = {};
+      if (!next[ledgerKey]) next[ledgerKey] = {};
       BC.CHILDREN.forEach((c) => {
         if (!next.data[c.id]) return;
         const total = Math.round(info.byChild[c.id] || 0);
-        const rec = next.pointsCredited[c.id];
+        const rec = next[ledgerKey][c.id];
         const base = (rec && rec.week === info.week) ? rec.amount : 0;
         const add = total - base; // solo abonamos lo nuevo; nunca quitamos
         if (add > 0) {
@@ -143,26 +166,36 @@ function StoreProvider({ children }) {
           month.income += add;
           child.tx.unshift({
             id: Date.now() + "-" + Math.random().toString(36).slice(2, 7), ts: Date.now(),
-            type: "income", amount: add, label: "Puntos de tareas aprobados", cat: "tareas", icon: "⭐",
+            type: "income", amount: add, label: label || "Puntos de tareas aprobados", cat: "tareas", icon: "⭐",
           });
           if (child.tx.length > 400) child.tx.length = 400;
-          next.pointsCredited[c.id] = { week: info.week, amount: base + add };
+          next[ledgerKey][c.id] = { week: info.week, amount: base + add };
           changed = true;
         } else if (!rec || rec.week !== info.week) {
           // Semana nueva sin puntos todavía: fija la línea base sin abonar.
-          next.pointsCredited[c.id] = { week: info.week, amount: base };
+          next[ledgerKey][c.id] = { week: info.week, amount: base };
           changed = true;
         }
       });
       return changed ? next : prev;
     });
+  }
+
+  const reconcilePoints = useCallback(() => {
+    // Sistema anterior (Panel de Padres): usa window.markPoints si está cargado.
+    reconcileSource(TASKS_KEY, "pointsCredited",
+      (m) => (typeof window.markPoints === "function") ? window.markPoints(m) : 0,
+      "Puntos de tareas aprobados");
+    // Sistema nuevo ("Mi día"): rutinas (1 pt) y áreas por orden + limpieza.
+    reconcileSource(MICRO_KEY, "pointsCreditedMicro", microMarkPoints,
+      "Puntos de tareas aprobados");
   }, []);
 
   // Reconcilia al abrir el banco y cada vez que cambian las tareas (otra
   // pestaña/ventana escribe localStorage, o al volver a la app).
   useEffect(() => {
     reconcilePoints();
-    const onStorage = (e) => { if (!e || e.key === null || e.key === TASKS_KEY) reconcilePoints(); };
+    const onStorage = (e) => { if (!e || e.key === null || e.key === TASKS_KEY || e.key === MICRO_KEY) reconcilePoints(); };
     const onVisible = () => { if (!document.hidden) reconcilePoints(); };
     window.addEventListener("storage", onStorage);
     document.addEventListener("visibilitychange", onVisible);
