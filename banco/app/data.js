@@ -84,6 +84,18 @@
 
   // Única moneda del sistema: PUNTOS. Antes se mostraba en "$"; ahora todo
   // el banco habla en puntos (el salario virtual de cada integrante).
+  // ---- IVA Familiar (educativo) ----
+  // Cada ingreso por tareas retiene un % que va al Fondo IVA Familiar.
+  const IVA_DEFAULT = 0.13;
+  // Categorías que financia el Fondo IVA Familiar.
+  const FUND_CATS = [
+    { id: "hogar",        label: "Hogar",        icon: "🏡", desc: "Reparaciones, muebles, electrodomésticos" },
+    { id: "vehiculos",    label: "Vehículos",    icon: "🚗", desc: "Mantenimiento, llantas, seguro" },
+    { id: "experiencias", label: "Experiencias", icon: "✈️", desc: "Paseos, viajes, celebraciones" },
+    { id: "emergencias",  label: "Emergencias",  icon: "🛠️", desc: "Gastos inesperados del hogar" },
+  ];
+  function fundCat(id) { return FUND_CATS.find((c) => c.id === id); }
+
   function money(n) {
     const v = Math.round(n);
     return v.toLocaleString("en-US") + " pts";
@@ -137,6 +149,7 @@
     CHILDREN, EXPENSES, PERCENT_DUES, CHORES, BADGES, evaluateBadges,
     EXAM_BONUS_MAX, examBonus, fixedTotal, money,
     MONTHS, monthKey, monthLabel,
+    IVA_DEFAULT, FUND_CATS, fundCat,
     DEFAULT_PIN: (window.PARENT_PIN || "181215"),
   };
 })();

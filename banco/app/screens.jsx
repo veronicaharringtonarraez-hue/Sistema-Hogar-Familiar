@@ -69,6 +69,8 @@ function ScreenInicio({ child, nav }) {
         </div>
       </button>
 
+      <FundTeaser nav={nav} />
+
       <div className="bc-section-title">Este mes — {BC.monthLabel(BC.monthKey())}</div>
       <div className="bc-mini-grid">
         <Stat label="Ganado este mes" value={BC.money(s.income)} color="#1FB85A" icon="💪" />
@@ -110,9 +112,16 @@ function ScreenGanar({ child, nav }) {
       </Card>
 
       <div className="bc-mini-grid">
-        <Stat label="Ganado este mes" value={BC.money(s.income)} color="#1FB85A" icon="⭐" />
+        <Stat label="Ganado este mes (neto)" value={BC.money(s.income)} color="#1FB85A" icon="⭐" />
         <Stat label="Mi saldo ahora" value={BC.money(s.balance)} color="#2E8BFF" icon="💰" />
       </div>
+
+      {s.iva > 0 && (
+        <Card className="bc-iva-note">
+          🏛 De tus <strong>{BC.money(s.gross)}</strong> ganados este mes, <strong>{BC.money(s.iva)}</strong> fueron al
+          <strong> Fondo IVA Familiar</strong> para el bienestar de todos. Recibiste <strong>{BC.money(s.income)}</strong>.
+        </Card>
+      )}
 
       {fromTasks.length > 0 && (
         <>
@@ -445,6 +454,96 @@ function ScreenLogros({ child }) {
   );
 }
 
+/* -------- FONDO IVA FAMILIAR -------- */
+function FundTeaser({ nav }) {
+  const { state } = useStore();
+  const f = fundSummary(state);
+  return (
+    <button className="bc-fund-teaser" onClick={() => nav("fondo")}>
+      <span className="bc-fund-teaser-ic">🏛</span>
+      <div className="bc-fund-teaser-txt">
+        <strong>Fondo IVA Familiar</strong>
+        <span>El ahorro de toda la familia</span>
+      </div>
+      <span className="bc-fund-teaser-amt">{BC.money(f.balance)}</span>
+    </button>
+  );
+}
+
+function ScreenFondo({ child }) {
+  const { state } = useStore();
+  const f = fundSummary(state);
+  const nameOf = (id) => (BC.CHILDREN.find((c) => c.id === id) || {});
+
+  // mensaje motivador sencillo
+  const lastOut = (f.tx || []).find((t) => t.type === "out");
+
+  return (
+    <div className="bc-screen">
+      <div className="bc-fund-hero">
+        <div className="bc-fund-hero-ic">🏛</div>
+        <div className="bc-fund-hero-label">Fondo IVA Familiar</div>
+        <div className="bc-fund-hero-amount">{BC.money(f.balance)}</div>
+        <div className="bc-fund-hero-sub">El dinero que entre todos cuidamos 💛</div>
+      </div>
+
+      <Card className="bc-iva-note">
+        Cada vez que alguien gana puntos, una parte va a este fondo común. Sirve para reparar la casa,
+        cuidar el carro y vivir experiencias juntos. ¡Todos aportamos, todos ganamos!
+      </Card>
+
+      <div className="bc-mini-grid">
+        <Stat label="Aportes este mes" value={BC.money(f.monthIn)} color="#1FB85A" icon="📥" />
+        <Stat label="Gastos este mes" value={BC.money(f.monthOut)} color="#FF7A45" icon="📤" />
+        <Stat label="Aportes del año" value={BC.money(f.yearIn)} color="#2E8BFF" icon="📅" />
+        <Stat label="Gastos del año" value={BC.money(f.yearOut)} color="#A855F7" icon="🧾" />
+      </div>
+
+      {lastOut && (
+        <Card className="bc-fund-msg">
+          🎉 Lo último que logramos juntos: <strong>{lastOut.label}</strong> ({BC.money(lastOut.amount)}).
+        </Card>
+      )}
+
+      <div className="bc-section-title">Quién ha aportado</div>
+      <div className="bc-budget-list">
+        {BC.CHILDREN.map((c) => {
+          const amt = f.byChild[c.id] || 0;
+          const max = Math.max(1, ...BC.CHILDREN.map((k) => f.byChild[k.id] || 0));
+          return (
+            <div key={c.id} className="bc-budget-row">
+              <span className="bc-budget-ic">{c.avatar}</span>
+              <div className="bc-budget-main">
+                <div className="bc-budget-top"><span>{c.name}</span><strong>{BC.money(amt)}</strong></div>
+                <ProgressBar value={amt} max={max} color={c.color} height={8} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="bc-section-title">Movimientos del fondo</div>
+      <div className="bc-tx-list">
+        {(f.tx || []).length === 0 && <div className="bc-empty">Aún no hay movimientos 🐣</div>}
+        {(f.tx || []).slice(0, 30).map((t) => (
+          <div key={t.id} className="bc-tx">
+            <span className="bc-tx-ic" style={{ background: (t.type === "in" ? "#1FB85A" : "#FF7A45") + "22" }}>
+              {t.type === "in" ? (nameOf(t.childId).avatar || "⭐") : (BC.fundCat(t.cat) || {}).icon || "🛠️"}
+            </span>
+            <div className="bc-tx-info">
+              <div className="bc-tx-label">{t.label}</div>
+              <div className="bc-tx-date">{fmtDate(t.ts)}</div>
+            </div>
+            <div className="bc-tx-amount" style={{ color: t.type === "in" ? "#1FB85A" : "#FF7A45" }}>
+              {t.type === "in" ? "+" : "−"}{BC.money(t.amount)}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* -------- helpers -------- */
 function txColor(type) {
   return type === "income" ? "#1FB85A" : type === "expense" ? "#FF4D5E" : "#2E8BFF";
@@ -464,4 +563,5 @@ function shade(hex, amt) {
 
 Object.assign(window, {
   ScreenInicio, ScreenGanar, ScreenPagar, ScreenAhorro, ScreenRegistro, ScreenPresupuesto, ScreenLogros,
+  ScreenFondo, FundTeaser,
 });

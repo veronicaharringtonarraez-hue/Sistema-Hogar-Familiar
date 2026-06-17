@@ -195,6 +195,7 @@ function ChildScreens({ child, tab, nav, approval }) {
     case "logros": return <ScreenLogros child={child} />;
     case "registro": return <ScreenRegistro child={child} />;
     case "presupuesto": return <ScreenPresupuesto child={child} />;
+    case "fondo": return <ScreenFondo child={child} />;
     default: return <ScreenInicio child={child} nav={nav} />;
   }
 }

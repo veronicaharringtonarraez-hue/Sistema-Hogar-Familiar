@@ -38,6 +38,8 @@ function ParentPanel({ onClose }) {
         <ExamBonus child={cfg} actions={actions} fx={fx} />
         <BudgetEditor child={cfg} state={state} actions={actions} fx={fx} />
         <EditGoal childId={cfg.id} goal={state.goals[cfg.id]} actions={actions} fx={fx} color={cfg.color} />
+        <IvaConfig state={state} actions={actions} fx={fx} />
+        <FundSpend state={state} actions={actions} fx={fx} />
 
         <Card className="bc-padmin">
           <div className="bc-padmin-title">Administrar</div>
@@ -241,6 +243,64 @@ function BudgetRow({ icon, label, value, onSave }) {
         onKeyDown={(e) => { if (e.key === "Enter") e.target.blur(); }}
       />
     </div>
+  );
+}
+
+function IvaConfig({ state, actions, fx }) {
+  const cfg = state.ivaCfg || { enabled: true, pct: BC.IVA_DEFAULT };
+  const pctInt = Math.round((cfg.pct || 0) * 100);
+  return (
+    <Card className="bc-padmin">
+      <div className="bc-padmin-title">🏛 IVA Familiar</div>
+      <p className="bc-muted">
+        Un % de cada ingreso por tareas va al Fondo IVA Familiar (cuenta compartida). Es educativo:
+        enseña que parte de lo que ganamos sostiene los bienes comunes. No afecta puntos ni privilegios.
+      </p>
+      <div className="bc-two-btn">
+        <button className={"bc-chip " + (cfg.enabled ? "green" : "")} onClick={() => { actions.setIva({ enabled: !cfg.enabled }); fx.toast(cfg.enabled ? "IVA desactivado" : "IVA activado"); }}>
+          {cfg.enabled ? "Activado ✅" : "Desactivado"}
+        </button>
+      </div>
+      <div className="bc-exam-row">
+        <label style={{ flex: 1 }}>Porcentaje</label>
+        <div className="bc-amount-row sm">
+          <button onClick={() => actions.setIva({ pct: Math.max(0, (pctInt - 1)) / 100 })}>−</button>
+          <div className="bc-amount-val" style={{ minWidth: 70 }}>{pctInt}%</div>
+          <button onClick={() => actions.setIva({ pct: Math.min(50, (pctInt + 1)) / 100 })}>+</button>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function FundSpend({ state, actions, fx }) {
+  const f = fundSummary(state);
+  const [cat, setCat] = useState(BC.FUND_CATS[0].id);
+  const [amt, setAmt] = useState(100);
+  const [label, setLabel] = useState("");
+  return (
+    <Card className="bc-padmin">
+      <div className="bc-padmin-title">🏛 Fondo IVA Familiar — gastar</div>
+      <p className="bc-muted">Saldo del fondo: <strong>{BC.money(f.balance)}</strong>. Úsalo para proyectos compartidos.</p>
+      <div className="bc-chip-row wrap">
+        {BC.FUND_CATS.map((c) => (
+          <button key={c.id} className={"bc-chip " + (cat === c.id ? "green" : "")} onClick={() => setCat(c.id)}>
+            {c.icon} {c.label}
+          </button>
+        ))}
+      </div>
+      <div className="bc-amount-row sm">
+        <button onClick={() => setAmt((a) => Math.max(1, a - 10))}>−</button>
+        <div className="bc-amount-val">{BC.money(amt)}</div>
+        <button onClick={() => setAmt((a) => a + 10)}>+</button>
+      </div>
+      <input className="bc-input" placeholder="¿En qué se usó? (ej: pintura del cuarto)" value={label} onChange={(e) => setLabel(e.target.value)} />
+      <button className="bc-btn-primary full" disabled={amt > f.balance} onClick={() => {
+        const ok = actions.fundSpend(amt, cat, label || (BC.fundCat(cat) || {}).label);
+        if (ok) { setLabel(""); fx.celebrate(); fx.toast("Gasto del fondo registrado 🏛"); }
+        else fx.toast("Saldo del fondo insuficiente");
+      }}>{amt > f.balance ? "Saldo insuficiente" : `Gastar ${BC.money(amt)} del fondo`}</button>
+    </Card>
   );
 }
 

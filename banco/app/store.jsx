@@ -19,12 +19,55 @@ function microMarkPoints(m) {
   return (typeof m.pts === "number") ? m.pts : 10;
 }
 
+function genId() { return Date.now() + "-" + Math.random().toString(36).slice(2, 7); }
+
+// income = neto (lo que llega al saldo); gross = bruto; iva = retenido al fondo.
 function freshMonth() {
-  return { income: 0, paid: {}, diezmoPaid: 0, ahorroDone: 0 };
+  return { income: 0, gross: 0, iva: 0, paid: {}, diezmoPaid: 0, ahorroDone: 0 };
 }
 
 function freshChild() {
   return { balance: 0, savings: 0, months: {}, tx: [], badges: {} };
+}
+
+function freshFund() {
+  return { balance: 0, tx: [], months: {} };
+}
+
+// % de IVA efectivo según la configuración.
+function ivaPct(next) {
+  const c = next.ivaCfg || {};
+  return c.enabled ? (c.pct || 0) : 0;
+}
+
+// Abona un ingreso BRUTO a un niño aplicando el IVA Familiar: el neto va al
+// saldo del niño y el IVA al Fondo IVA Familiar. Centraliza todo el crédito de
+// ingresos (tareas, bonos, pedidos) para que el impuesto se aplique siempre.
+function creditIncome(next, childId, gross, label, cat, icon) {
+  const child = next.data[childId];
+  if (!child || gross <= 0) return;
+  const mk = BC.monthKey();
+  if (!child.months[mk]) child.months[mk] = freshMonth();
+  const month = child.months[mk];
+  const pct = ivaPct(next);
+  const iva = Math.round(gross * pct);
+  const net = gross - iva;
+  child.balance += net;
+  month.gross = (month.gross || 0) + gross;
+  month.iva = (month.iva || 0) + iva;
+  month.income += net;
+  const note = iva > 0 ? (label + " · neto (IVA " + Math.round(pct * 100) + "% al fondo)") : label;
+  child.tx.unshift({ id: genId(), ts: Date.now(), type: "income", amount: net, label: note, cat, icon });
+  if (child.tx.length > 400) child.tx.length = 400;
+  if (iva > 0) {
+    if (!next.fund) next.fund = freshFund();
+    next.fund.balance += iva;
+    if (!next.fund.months[mk]) next.fund.months[mk] = { in: 0, out: 0 };
+    next.fund.months[mk].in += iva;
+    const cn = (BC.CHILDREN.find((c) => c.id === childId) || {}).name || childId;
+    next.fund.tx.unshift({ id: genId(), ts: Date.now(), type: "in", childId, amount: iva, gross, label: "IVA de " + cn });
+    if (next.fund.tx.length > 600) next.fund.tx.length = 600;
+  }
 }
 
 function defaultState() {
@@ -50,6 +93,10 @@ function defaultState() {
     // Libro mayor del NUEVO sistema (fam_micro_v1), separado del anterior para
     // que cada fuente se abone de forma independiente y nunca se duplique.
     pointsCreditedMicro: {},
+    // IVA Familiar: % que se retiene de cada ingreso para el Fondo compartido.
+    ivaCfg: { enabled: true, pct: BC.IVA_DEFAULT },
+    // Fondo IVA Familiar (cuenta compartida administrada por los padres).
+    fund: freshFund(),
     data,
   };
 }
@@ -65,6 +112,9 @@ function mergeState(parsed) {
   base.requests = Array.isArray(parsed.requests) ? parsed.requests : [];
   base.pointsCredited = (parsed.pointsCredited && typeof parsed.pointsCredited === "object") ? parsed.pointsCredited : {};
   base.pointsCreditedMicro = (parsed.pointsCreditedMicro && typeof parsed.pointsCreditedMicro === "object") ? parsed.pointsCreditedMicro : {};
+  base.ivaCfg = Object.assign({ enabled: true, pct: BC.IVA_DEFAULT }, parsed.ivaCfg || {});
+  base.fund = (parsed.fund && typeof parsed.fund === "object")
+    ? Object.assign(freshFund(), parsed.fund) : freshFund();
   BC.CHILDREN.forEach((c) => {
     if (parsed.data && parsed.data[c.id]) {
       base.data[c.id] = Object.assign(freshChild(), parsed.data[c.id]);
@@ -158,17 +208,7 @@ function StoreProvider({ children }) {
         const base = (rec && rec.week === info.week) ? rec.amount : 0;
         const add = total - base; // solo abonamos lo nuevo; nunca quitamos
         if (add > 0) {
-          const child = next.data[c.id];
-          const mk = BC.monthKey();
-          if (!child.months[mk]) child.months[mk] = freshMonth();
-          const month = child.months[mk];
-          child.balance += add;
-          month.income += add;
-          child.tx.unshift({
-            id: Date.now() + "-" + Math.random().toString(36).slice(2, 7), ts: Date.now(),
-            type: "income", amount: add, label: label || "Puntos de tareas aprobados", cat: "tareas", icon: "⭐",
-          });
-          if (child.tx.length > 400) child.tx.length = 400;
+          creditIncome(next, c.id, add, label || "Puntos de tareas aprobados", "tareas", "⭐");
           next[ledgerKey][c.id] = { week: info.week, amount: base + add };
           changed = true;
         } else if (!rec || rec.week !== info.week) {
@@ -209,10 +249,10 @@ function StoreProvider({ children }) {
 
   const actions = {
     earn(childId, amount, label, cat = "trabajo", icon = "💪") {
-      update(childId, (child, month) => {
-        child.balance += amount;
-        month.income += amount;
-        log(child, { type: "income", amount, label, cat, icon });
+      setState((prev) => {
+        const next = JSON.parse(JSON.stringify(prev));
+        creditIncome(next, childId, amount, label, cat, icon);
+        return next;
       });
     },
     payBill(childId, expenseId) {
@@ -331,17 +371,8 @@ function StoreProvider({ children }) {
         const next = JSON.parse(JSON.stringify(prev));
         const req = next.requests.find((r) => r.id === reqId);
         if (!req) return next;
-        const child = next.data[req.childId];
-        const mk = BC.monthKey();
-        if (!child.months[mk]) child.months[mk] = freshMonth();
-        const month = child.months[mk];
         req.items.forEach((i) => {
-          child.balance += i.subtotal;
-          month.income += i.subtotal;
-          child.tx.unshift({
-            id: Date.now() + "-" + Math.random().toString(36).slice(2, 7), ts: Date.now(),
-            type: "income", amount: i.subtotal, label: i.label, cat: i.cat, icon: i.icon,
-          });
+          creditIncome(next, req.childId, i.subtotal, i.label, i.cat, i.icon);
         });
         next.requests = next.requests.filter((r) => r.id !== reqId);
         return next;
@@ -353,6 +384,29 @@ function StoreProvider({ children }) {
         next.requests = next.requests.filter((r) => r.id !== reqId);
         return next;
       });
+    },
+    setIva(patch) {
+      setState((prev) => Object.assign({}, prev, {
+        ivaCfg: Object.assign({ enabled: true, pct: BC.IVA_DEFAULT }, prev.ivaCfg, patch),
+      }));
+    },
+    fundSpend(amount, cat, label) {
+      let ok = false;
+      setState((prev) => {
+        const next = JSON.parse(JSON.stringify(prev));
+        amount = Math.round(Number(amount) || 0);
+        if (!next.fund) next.fund = freshFund();
+        if (amount <= 0 || next.fund.balance < amount) return prev;
+        next.fund.balance -= amount;
+        const mk = BC.monthKey();
+        if (!next.fund.months[mk]) next.fund.months[mk] = { in: 0, out: 0 };
+        next.fund.months[mk].out += amount;
+        next.fund.tx.unshift({ id: genId(), ts: Date.now(), type: "out", cat, amount, label: label || "Gasto del fondo" });
+        if (next.fund.tx.length > 600) next.fund.tx.length = 600;
+        ok = true;
+        return next;
+      });
+      return ok;
     },
     resetChildMonth(childId) {
       update(childId, (child, month, mk) => {
@@ -414,6 +468,8 @@ function childSummary(state, childId) {
     balance: child.balance,
     savings: child.savings,
     income: month.income,
+    gross: month.gross || 0,
+    iva: month.iva || 0,
     fixedTotal,
     fixedPaid,
     fixedPending: fixedTotal - fixedPaid,
@@ -427,4 +483,25 @@ function childSummary(state, childId) {
   };
 }
 
-Object.assign(window, { StoreProvider, useStore, StoreContext, childMonth, childSummary, childExpenses, fixedTotalFor, budgetAmount });
+// Resumen del Fondo IVA Familiar.
+function fundSummary(state) {
+  const f = state.fund || freshFund();
+  const mk = BC.monthKey();
+  const year = String(new Date().getFullYear());
+  const thisMonth = f.months[mk] || { in: 0, out: 0 };
+  let yearIn = 0, yearOut = 0;
+  Object.keys(f.months || {}).forEach((k) => {
+    if (k.indexOf(year + "-") === 0) { yearIn += f.months[k].in || 0; yearOut += f.months[k].out || 0; }
+  });
+  const byChild = {};
+  (f.tx || []).forEach((t) => {
+    if (t.type === "in" && t.childId) byChild[t.childId] = (byChild[t.childId] || 0) + t.amount;
+  });
+  return {
+    balance: f.balance || 0,
+    monthIn: thisMonth.in || 0, monthOut: thisMonth.out || 0,
+    yearIn, yearOut, byChild, tx: f.tx || [],
+  };
+}
+
+Object.assign(window, { StoreProvider, useStore, StoreContext, childMonth, childSummary, childExpenses, fixedTotalFor, budgetAmount, fundSummary });
