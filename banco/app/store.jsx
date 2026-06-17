@@ -19,12 +19,56 @@ function microMarkPoints(m) {
   return (typeof m.pts === "number") ? m.pts : 10;
 }
 
+function genId() { return Date.now() + "-" + Math.random().toString(36).slice(2, 7); }
+
+// income = neto (lo que llega al saldo); gross = bruto; iva = retenido al fondo.
 function freshMonth() {
-  return { income: 0, paid: {}, diezmoPaid: 0, ahorroDone: 0 };
+  return { income: 0, gross: 0, iva: 0, paid: {}, diezmoPaid: 0, ahorroDone: 0 };
 }
 
 function freshChild() {
   return { balance: 0, savings: 0, months: {}, tx: [], badges: {} };
+}
+
+function freshFund() {
+  return { balance: 0, tx: [], months: {} };
+}
+
+// % de IVA efectivo según la configuración.
+function ivaPct(next) {
+  const c = next.ivaCfg || {};
+  return c.enabled ? (c.pct || 0) : 0;
+}
+
+// Abona un ingreso BRUTO a un niño aplicando el IVA Familiar: el neto va al
+// saldo del niño y el IVA al Fondo IVA Familiar. Centraliza todo el crédito de
+// ingresos (tareas, bonos, pedidos) para que el impuesto se aplique siempre.
+function creditIncome(next, childId, gross, label, cat, icon) {
+  const child = next.data[childId];
+  if (!child || gross <= 0) return;
+  const pk = BC.periodKey();           // periodo del niño = quincena
+  const mk = BC.monthKey();            // el fondo lleva sus cuentas por mes
+  if (!child.months[pk]) child.months[pk] = freshMonth();
+  const month = child.months[pk];
+  const pct = ivaPct(next);
+  const iva = Math.round(gross * pct);
+  const net = gross - iva;
+  child.balance += net;
+  month.gross = (month.gross || 0) + gross;
+  month.iva = (month.iva || 0) + iva;
+  month.income += net;
+  const note = iva > 0 ? (label + " · neto (IVA " + Math.round(pct * 100) + "% al fondo)") : label;
+  child.tx.unshift({ id: genId(), ts: Date.now(), type: "income", amount: net, label: note, cat, icon });
+  if (child.tx.length > 400) child.tx.length = 400;
+  if (iva > 0) {
+    if (!next.fund) next.fund = freshFund();
+    next.fund.balance += iva;
+    if (!next.fund.months[mk]) next.fund.months[mk] = { in: 0, out: 0 };
+    next.fund.months[mk].in += iva;
+    const cn = (BC.CHILDREN.find((c) => c.id === childId) || {}).name || childId;
+    next.fund.tx.unshift({ id: genId(), ts: Date.now(), type: "in", childId, amount: iva, gross, label: "IVA de " + cn });
+    if (next.fund.tx.length > 600) next.fund.tx.length = 600;
+  }
 }
 
 function defaultState() {
@@ -50,6 +94,12 @@ function defaultState() {
     // Libro mayor del NUEVO sistema (fam_micro_v1), separado del anterior para
     // que cada fuente se abone de forma independiente y nunca se duplique.
     pointsCreditedMicro: {},
+    // budgetPct[catId] = % editado de la distribución (si no, el de BC.BUDGET_CATS).
+    budgetPct: {},
+    // IVA Familiar: % que se retiene de cada ingreso para el Fondo compartido.
+    ivaCfg: { enabled: true, pct: BC.IVA_DEFAULT },
+    // Fondo IVA Familiar (cuenta compartida administrada por los padres).
+    fund: freshFund(),
     data,
   };
 }
@@ -62,9 +112,13 @@ function mergeState(parsed) {
   base.pin = parsed.pin || base.pin;
   base.goals = Object.assign(base.goals, parsed.goals || {});
   base.budgets = (parsed.budgets && typeof parsed.budgets === "object") ? parsed.budgets : {};
+  base.budgetPct = (parsed.budgetPct && typeof parsed.budgetPct === "object") ? parsed.budgetPct : {};
   base.requests = Array.isArray(parsed.requests) ? parsed.requests : [];
   base.pointsCredited = (parsed.pointsCredited && typeof parsed.pointsCredited === "object") ? parsed.pointsCredited : {};
   base.pointsCreditedMicro = (parsed.pointsCreditedMicro && typeof parsed.pointsCreditedMicro === "object") ? parsed.pointsCreditedMicro : {};
+  base.ivaCfg = Object.assign({ enabled: true, pct: BC.IVA_DEFAULT }, parsed.ivaCfg || {});
+  base.fund = (parsed.fund && typeof parsed.fund === "object")
+    ? Object.assign(freshFund(), parsed.fund) : freshFund();
   BC.CHILDREN.forEach((c) => {
     if (parsed.data && parsed.data[c.id]) {
       base.data[c.id] = Object.assign(freshChild(), parsed.data[c.id]);
@@ -92,9 +146,9 @@ function StoreProvider({ children }) {
     try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {}
   }, [state]);
 
-  // helper: asegura objeto del mes actual
+  // helper: asegura el objeto del periodo actual (quincena)
   const ensureMonth = (child) => {
-    const mk = BC.monthKey();
+    const mk = BC.periodKey();
     if (!child.months[mk]) child.months[mk] = freshMonth();
     return mk;
   };
@@ -158,17 +212,7 @@ function StoreProvider({ children }) {
         const base = (rec && rec.week === info.week) ? rec.amount : 0;
         const add = total - base; // solo abonamos lo nuevo; nunca quitamos
         if (add > 0) {
-          const child = next.data[c.id];
-          const mk = BC.monthKey();
-          if (!child.months[mk]) child.months[mk] = freshMonth();
-          const month = child.months[mk];
-          child.balance += add;
-          month.income += add;
-          child.tx.unshift({
-            id: Date.now() + "-" + Math.random().toString(36).slice(2, 7), ts: Date.now(),
-            type: "income", amount: add, label: label || "Puntos de tareas aprobados", cat: "tareas", icon: "⭐",
-          });
-          if (child.tx.length > 400) child.tx.length = 400;
+          creditIncome(next, c.id, add, label || "Puntos de tareas aprobados", "tareas", "⭐");
           next[ledgerKey][c.id] = { week: info.week, amount: base + add };
           changed = true;
         } else if (!rec || rec.week !== info.week) {
@@ -209,22 +253,24 @@ function StoreProvider({ children }) {
 
   const actions = {
     earn(childId, amount, label, cat = "trabajo", icon = "💪") {
-      update(childId, (child, month) => {
-        child.balance += amount;
-        month.income += amount;
-        log(child, { type: "income", amount, label, cat, icon });
+      setState((prev) => {
+        const next = JSON.parse(JSON.stringify(prev));
+        creditIncome(next, childId, amount, label, cat, icon);
+        return next;
       });
     },
-    payBill(childId, expenseId) {
-      const exp = BC.EXPENSES.find((e) => e.id === expenseId);
+    // Paga (cubre) una categoría del presupuesto: descuenta del saldo el monto
+    // sugerido = % de la categoría sobre el ingreso NETO de la quincena.
+    payBill(childId, catId) {
+      const cat = BC.budgetCat(catId);
       let ok = false;
       update(childId, (child, month, mk, next) => {
-        if (month.paid[expenseId]) return;
-        const amount = budgetAmount(next, childId, mk, exp);
-        if (child.balance < amount) return;
+        if (!cat || month.paid[catId]) return;
+        const amount = catAmount(next, month, catId);
+        if (amount <= 0 || child.balance < amount) return;
         child.balance -= amount;
-        month.paid[expenseId] = true;
-        log(child, { type: "expense", amount, label: exp.label, cat: exp.id, icon: exp.icon });
+        month.paid[catId] = true;
+        log(child, { type: "expense", amount, label: cat.label, cat: cat.id, icon: cat.icon });
         ok = true;
       });
       return ok;
@@ -280,22 +326,17 @@ function StoreProvider({ children }) {
         });
       });
     },
-    setBudget(childId, mk, expenseId, amount) {
+    // Distribución del presupuesto en % (global para toda la familia).
+    setBudgetPct(catId, pct) {
       setState((prev) => {
         const next = JSON.parse(JSON.stringify(prev));
-        if (!next.budgets) next.budgets = {};
-        if (!next.budgets[childId]) next.budgets[childId] = {};
-        if (!next.budgets[childId][mk]) next.budgets[childId][mk] = {};
-        next.budgets[childId][mk][expenseId] = Math.max(0, Math.round(Number(amount) || 0));
+        if (!next.budgetPct) next.budgetPct = {};
+        next.budgetPct[catId] = Math.max(0, Math.min(100, Math.round(Number(pct) || 0)));
         return next;
       });
     },
-    resetBudget(childId, mk) {
-      setState((prev) => {
-        const next = JSON.parse(JSON.stringify(prev));
-        if (next.budgets && next.budgets[childId]) delete next.budgets[childId][mk];
-        return next;
-      });
+    resetBudgetPct() {
+      setState((prev) => Object.assign({}, prev, { budgetPct: {} }));
     },
     setGoal(childId, goal) {
       setState((prev) => {
@@ -331,17 +372,8 @@ function StoreProvider({ children }) {
         const next = JSON.parse(JSON.stringify(prev));
         const req = next.requests.find((r) => r.id === reqId);
         if (!req) return next;
-        const child = next.data[req.childId];
-        const mk = BC.monthKey();
-        if (!child.months[mk]) child.months[mk] = freshMonth();
-        const month = child.months[mk];
         req.items.forEach((i) => {
-          child.balance += i.subtotal;
-          month.income += i.subtotal;
-          child.tx.unshift({
-            id: Date.now() + "-" + Math.random().toString(36).slice(2, 7), ts: Date.now(),
-            type: "income", amount: i.subtotal, label: i.label, cat: i.cat, icon: i.icon,
-          });
+          creditIncome(next, req.childId, i.subtotal, i.label, i.cat, i.icon);
         });
         next.requests = next.requests.filter((r) => r.id !== reqId);
         return next;
@@ -353,6 +385,29 @@ function StoreProvider({ children }) {
         next.requests = next.requests.filter((r) => r.id !== reqId);
         return next;
       });
+    },
+    setIva(patch) {
+      setState((prev) => Object.assign({}, prev, {
+        ivaCfg: Object.assign({ enabled: true, pct: BC.IVA_DEFAULT }, prev.ivaCfg, patch),
+      }));
+    },
+    fundSpend(amount, cat, label) {
+      let ok = false;
+      setState((prev) => {
+        const next = JSON.parse(JSON.stringify(prev));
+        amount = Math.round(Number(amount) || 0);
+        if (!next.fund) next.fund = freshFund();
+        if (amount <= 0 || next.fund.balance < amount) return prev;
+        next.fund.balance -= amount;
+        const mk = BC.monthKey();
+        if (!next.fund.months[mk]) next.fund.months[mk] = { in: 0, out: 0 };
+        next.fund.months[mk].out += amount;
+        next.fund.tx.unshift({ id: genId(), ts: Date.now(), type: "out", cat, amount, label: label || "Gasto del fondo" });
+        if (next.fund.tx.length > 600) next.fund.tx.length = 600;
+        ok = true;
+        return next;
+      });
+      return ok;
     },
     resetChildMonth(childId) {
       update(childId, (child, month, mk) => {
@@ -379,52 +434,91 @@ function useStore() {
 
 // Selectores / cálculos
 function childMonth(state, childId) {
-  const mk = BC.monthKey();
-  return (state.data[childId].months[mk]) || freshMonth();
+  const pk = BC.periodKey();
+  return (state.data[childId].months[pk]) || freshMonth();
 }
 
-// Monto de un gasto para un niño en un mes: usa el valor editado si existe,
-// si no, el valor por defecto de BC.EXPENSES.
-function budgetAmount(state, childId, mk, exp) {
-  const ov = state.budgets && state.budgets[childId] && state.budgets[childId][mk];
-  if (ov && ov[exp.id] != null) return ov[exp.id];
-  return exp[childId] || 0;
+function ivaPctState(state) {
+  const c = state.ivaCfg || {};
+  return c.enabled ? (c.pct || 0) : 0;
 }
 
-// Lista de gastos del mes con su monto resuelto (editado o por defecto).
-function childExpenses(state, childId, mk) {
-  mk = mk || BC.monthKey();
-  return BC.EXPENSES.map((e) => Object.assign({}, e, { amount: budgetAmount(state, childId, mk, e) }));
+// % de una categoría del presupuesto (editado o por defecto).
+function budgetPctOf(state, catId) {
+  const ov = state.budgetPct && state.budgetPct[catId];
+  if (ov != null) return ov;
+  const c = BC.budgetCat(catId);
+  return c ? c.pct : 0;
 }
 
-function fixedTotalFor(state, childId, mk) {
-  return childExpenses(state, childId, mk).reduce((s, e) => s + e.amount, 0);
+// Monto sugerido de una categoría = % sobre el ingreso NETO de la quincena.
+function catAmount(state, month, catId) {
+  return Math.round((month.income || 0) * budgetPctOf(state, catId) / 100);
+}
+
+// Presupuesto del niño: las categorías con su % y su monto del periodo.
+function childBudget(state, childId) {
+  const month = childMonth(state, childId);
+  return BC.BUDGET_CATS.map((c) => ({
+    id: c.id, label: c.label, icon: c.icon, desc: c.desc, group: c.group, kind: c.kind,
+    pct: budgetPctOf(state, c.id),
+    amount: catAmount(state, month, c.id),
+    paid: !!month.paid[c.id],
+  }));
 }
 
 function childSummary(state, childId) {
   const child = state.data[childId];
-  const mk = BC.monthKey();
   const month = childMonth(state, childId);
-  const exps = childExpenses(state, childId, mk);
-  const fixedTotal = exps.reduce((s, e) => s + e.amount, 0);
-  const fixedPaid = exps.reduce((s, e) => s + (month.paid[e.id] ? e.amount : 0), 0);
-  const diezmoDue = Math.round(month.income * 0.10);
-  const ahorroGoal = Math.round(month.income * 0.10);
+  const budget = childBudget(state, childId);
+  const oblig = budget.filter((c) => c.kind === "obligacion");
+  const obligTotal = oblig.reduce((s, c) => s + c.amount, 0);
+  const obligPaid = oblig.reduce((s, c) => s + (c.paid ? c.amount : 0), 0);
+  const obligPaidCount = oblig.filter((c) => c.paid).length;
+  const cat = (id) => budget.find((c) => c.id === id) || { amount: 0, paid: false };
+  const ahorroC = cat("ahorro"), gustosC = cat("gustos"), diezmoC = cat("diezmo");
+  const expGross = BC.expectedSalaryGross(childId);
+  const expNet = Math.round(expGross * (1 - ivaPctState(state)));
   return {
     balance: child.balance,
     savings: child.savings,
-    income: month.income,
-    fixedTotal,
-    fixedPaid,
-    fixedPending: fixedTotal - fixedPaid,
-    billsPaidCount: BC.EXPENSES.filter((e) => month.paid[e.id]).length,
-    billsTotalCount: BC.EXPENSES.length,
-    diezmoDue,
-    diezmoPaid: month.diezmoPaid,
-    diezmoPending: Math.max(0, diezmoDue - month.diezmoPaid),
-    ahorroGoal,
-    ahorroDone: month.ahorroDone,
+    income: month.income,            // neto de la quincena
+    gross: month.gross || 0,
+    iva: month.iva || 0,
+    budget,
+    obligTotal, obligPaid, obligPending: obligTotal - obligPaid,
+    obligPaidCount, obligTotalCount: oblig.length,
+    // compat con pantallas existentes
+    fixedTotal: obligTotal, fixedPaid: obligPaid, fixedPending: obligTotal - obligPaid,
+    billsPaidCount: obligPaidCount, billsTotalCount: oblig.length,
+    diezmoDue: diezmoC.amount,
+    diezmoPaid: diezmoC.paid ? diezmoC.amount : 0,
+    diezmoPending: diezmoC.paid ? 0 : diezmoC.amount,
+    ahorroGoal: ahorroC.amount, ahorroDone: month.ahorroDone || 0,
+    gustos: gustosC.amount,
+    expectedGross: expGross, expectedNet: expNet,
   };
 }
 
-Object.assign(window, { StoreProvider, useStore, StoreContext, childMonth, childSummary, childExpenses, fixedTotalFor, budgetAmount });
+// Resumen del Fondo IVA Familiar.
+function fundSummary(state) {
+  const f = state.fund || freshFund();
+  const mk = BC.monthKey();
+  const year = String(new Date().getFullYear());
+  const thisMonth = f.months[mk] || { in: 0, out: 0 };
+  let yearIn = 0, yearOut = 0;
+  Object.keys(f.months || {}).forEach((k) => {
+    if (k.indexOf(year + "-") === 0) { yearIn += f.months[k].in || 0; yearOut += f.months[k].out || 0; }
+  });
+  const byChild = {};
+  (f.tx || []).forEach((t) => {
+    if (t.type === "in" && t.childId) byChild[t.childId] = (byChild[t.childId] || 0) + t.amount;
+  });
+  return {
+    balance: f.balance || 0,
+    monthIn: thisMonth.in || 0, monthOut: thisMonth.out || 0,
+    yearIn, yearOut, byChild, tx: f.tx || [],
+  };
+}
+
+Object.assign(window, { StoreProvider, useStore, StoreContext, childMonth, childSummary, childBudget, budgetPctOf, fundSummary });

@@ -69,16 +69,18 @@ function ScreenInicio({ child, nav }) {
         </div>
       </button>
 
-      <div className="bc-section-title">Este mes — {BC.monthLabel(BC.monthKey())}</div>
+      <FundTeaser nav={nav} />
+
+      <div className="bc-section-title">{BC.periodLabel(BC.periodKey())}</div>
       <div className="bc-mini-grid">
-        <Stat label="Ganado este mes" value={BC.money(s.income)} color="#1FB85A" icon="💪" />
-        <Stat label="Gastos pagados" value={`${s.billsPaidCount}/${s.billsTotalCount}`} color="#FF7A45" icon="🧾" />
+        <Stat label="Ganado (neto)" value={BC.money(s.income)} color="#1FB85A" icon="💪" />
+        <Stat label="Obligaciones" value={`${s.obligPaidCount}/${s.obligTotalCount}`} color="#FF7A45" icon="🧾" />
         <Stat label="Diezmo pendiente" value={BC.money(s.diezmoPending)} color="#A855F7" icon="⛪" />
-        <Stat label="Ahorro del mes" value={BC.money(s.ahorroDone)} color="#2E8BFF" icon="🐷" />
+        <Stat label="Ahorro de la quincena" value={BC.money(s.ahorroDone)} color="#2E8BFF" icon="🐷" />
       </div>
 
       {allPaid && s.income > 0 && (
-        <div className="bc-allpaid">✅ ¡Pagaste todo este mes! Eres muy responsable.</div>
+        <div className="bc-allpaid">✅ ¡Cubriste todas tus obligaciones! Eres muy responsable.</div>
       )}
     </div>
   );
@@ -110,9 +112,16 @@ function ScreenGanar({ child, nav }) {
       </Card>
 
       <div className="bc-mini-grid">
-        <Stat label="Ganado este mes" value={BC.money(s.income)} color="#1FB85A" icon="⭐" />
+        <Stat label="Ganado esta quincena (neto)" value={BC.money(s.income)} color="#1FB85A" icon="⭐" />
         <Stat label="Mi saldo ahora" value={BC.money(s.balance)} color="#2E8BFF" icon="💰" />
       </div>
+
+      {s.iva > 0 && (
+        <Card className="bc-iva-note">
+          🏛 De tus <strong>{BC.money(s.gross)}</strong> ganados esta quincena, <strong>{BC.money(s.iva)}</strong> fueron al
+          <strong> Fondo IVA Familiar</strong> para el bienestar de todos. Recibiste <strong>{BC.money(s.income)}</strong>.
+        </Card>
+      )}
 
       {fromTasks.length > 0 && (
         <>
@@ -137,20 +146,17 @@ function ScreenGanar({ child, nav }) {
   );
 }
 
-/* -------- PAGAR -------- */
+/* -------- PAGAR (cubrir obligaciones de la quincena) -------- */
 function ScreenPagar({ child }) {
   const { state, actions } = useStore();
   const fx = useFx();
   const s = childSummary(state, child.id);
-  const month = childMonth(state, child.id);
+  const oblig = s.budget.filter((c) => c.kind === "obligacion");
 
   const pay = (id) => {
     const ok = actions.payBill(child.id, id);
-    if (ok) { fx.toast("Pagado ✅"); }
-  };
-  const payDiezmo = () => {
-    const ok = actions.payDiezmo(child.id);
-    if (ok) fx.toast("Diezmo pagado ⛪");
+    if (ok) fx.toast("Cubierto ✅");
+    else fx.toast("No te alcanza el saldo todavía");
   };
 
   return (
@@ -160,51 +166,40 @@ function ScreenPagar({ child }) {
         <MoneyText amount={s.balance} className="big" style={{ color: child.color }} />
       </div>
       <div className="bc-screen-head tight">
-        <h2>🧾 Mis gastos del mes</h2>
-        <p>Paga tus cuentas como un adulto. {s.billsPaidCount} de {s.billsTotalCount} pagadas.</p>
+        <h2>🧾 Mis obligaciones</h2>
+        <p>Primero las obligaciones. {s.obligPaidCount} de {s.obligTotalCount} cubiertas esta quincena.</p>
       </div>
 
+      {s.income === 0 && (
+        <Card className="bc-iva-note">Cuando ganes puntos, aquí aparecerá cuánto destinar a cada cosa (es un % de lo que ganas).</Card>
+      )}
+
       <div className="bc-bill-list">
-        {childExpenses(state, child.id).map((e) => {
-          const amount = e.amount;
-          const paid = !!month.paid[e.id];
-          const cant = !paid && s.balance < amount;
+        {oblig.map((c) => {
+          const paid = c.paid;
+          const cant = !paid && s.balance < c.amount;
           return (
-            <Card key={e.id} className={"bc-bill " + (paid ? "paid" : "")}>
-              <span className="bc-bill-ic">{e.icon}</span>
+            <Card key={c.id} className={"bc-bill " + (paid ? "paid" : "")}>
+              <span className="bc-bill-ic">{c.icon}</span>
               <div className="bc-bill-info">
-                <div className="bc-bill-label">{e.label}</div>
-                <div className="bc-bill-desc">{e.desc}</div>
+                <div className="bc-bill-label">{c.label} <span className="bc-pct-tag">{c.pct}%</span></div>
+                <div className="bc-bill-desc">{c.desc}</div>
               </div>
-              <div className="bc-bill-amount">{BC.money(amount)}</div>
+              <div className="bc-bill-amount">{BC.money(c.amount)}</div>
               {paid
-                ? <span className="bc-bill-done">Pagado ✅</span>
-                : <button className="bc-bill-pay" disabled={cant} onClick={() => pay(e.id)}>
-                    {cant ? "Sin saldo" : "Pagar"}
+                ? <span className="bc-bill-done">Cubierto ✅</span>
+                : <button className="bc-bill-pay" disabled={cant || c.amount <= 0} onClick={() => pay(c.id)}>
+                    {cant ? "Sin saldo" : "Cubrir"}
                   </button>}
             </Card>
           );
         })}
-
-        {/* Diezmo */}
-        <Card className={"bc-bill diezmo " + (s.diezmoPending === 0 && s.income > 0 ? "paid" : "")}>
-          <span className="bc-bill-ic">⛪</span>
-          <div className="bc-bill-info">
-            <div className="bc-bill-label">Diezmo (10%)</div>
-            <div className="bc-bill-desc">
-              {s.income > 0
-                ? `10% de lo que ganaste (${BC.money(s.income)})`
-                : "Aparece cuando ganas dinero"}
-            </div>
-          </div>
-          <div className="bc-bill-amount">{BC.money(s.diezmoDue)}</div>
-          {s.diezmoPending === 0
-            ? <span className="bc-bill-done">{s.income > 0 ? "Al día ✅" : "—"}</span>
-            : <button className="bc-bill-pay" disabled={s.balance <= 0} onClick={payDiezmo}>
-                Pagar {BC.money(s.diezmoPending)}
-              </button>}
-        </Card>
       </div>
+
+      <Card className="bc-iva-note">
+        Después de las obligaciones: aparta <strong>{BC.money(s.ahorroGoal)}</strong> en tu ahorro 🐷 y te quedan
+        <strong> {BC.money(s.gustos)}</strong> para tus gustos 🎉.
+      </Card>
     </div>
   );
 }
@@ -250,13 +245,13 @@ function ScreenAhorro({ child }) {
         </div>
         <ProgressBar value={s.savings} max={goal.target} color={child.color} height={18} showPct />
         {s.savings < goal.target
-          ? <div className="bc-goal-left">Te faltan <strong>{BC.money(goal.target - s.savings)}</strong> 💪</div>
+          ? <div className="bc-goal-left">Te faltan <strong>{BC.money(goal.target - s.savings)}</strong> · <strong>{weeksLabel(goalEstimate(state, child.id, s, goal).weeks)}</strong> 💪</div>
           : <div className="bc-goal-done">🎉 ¡Meta cumplida! Habla con Mamá/Papá.</div>}
       </Card>
 
       <Card className="bc-save-box">
         <div className="bc-save-title">Apartar dinero para mi meta</div>
-        <div className="bc-save-hint">Tu meta del mes: ahorrar {BC.money(s.ahorroGoal)} · llevas {BC.money(s.ahorroDone)}</div>
+        <div className="bc-save-hint">Tu meta de la quincena: ahorrar {BC.money(s.ahorroGoal)} · llevas {BC.money(s.ahorroDone)}</div>
         <div className="bc-amount-row">
           <button onClick={() => setAmt((a) => Math.max(1, a - 1))}>−</button>
           <div className="bc-amount-val">{BC.money(amt)}</div>
@@ -311,12 +306,12 @@ function ScreenRegistro({ child }) {
 
       <div className="bc-reg-summary">
         <div className="bc-reg-sum-item in">
-          <span>Ingresos del mes</span>
+          <span>Ingresos de la quincena</span>
           <strong>+{BC.money(s.income)}</strong>
         </div>
         <div className="bc-reg-sum-item out">
-          <span>Gastos del mes</span>
-          <strong>−{BC.money(s.fixedPaid + s.diezmoPaid)}</strong>
+          <span>Obligaciones cubiertas</span>
+          <strong>−{BC.money(s.fixedPaid)}</strong>
         </div>
       </div>
 
@@ -345,65 +340,66 @@ function ScreenRegistro({ child }) {
   );
 }
 
-/* -------- PRESUPUESTO -------- */
+/* -------- PRESUPUESTO / RECIBO DE PAGO (quincenal) -------- */
 function ScreenPresupuesto({ child }) {
   const { state } = useStore();
   const s = childSummary(state, child.id);
-  const exps = childExpenses(state, child.id);
-  const fixed = exps.reduce((sum, e) => sum + e.amount, 0);
+  const groups = [];
+  s.budget.forEach((c) => {
+    let g = groups.find((x) => x.name === c.group);
+    if (!g) { g = { name: c.group, cats: [], pct: 0, amount: 0 }; groups.push(g); }
+    g.cats.push(c); g.pct += c.pct; g.amount += c.amount;
+  });
+  const groupColors = { "Necesidades básicas": "#FF7A45", "Futuro y compromisos": "#A855F7", "Protección financiera": "#2E8BFF", "Estilo de vida": "#1FB85A" };
 
   return (
     <div className="bc-screen">
       <div className="bc-screen-head">
-        <h2>📊 Mi presupuesto</h2>
-        <p>Así se reparte el dinero de un adulto. Tú lo aprendes desde ya.</p>
+        <h2>📊 Mi plan de dinero</h2>
+        <p>Tu salario se reparte como el de un adulto: obligaciones, ahorro y, al final, tus gustos.</p>
       </div>
 
-      <Card className="bc-budget-rule">
-        <div className="bc-rule-title">La regla del dinero inteligente</div>
-        <div className="bc-rule-bars">
-          <div className="bc-rule-seg" style={{ flex: 70, background: "#FF7A45" }}><span>70%</span></div>
-          <div className="bc-rule-seg" style={{ flex: 10, background: "#A855F7" }}><span>10%</span></div>
-          <div className="bc-rule-seg" style={{ flex: 10, background: "#2E8BFF" }}><span>10%</span></div>
-          <div className="bc-rule-seg" style={{ flex: 10, background: "#1FB85A" }}><span>10%</span></div>
-        </div>
-        <div className="bc-rule-legend">
-          <span><i style={{ background: "#FF7A45" }} />Gastos</span>
-          <span><i style={{ background: "#A855F7" }} />Diezmo</span>
-          <span><i style={{ background: "#2E8BFF" }} />Ahorro</span>
-          <span><i style={{ background: "#1FB85A" }} />Libre</span>
+      <Card className="bc-salary-card" style={{ background: child.colorSoft }}>
+        <div className="bc-salary-label">Salario esperado por quincena</div>
+        <div className="bc-salary-amount" style={{ color: child.color }}>{BC.money(s.expectedNet)}</div>
+        <div className="bc-salary-sub">si cumples todas tus responsabilidades (ya con IVA descontado)</div>
+      </Card>
+
+      {/* Recibo de pago de la quincena */}
+      <Card className="bc-receipt">
+        <div className="bc-receipt-head">🧾 Recibo · {BC.periodLabel(BC.periodKey())}</div>
+        <div className="bc-receipt-row"><span>Ingreso bruto</span><strong>{BC.money(s.gross)}</strong></div>
+        <div className="bc-receipt-row sub"><span>− IVA Familiar</span><strong>−{BC.money(s.iva)}</strong></div>
+        <div className="bc-receipt-row total" style={{ borderColor: child.color }}>
+          <span>Ingreso neto</span><strong style={{ color: child.color }}>{BC.money(s.income)}</strong>
         </div>
       </Card>
 
-      <div className="bc-section-title">Gastos fijos cada mes</div>
-      <div className="bc-budget-list">
-        {exps.map((e) => {
-          const amt = e.amount;
-          const pct = fixed > 0 ? Math.round((amt / fixed) * 100) : 0;
-          return (
-            <div key={e.id} className="bc-budget-row">
-              <span className="bc-budget-ic">{e.icon}</span>
+      <div className="bc-section-title">Distribución sugerida (del neto)</div>
+      <div className="bc-rule-bars" style={{ marginBottom: 4 }}>
+        {groups.map((g) => (
+          <div key={g.name} className="bc-rule-seg" style={{ flex: g.pct, background: groupColors[g.name] || child.color }}><span>{g.pct}%</span></div>
+        ))}
+      </div>
+
+      {groups.map((g) => (
+        <Card key={g.name} className="bc-budget-list" style={{ borderLeft: `4px solid ${groupColors[g.name] || child.color}` }}>
+          <div className="bc-budget-group">{g.name} · {g.pct}%</div>
+          {g.cats.map((c) => (
+            <div key={c.id} className="bc-budget-row">
+              <span className="bc-budget-ic">{c.icon}</span>
               <div className="bc-budget-main">
-                <div className="bc-budget-top">
-                  <span>{e.label}</span>
-                  <strong>{BC.money(amt)}</strong>
-                </div>
-                <ProgressBar value={pct} max={100} color={child.color} height={8} />
+                <div className="bc-budget-top"><span>{c.label} <span className="bc-pct-tag">{c.pct}%</span></span><strong>{BC.money(c.amount)}</strong></div>
+                <ProgressBar value={c.pct} max={100} color={groupColors[g.name] || child.color} height={8} />
               </div>
             </div>
-          );
-        })}
-      </div>
-
-      <Card className="bc-budget-total">
-        <div className="bc-bt-row"><span>🏠 Total gastos fijos</span><strong>{BC.money(fixed)}</strong></div>
-        <div className="bc-bt-row"><span>⛪ Diezmo</span><strong>10% de lo que ganas</strong></div>
-        <div className="bc-bt-row"><span>🐷 Ahorro</span><strong>10% de lo que ganas</strong></div>
-      </Card>
+          ))}
+        </Card>
+      ))}
 
       <Card className="bc-budget-tip">
-        💡 Si limpias todos los días puedes ganar hasta <strong>{BC.money(child.dailyRate * 30)}</strong> al mes.
-        ¡Mientras más ayudas, más te sobra para tus metas!
+        💡 Tu salario esperado sube solo cuando asumes más responsabilidades en "Mi día".
+        ¡Mientras más ayudas en casa, mayor tu capacidad de generar ingresos!
       </Card>
     </div>
   );
@@ -445,6 +441,180 @@ function ScreenLogros({ child }) {
   );
 }
 
+/* -------- FONDO IVA FAMILIAR -------- */
+function FundTeaser({ nav }) {
+  const { state } = useStore();
+  const f = fundSummary(state);
+  return (
+    <button className="bc-fund-teaser" onClick={() => nav("fondo")}>
+      <span className="bc-fund-teaser-ic">🏛</span>
+      <div className="bc-fund-teaser-txt">
+        <strong>Fondo IVA Familiar</strong>
+        <span>El ahorro de toda la familia</span>
+      </div>
+      <span className="bc-fund-teaser-amt">{BC.money(f.balance)}</span>
+    </button>
+  );
+}
+
+function ScreenFondo({ child }) {
+  const { state } = useStore();
+  const f = fundSummary(state);
+  const nameOf = (id) => (BC.CHILDREN.find((c) => c.id === id) || {});
+
+  // mensaje motivador sencillo
+  const lastOut = (f.tx || []).find((t) => t.type === "out");
+
+  return (
+    <div className="bc-screen">
+      <div className="bc-fund-hero">
+        <div className="bc-fund-hero-ic">🏛</div>
+        <div className="bc-fund-hero-label">Fondo IVA Familiar</div>
+        <div className="bc-fund-hero-amount">{BC.money(f.balance)}</div>
+        <div className="bc-fund-hero-sub">El dinero que entre todos cuidamos 💛</div>
+      </div>
+
+      <Card className="bc-iva-note">
+        Cada vez que alguien gana puntos, una parte va a este fondo común. Sirve para reparar la casa,
+        cuidar el carro y vivir experiencias juntos. ¡Todos aportamos, todos ganamos!
+      </Card>
+
+      <div className="bc-mini-grid">
+        <Stat label="Aportes este mes" value={BC.money(f.monthIn)} color="#1FB85A" icon="📥" />
+        <Stat label="Gastos este mes" value={BC.money(f.monthOut)} color="#FF7A45" icon="📤" />
+        <Stat label="Aportes del año" value={BC.money(f.yearIn)} color="#2E8BFF" icon="📅" />
+        <Stat label="Gastos del año" value={BC.money(f.yearOut)} color="#A855F7" icon="🧾" />
+      </div>
+
+      {lastOut && (
+        <Card className="bc-fund-msg">
+          🎉 Lo último que logramos juntos: <strong>{lastOut.label}</strong> ({BC.money(lastOut.amount)}).
+        </Card>
+      )}
+
+      <div className="bc-section-title">Quién ha aportado</div>
+      <div className="bc-budget-list">
+        {BC.CHILDREN.map((c) => {
+          const amt = f.byChild[c.id] || 0;
+          const max = Math.max(1, ...BC.CHILDREN.map((k) => f.byChild[k.id] || 0));
+          return (
+            <div key={c.id} className="bc-budget-row">
+              <span className="bc-budget-ic">{c.avatar}</span>
+              <div className="bc-budget-main">
+                <div className="bc-budget-top"><span>{c.name}</span><strong>{BC.money(amt)}</strong></div>
+                <ProgressBar value={amt} max={max} color={c.color} height={8} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="bc-section-title">Movimientos del fondo</div>
+      <div className="bc-tx-list">
+        {(f.tx || []).length === 0 && <div className="bc-empty">Aún no hay movimientos 🐣</div>}
+        {(f.tx || []).slice(0, 30).map((t) => (
+          <div key={t.id} className="bc-tx">
+            <span className="bc-tx-ic" style={{ background: (t.type === "in" ? "#1FB85A" : "#FF7A45") + "22" }}>
+              {t.type === "in" ? (nameOf(t.childId).avatar || "⭐") : (BC.fundCat(t.cat) || {}).icon || "🛠️"}
+            </span>
+            <div className="bc-tx-info">
+              <div className="bc-tx-label">{t.label}</div>
+              <div className="bc-tx-date">{fmtDate(t.ts)}</div>
+            </div>
+            <div className="bc-tx-amount" style={{ color: t.type === "in" ? "#1FB85A" : "#FF7A45" }}>
+              {t.type === "in" ? "+" : "−"}{BC.money(t.amount)}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* -------- PANEL FINANCIERO -------- */
+// Estimación de una meta de ahorro: % completado y semanas para alcanzarla
+// (según el ahorro esperado por semana = % de ahorro sobre el salario esperado).
+function goalEstimate(state, childId, s, goal) {
+  const pct = goal.target > 0 ? Math.min(100, Math.round((s.savings / goal.target) * 100)) : 0;
+  const remaining = Math.max(0, goal.target - s.savings);
+  const ahorroPct = budgetPctOf(state, "ahorro");
+  const weeklySave = (s.expectedNet * ahorroPct / 100) / 2; // quincena = 2 semanas
+  const weeks = remaining <= 0 ? 0 : (weeklySave > 0 ? Math.ceil(remaining / weeklySave) : null);
+  return { pct, remaining, weeks };
+}
+function weeksLabel(weeks) {
+  if (weeks == null) return "Ahorra un poco para estimarlo";
+  if (weeks === 0) return "¡Ya la alcanzaste! 🎉";
+  if (weeks === 1) return "~1 semana";
+  if (weeks < 8) return "~" + weeks + " semanas";
+  const months = Math.round(weeks / 4.3);
+  return "~" + months + (months === 1 ? " mes" : " meses");
+}
+
+function ScreenPanel({ child }) {
+  const { state } = useStore();
+  const s = childSummary(state, child.id);
+  const tx = state.data[child.id].tx || [];
+  const goal = state.goals[child.id];
+
+  const now = new Date();
+  const startToday = new Date(now); startToday.setHours(0, 0, 0, 0);
+  const dow = now.getDay(); const diff = dow === 0 ? -6 : 1 - dow;
+  const startWeek = new Date(now); startWeek.setDate(now.getDate() + diff); startWeek.setHours(0, 0, 0, 0);
+  const incSince = (from) => tx.filter((t) => t.type === "income" && t.ts >= from).reduce((a, t) => a + t.amount, 0);
+  const daily = incSince(startToday.getTime());
+  const weekly = incSince(startWeek.getTime());
+  const totalNet = tx.filter((t) => t.type === "income").reduce((a, t) => a + t.amount, 0);
+  const f = fundSummary(state);
+  const ivaAport = f.byChild[child.id] || 0;
+  const est = goalEstimate(state, child.id, s, goal);
+
+  return (
+    <div className="bc-screen">
+      <div className="bc-screen-head">
+        <h2>📈 Mi panel financiero</h2>
+        <p>Tu dinero de un vistazo, como un adulto responsable.</p>
+      </div>
+
+      <div className="bc-mini-grid">
+        <Stat label="Ingreso de hoy" value={BC.money(daily)} color="#1FB85A" icon="☀️" />
+        <Stat label="Ingreso de la semana" value={BC.money(weekly)} color="#2E8BFF" icon="📆" />
+        <Stat label="Ingreso de la quincena" value={BC.money(s.income)} color="#A855F7" icon="🗓️" />
+        <Stat label="Salario esperado" value={BC.money(s.expectedNet)} color="#FF7A45" icon="💼" />
+      </div>
+
+      <Card className="bc-goal-card">
+        <div className="bc-goal-head">
+          <span className="bc-goal-emoji">{goal.emoji}</span>
+          <div>
+            <div className="bc-goal-name">Meta: {goal.name}</div>
+            <div className="bc-goal-nums"><MoneyText amount={s.savings} /> de <MoneyText amount={goal.target} /> · {est.pct}%</div>
+          </div>
+        </div>
+        <ProgressBar value={s.savings} max={goal.target} color={child.color} height={16} showPct />
+        <div className="bc-goal-left">
+          {est.remaining > 0
+            ? <>Te faltan <strong>{BC.money(est.remaining)}</strong> · <strong>{weeksLabel(est.weeks)}</strong></>
+            : <>🎉 ¡Meta cumplida!</>}
+        </div>
+      </Card>
+
+      <div className="bc-section-title">Mis estadísticas</div>
+      <div className="bc-mini-grid">
+        <Stat label="Saldo ahora" value={BC.money(s.balance)} color="#2E8BFF" icon="💰" />
+        <Stat label="Ahorrado total" value={BC.money(s.savings)} color="#FF7AB0" icon="🐷" />
+        <Stat label="Ganado en total" value={BC.money(totalNet)} color="#1FB85A" icon="💪" />
+        <Stat label="Aportado al fondo" value={BC.money(ivaAport)} color="#7C5CFF" icon="🏛" />
+      </div>
+
+      <Card className="bc-budget-tip">
+        💡 Obligaciones cubiertas esta quincena: <strong>{s.obligPaidCount}/{s.obligTotalCount}</strong>.
+        Recuerda: primero las obligaciones, luego el ahorro y al final tus gustos.
+      </Card>
+    </div>
+  );
+}
+
 /* -------- helpers -------- */
 function txColor(type) {
   return type === "income" ? "#1FB85A" : type === "expense" ? "#FF4D5E" : "#2E8BFF";
@@ -464,4 +634,5 @@ function shade(hex, amt) {
 
 Object.assign(window, {
   ScreenInicio, ScreenGanar, ScreenPagar, ScreenAhorro, ScreenRegistro, ScreenPresupuesto, ScreenLogros,
+  ScreenFondo, FundTeaser, ScreenPanel,
 });

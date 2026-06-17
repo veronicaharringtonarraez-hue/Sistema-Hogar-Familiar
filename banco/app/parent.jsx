@@ -31,21 +31,23 @@ function ParentPanel({ onClose }) {
         <div className="bc-parent-balance" style={{ background: cfg.colorSoft }}>
           <div><span>Dinero</span><strong style={{ color: cfg.color }}>{BC.money(s.balance)}</strong></div>
           <div><span>Ahorro</span><strong style={{ color: cfg.color }}>{BC.money(s.savings)}</strong></div>
-          <div><span>Ganado mes</span><strong style={{ color: cfg.color }}>{BC.money(s.income)}</strong></div>
+          <div><span>Ganado quincena</span><strong style={{ color: cfg.color }}>{BC.money(s.income)}</strong></div>
         </div>
 
         <GivePoints child={cfg} actions={actions} fx={fx} />
         <ExamBonus child={cfg} actions={actions} fx={fx} />
         <BudgetEditor child={cfg} state={state} actions={actions} fx={fx} />
         <EditGoal childId={cfg.id} goal={state.goals[cfg.id]} actions={actions} fx={fx} color={cfg.color} />
+        <IvaConfig state={state} actions={actions} fx={fx} />
+        <FundSpend state={state} actions={actions} fx={fx} />
 
         <Card className="bc-padmin">
           <div className="bc-padmin-title">Administrar</div>
           <button className="bc-admin-btn" onClick={() => {
-            if (confirm(`¿Reiniciar el mes de ${cfg.name}? Se borran los pagos y el ingreso del mes (el saldo y ahorro se conservan).`)) {
-              actions.resetChildMonth(cfg.id); fx.toast("Mes reiniciado");
+            if (confirm(`¿Reiniciar la quincena de ${cfg.name}? Se borran las obligaciones cubiertas y el ingreso de la quincena (el saldo y ahorro se conservan).`)) {
+              actions.resetChildMonth(cfg.id); fx.toast("Quincena reiniciada");
             }
-          }}>🔄 Reiniciar el mes de {cfg.name}</button>
+          }}>🔄 Reiniciar la quincena de {cfg.name}</button>
         </Card>
 
         <ChangePin actions={actions} currentPin={state.pin} fx={fx} />
@@ -183,36 +185,34 @@ function EditGoal({ childId, goal, actions, fx, color }) {
 }
 
 function BudgetEditor({ child, state, actions, fx }) {
-  const mk = BC.monthKey();
-  const exps = childExpenses(state, child.id, mk);
-  const total = exps.reduce((s, e) => s + e.amount, 0);
-  const hasOverride = !!(state.budgets && state.budgets[child.id] && state.budgets[child.id][mk]);
+  const cats = BC.BUDGET_CATS.map((c) => ({ ...c, pct: budgetPctOf(state, c.id) }));
+  const total = cats.reduce((s, c) => s + c.pct, 0);
+  const hasOverride = !!(state.budgetPct && Object.keys(state.budgetPct).length);
 
   return (
     <Card className="bc-padmin">
-      <div className="bc-padmin-title">📊 Presupuesto de {child.name}</div>
+      <div className="bc-padmin-title">📊 Distribución del presupuesto</div>
       <p className="bc-muted">
-        Ajusta cuánto cuesta cada gasto este mes ({BC.monthLabel(mk)}). Se guarda solo y queda igual cuando vuelvas a abrir la app.
-        El próximo mes empieza de nuevo con estos valores como base.
+        Cada categoría es un % del ingreso NETO de la quincena (igual para toda la familia). Lo ideal es que sumen 100%.
       </p>
 
-      {exps.map((e) => (
-        <BudgetRow key={e.id}
-          icon={e.icon} label={e.label} value={e.amount}
-          onSave={(v) => actions.setBudget(child.id, mk, e.id, v)} />
+      {cats.map((c) => (
+        <BudgetRow key={c.id}
+          icon={c.icon} label={c.label} value={c.pct}
+          onSave={(v) => actions.setBudgetPct(c.id, v)} />
       ))}
 
       <div className="bc-bt-row" style={{ marginTop: 4, paddingTop: 8, borderTop: "1px solid var(--line)" }}>
-        <span>Total gastos fijos del mes</span>
-        <strong style={{ color: child.color }}>{BC.money(total)}</strong>
+        <span>Suma total</span>
+        <strong style={{ color: total === 100 ? "var(--green)" : "var(--red)" }}>{total}%</strong>
       </div>
 
       {hasOverride && (
         <button className="bc-admin-btn" onClick={() => {
-          if (confirm(`¿Volver a los montos por defecto del presupuesto de ${child.name} para ${BC.monthLabel(mk)}?`)) {
-            actions.resetBudget(child.id, mk); fx.toast("Presupuesto restablecido");
+          if (confirm("¿Volver a la distribución por defecto (30/15/10…)?")) {
+            actions.resetBudgetPct(); fx.toast("Distribución restablecida");
           }
-        }}>↩️ Restablecer montos por defecto</button>
+        }}>↩️ Restablecer porcentajes por defecto</button>
       )}
     </Card>
   );
@@ -223,7 +223,7 @@ function BudgetRow({ icon, label, value, onSave }) {
   // Si el valor guardado cambia desde fuera (p. ej. al restablecer), refrescamos el campo.
   useEffect(() => { setDraft(String(value)); }, [value]);
   const commit = () => {
-    const n = Math.max(0, Math.round(Number(draft) || 0));
+    const n = Math.max(0, Math.min(100, Math.round(Number(draft) || 0)));
     setDraft(String(n));
     if (n !== value) onSave(n);
   };
@@ -234,13 +234,72 @@ function BudgetRow({ icon, label, value, onSave }) {
         className="bc-input num"
         type="number"
         inputMode="numeric"
-        min="0"
+        min="0" max="100"
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={commit}
         onKeyDown={(e) => { if (e.key === "Enter") e.target.blur(); }}
       />
+      <span style={{ fontWeight: 800, color: "var(--text-soft)" }}>%</span>
     </div>
+  );
+}
+
+function IvaConfig({ state, actions, fx }) {
+  const cfg = state.ivaCfg || { enabled: true, pct: BC.IVA_DEFAULT };
+  const pctInt = Math.round((cfg.pct || 0) * 100);
+  return (
+    <Card className="bc-padmin">
+      <div className="bc-padmin-title">🏛 IVA Familiar</div>
+      <p className="bc-muted">
+        Un % de cada ingreso por tareas va al Fondo IVA Familiar (cuenta compartida). Es educativo:
+        enseña que parte de lo que ganamos sostiene los bienes comunes. No afecta puntos ni privilegios.
+      </p>
+      <div className="bc-two-btn">
+        <button className={"bc-chip " + (cfg.enabled ? "green" : "")} onClick={() => { actions.setIva({ enabled: !cfg.enabled }); fx.toast(cfg.enabled ? "IVA desactivado" : "IVA activado"); }}>
+          {cfg.enabled ? "Activado ✅" : "Desactivado"}
+        </button>
+      </div>
+      <div className="bc-exam-row">
+        <label style={{ flex: 1 }}>Porcentaje</label>
+        <div className="bc-amount-row sm">
+          <button onClick={() => actions.setIva({ pct: Math.max(0, (pctInt - 1)) / 100 })}>−</button>
+          <div className="bc-amount-val" style={{ minWidth: 70 }}>{pctInt}%</div>
+          <button onClick={() => actions.setIva({ pct: Math.min(50, (pctInt + 1)) / 100 })}>+</button>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function FundSpend({ state, actions, fx }) {
+  const f = fundSummary(state);
+  const [cat, setCat] = useState(BC.FUND_CATS[0].id);
+  const [amt, setAmt] = useState(100);
+  const [label, setLabel] = useState("");
+  return (
+    <Card className="bc-padmin">
+      <div className="bc-padmin-title">🏛 Fondo IVA Familiar — gastar</div>
+      <p className="bc-muted">Saldo del fondo: <strong>{BC.money(f.balance)}</strong>. Úsalo para proyectos compartidos.</p>
+      <div className="bc-chip-row wrap">
+        {BC.FUND_CATS.map((c) => (
+          <button key={c.id} className={"bc-chip " + (cat === c.id ? "green" : "")} onClick={() => setCat(c.id)}>
+            {c.icon} {c.label}
+          </button>
+        ))}
+      </div>
+      <div className="bc-amount-row sm">
+        <button onClick={() => setAmt((a) => Math.max(1, a - 10))}>−</button>
+        <div className="bc-amount-val">{BC.money(amt)}</div>
+        <button onClick={() => setAmt((a) => a + 10)}>+</button>
+      </div>
+      <input className="bc-input" placeholder="¿En qué se usó? (ej: pintura del cuarto)" value={label} onChange={(e) => setLabel(e.target.value)} />
+      <button className="bc-btn-primary full" disabled={amt > f.balance} onClick={() => {
+        const ok = actions.fundSpend(amt, cat, label || (BC.fundCat(cat) || {}).label);
+        if (ok) { setLabel(""); fx.celebrate(); fx.toast("Gasto del fondo registrado 🏛"); }
+        else fx.toast("Saldo del fondo insuficiente");
+      }}>{amt > f.balance ? "Saldo insuficiente" : `Gastar ${BC.money(amt)} del fondo`}</button>
+    </Card>
   );
 }
 

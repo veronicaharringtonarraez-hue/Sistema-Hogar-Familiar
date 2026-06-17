@@ -283,6 +283,36 @@ h1,h2,h3{ font-family:'Baloo 2',cursive; font-weight:700; line-height:1.1; }
 .bc-bt-row{ display:flex; justify-content:space-between; font-weight:800; color:var(--text); font-size:.95rem; }
 .bc-bt-row strong{ font-family:'Baloo 2'; }
 .bc-budget-tip{ background:#FFB02016; border:2px solid #FFB02040; font-weight:700; color:var(--text-soft); font-size:.9rem; line-height:1.5; }
+.bc-budget-group{ font-family:'Baloo 2'; font-weight:800; font-size:.9rem; color:var(--text-soft); margin-bottom:2px; }
+.bc-pct-tag{ font-size:.7rem; font-weight:900; color:#fff; background:var(--muted); padding:1px 7px; border-radius:8px; margin-left:4px; vertical-align:middle; }
+.bc-salary-card{ text-align:center; }
+.bc-salary-label{ font-weight:800; color:var(--text-soft); font-size:.85rem; }
+.bc-salary-amount{ font-family:'Baloo 2'; font-weight:800; font-size:2.4rem; line-height:1.1; }
+.bc-salary-sub{ font-weight:700; color:var(--text-soft); font-size:.78rem; }
+.bc-receipt{ display:flex; flex-direction:column; gap:6px; }
+.bc-receipt-head{ font-family:'Baloo 2'; font-weight:800; font-size:1rem; margin-bottom:2px; }
+.bc-receipt-row{ display:flex; justify-content:space-between; font-weight:800; color:var(--text); font-size:.95rem; }
+.bc-receipt-row.sub{ color:var(--text-soft); font-weight:700; }
+.bc-receipt-row strong{ font-family:'Baloo 2'; }
+.bc-receipt-row.total{ border-top:2px solid; margin-top:4px; padding-top:6px; font-size:1.1rem; }
+
+/* ============ IVA / FONDO FAMILIAR ============ */
+.bc-iva-note{ background:#7C5CFF12; border:2px solid #7C5CFF33; font-weight:700; color:var(--text-soft); font-size:.9rem; line-height:1.5; }
+.bc-iva-note strong{ color:var(--text); }
+.bc-fund-teaser{ display:flex; align-items:center; gap:12px; width:100%; text-align:left; background:linear-gradient(135deg,#EDE7FF,#E7F0FF); border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px; box-shadow:var(--shadow); }
+[data-theme="galaxia"] .bc-fund-teaser{ background:var(--card-2); }
+.bc-fund-teaser-ic{ font-size:1.8rem; }
+.bc-fund-teaser-txt{ flex:1; display:flex; flex-direction:column; }
+.bc-fund-teaser-txt strong{ font-family:'Baloo 2'; font-weight:700; font-size:1rem; color:var(--text); }
+.bc-fund-teaser-txt span{ font-size:.8rem; color:var(--muted); font-weight:700; }
+.bc-fund-teaser-amt{ font-family:'Baloo 2'; font-weight:800; font-size:1.3rem; color:#6C4DD6; }
+[data-theme="galaxia"] .bc-fund-teaser-amt{ color:#C9B8FF; }
+.bc-fund-hero{ text-align:center; background:linear-gradient(135deg,#7C5CFF,#5B8DEF); color:#fff; border-radius:var(--radius); padding:22px; box-shadow:0 12px 30px rgba(90,80,200,.3); }
+.bc-fund-hero-ic{ font-size:2.6rem; }
+.bc-fund-hero-label{ font-weight:800; opacity:.92; margin-top:2px; }
+.bc-fund-hero-amount{ font-family:'Baloo 2'; font-weight:800; font-size:2.6rem; line-height:1; margin:4px 0 4px; }
+.bc-fund-hero-sub{ font-weight:700; opacity:.95; font-size:.92rem; }
+.bc-fund-msg{ background:#1FB85A14; border:2px solid #1FB85A33; font-weight:700; color:#159a48; font-size:.9rem; line-height:1.5; }
 
 /* ============ MODAL / PIN ============ */
 .bc-modal-overlay{ position:fixed; inset:0; background:rgba(20,10,30,.45); backdrop-filter:blur(4px); z-index:60; display:flex; align-items:flex-end; justify-content:center; padding:0; animation:fade .2s; }
@@ -413,6 +443,8 @@ h1,h2,h3{ font-family:'Baloo 2',cursive; font-weight:700; line-height:1.1; }
 <!-- Familia y PIN del Hogar (fusión): el banco deriva sus cuentas de aquí -->
 <script src="../images.js"></script>
 <script src="../data.js"></script>
+<!-- Catálogo de tareas de "Mi día": el banco calcula con él el salario esperado -->
+<script src="../micro-data.js"></script>
 
 <!-- Nube (Firebase): sincroniza el banco entre dispositivos. Si no está
      configurado, el banco guarda solo en este dispositivo. -->
