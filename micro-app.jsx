@@ -1,12 +1,15 @@
 /* ===========================================================
-   MICROTAREAS — app independiente (1 punto + inspección)
+   SISTEMA INTELIGENTE DE TAREAS — app (flujo del día)
    Comparte perfiles/fotos con data.js pero usa su PROPIO
    almacenamiento (fam_micro_v1) y su propio documento en la nube.
    =========================================================== */
 const { useState, useEffect, useMemo, useRef } = React;
 const MKEY = 'fam_micro_v1';
 const ORDER = ['mama', 'papa', 'taylor', 'emmeth', 'christopher', 'rachel'];
-const NAME = p => p.name;
+
+/* nombre "apodo" y nombre real (ambos) */
+const NICK = p => p.name;
+const REAL = p => p.realName || p.name;
 
 function weekKey(d = new Date()) {
   const dt = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
@@ -16,21 +19,32 @@ function weekKey(d = new Date()) {
   const week = 1 + Math.round(((dt - firstThu) / 86400000 - 3 + ((firstThu.getUTCDay() + 6) % 7)) / 7);
   return dt.getUTCFullYear() + '-W' + week;
 }
+
 function loadStore() {
   let s = {};
   try { s = JSON.parse(localStorage.getItem(MKEY)) || {}; } catch (e) {}
   const wk = weekKey();
-  if (s.week !== wk) { s.marks = {}; s.bonus = []; s.week = wk; }
-  s.marks = s.marks || {}; s.bonus = s.bonus || [];
+  if (s.week !== wk) { s.marks = {}; s.bonus = []; s.checks = {}; s.week = wk; }
+  s.marks = s.marks || {}; s.bonus = s.bonus || []; s.checks = s.checks || {};
   s.profile = s.profile || 'taylor';
   return s;
 }
 
 /* ---- puntos ---- */
 function bonusPts(pid, bonus) { return (bonus || []).filter(b => b.pid === pid).reduce((s, b) => s + (b.pts || 0), 0); }
-function taskPts(pid, marks) { return window.microTasksFor(pid).reduce((s, t) => s + window.microMarkPoints(marks[pid + ':' + t.id]), 0); }
+function taskPts(pid, marks) { return window.routinesFor(pid).reduce((s, t) => s + window.routinePoints(t, marks[pid + ':' + t.id]), 0); }
 function personPts(pid, store) { return taskPts(pid, store.marks) + bonusPts(pid, store.bonus); }
-const FREQ_LBL = { diario: 'Cada día', semanal: 'Semanal', profundo: 'Profundo' };
+
+/* ---- momento sugerido según la hora ---- */
+function currentMoment(d = new Date()) {
+  const h = d.getHours();
+  if (h < 11) return 'manana';
+  if (h < 13) return 'escuela';
+  if (h < 16) return 'tarde';
+  if (h < 19) return 'estudio';
+  if (h < 22) return 'noche';
+  return 'manana';
+}
 
 /* ---- avatar ---- */
 function Avatar({ p, size = 44 }) {
@@ -39,56 +53,121 @@ function Avatar({ p, size = 44 }) {
 }
 
 /* =========================================================
-   VISTA NIÑOS: mis microtareas por área → subárea
+   VISTA NIÑOS: mi día (por momentos)
    ========================================================= */
-function MyTasks({ pid, store, onClaim, showToast }) {
-  const mine = window.microTasksFor(pid);
-  if (!mine.length) return <div className="empty">Esta persona no tiene microtareas asignadas. 🍼</div>;
+function TaskRow({ pid, t, store, onClaim, showToast }) {
+  const st = window.microMarkState(store.marks[pid + ':' + t.id]);
+  return (
+    <div className={'mt ' + st} onClick={() => {
+      if (st === 'ok') { showToast('Ya está aprobada ✓'); return; }
+      onClaim(pid, t.id, st !== 'claim');
+    }}>
+      <div className={'box ' + st}>{st === 'ok' ? '✓' : st === 'claim' ? '⏳' : ''}</div>
+      <span className="mt-ic">{t.icon}</span>
+      <span className="mt-t">{t.label}</span>
+      {st === 'claim' && <span className="tagp">por revisar</span>}
+      {st === 'ok' && <span className="tagp ok">+1</span>}
+    </div>
+  );
+}
 
-  // agrupar por área (en el orden del catálogo)
-  const byArea = window.MICRO_AREAS
-    .map(a => ({ a, items: mine.filter(t => t.areaKey === a.key) }))
-    .filter(g => g.items.length);
+function AreaCard({ pid, t, store, onClaim, onCheck, showToast }) {
+  const k = pid + ':' + t.id;
+  const st = window.microMarkState(store.marks[k]);
+  const mark = store.marks[k];
+  const checks = store.checks[k] || [];
+  const doneCount = t.micro.filter((_, i) => checks[i]).length;
+  const score = window.routinePoints(t, mark);
 
+  return (
+    <div className={'areacard ' + st}>
+      <div className="area-h">
+        <span className="area-ic">{t.icon}</span>
+        <div className="grow">
+          <div className="area-t">{t.label} <span className="ptbadge">10 pts</span></div>
+          <div className="area-c">{doneCount}/{t.micro.length} pasos · {t.freq === 'semanal' ? 'semanal' : 'cada día'}</div>
+        </div>
+        {st === 'ok' && <span className="tagp ok big">+{score}</span>}
+        {st === 'claim' && <span className="tagp">por revisar ⏳</span>}
+      </div>
+
+      <div className="checklist">
+        {t.micro.map((label, i) => (
+          <div key={i} className={'chk ' + (checks[i] ? 'on' : '')} onClick={() => { if (st !== 'ok') onCheck(pid, t.id, i); }}>
+            <div className="cbox">{checks[i] ? '✓' : ''}</div>
+            <span>{label}</span>
+          </div>
+        ))}
+      </div>
+
+      {st !== 'ok' && (
+        <button className={'area-claim' + (st === 'claim' ? ' claimed' : '')}
+          onClick={() => onClaim(pid, t.id, st !== 'claim')}>
+          {st === 'claim' ? 'Marcada lista ⏳ (toca para deshacer)' : 'Marcar área lista para revisar'}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function MyDay({ pid, store, onClaim, onCheck, showToast }) {
+  const today = new Date();
+  const [open, setOpen] = useState(currentMoment(today));
+  const mine = window.routinesFor(pid).filter(t => window.appliesToday(t, today));
+  if (!mine.length) return <div className="empty">Hoy no hay tareas para esta persona. 🌿</div>;
+
+  const total = mine.length;
   const okCount = mine.filter(t => window.microMarkState(store.marks[pid + ':' + t.id]) === 'ok').length;
-  const claimCount = mine.filter(t => window.microMarkState(store.marks[pid + ':' + t.id]) === 'claim').length;
+
+  // agrupar por momento (en orden del día) y dentro por "group"
+  const byMoment = window.MOMENTS.map(m => {
+    const items = mine.filter(t => t.moment === m.id);
+    return { m, items };
+  }).filter(g => g.items.length);
+
+  const now = currentMoment(today);
 
   return (
     <>
       <div className="card progress">
         <div className="row between">
-          <span className="eyebrow">{okCount} aprobadas · {claimCount} por revisar</span>
+          <span className="eyebrow">{okCount} de {total} aprobadas hoy</span>
           <span className="chip pts">⭐ {personPts(pid, store)} pts</span>
         </div>
-        <div className="bar"><i style={{ width: (mine.length ? okCount / mine.length * 100 : 0) + '%' }} /></div>
+        <div className="bar"><i style={{ width: (total ? okCount / total * 100 : 0) + '%' }} /></div>
       </div>
 
-      {byArea.map(({ a, items }) => {
-        // subagrupar por subárea conservando orden
-        const subs = [];
-        items.forEach(t => { let g = subs.find(x => x.sub === t.sub); if (!g) { g = { sub: t.sub, freq: t.freq, items: [] }; subs.push(g); } g.items.push(t); });
+      {byMoment.map(({ m, items }) => {
+        const isOpen = open === m.id;
+        const mOk = items.filter(t => window.microMarkState(store.marks[pid + ':' + t.id]) === 'ok').length;
+        const isNow = m.id === now;
+        // subgrupos por "group"
+        const groups = [];
+        items.forEach(t => { let g = groups.find(x => x.group === t.group); if (!g) { g = { group: t.group, items: [] }; groups.push(g); } g.items.push(t); });
+
         return (
-          <div className="card area" key={a.key}>
-            <div className="area-h"><span className="area-ic">{a.icon}</span><div><div className="area-t">{a.area}</div><div className="area-c">{a.cat}</div></div></div>
-            {subs.map(s => (
-              <div className="sub" key={s.sub}>
-                <div className="sub-h">{s.sub} <span className="freq">{FREQ_LBL[s.freq] || ''}</span></div>
-                {s.items.map(t => {
-                  const st = window.microMarkState(store.marks[pid + ':' + t.id]);
-                  return (
-                    <div key={t.id} className={'mt ' + st} onClick={() => {
-                      if (st === 'ok') { showToast('Ya está aprobada ✓'); return; }
-                      onClaim(pid, t.id, st !== 'claim');
-                    }}>
-                      <div className={'box ' + st}>{st === 'ok' ? '✓' : st === 'claim' ? '⏳' : ''}</div>
-                      <span className="mt-t">{t.label}</span>
-                      {st === 'claim' && <span className="tagp">por revisar</span>}
-                      {st === 'ok' && <span className="tagp ok">+1</span>}
-                    </div>
-                  );
-                })}
+          <div className={'moment' + (isNow ? ' now' : '') + (isOpen ? ' open' : '')} key={m.id}>
+            <button className="moment-h" onClick={() => setOpen(isOpen ? null : m.id)}>
+              <span className="moment-ic">{m.icon}</span>
+              <div className="grow">
+                <div className="moment-t">{m.label} {isNow && <span className="nowtag">ahora</span>}</div>
+                <div className="moment-c">{mOk}/{items.length} listas</div>
               </div>
-            ))}
+              <span className="chev">{isOpen ? '▾' : '▸'}</span>
+            </button>
+
+            {isOpen && (
+              <div className="moment-body">
+                {groups.map(g => (
+                  <div className="grp" key={g.group}>
+                    <div className="grp-h">{g.group}</div>
+                    {g.items.map(t => t.type === 'area'
+                      ? <AreaCard key={t.id} pid={pid} t={t} store={store} onClaim={onClaim} onCheck={onCheck} showToast={showToast} />
+                      : <TaskRow key={t.id} pid={pid} t={t} store={store} onClaim={onClaim} showToast={showToast} />)}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         );
       })}
@@ -99,13 +178,43 @@ function MyTasks({ pid, store, onClaim, showToast }) {
 /* =========================================================
    PANEL PADRES: inspección + ranking + bonos
    ========================================================= */
-function ParentPanel({ store, onApprove, onReject, onGrant, showToast }) {
-  const [bonusPid, setBonusPid] = useState('taylor');
-  const [bonusType, setBonusType] = useState('ayuda');
+function InspectRow({ pid, t, onApproveTask, onApproveArea, onReject }) {
+  const p = window.PERSON(pid);
+  const [o, setO] = useState(5);
+  const [c, setC] = useState(5);
+  const isArea = t.type === 'area';
 
-  // cola de inspección: todas las marcas en 'claim'
+  return (
+    <div className="qrow">
+      <Avatar p={p} size={30} />
+      <div className="grow">
+        <div className="mt-t">{t.icon} {t.label}</div>
+        <div className="area-c">{NICK(p)} · {t.group}{isArea ? ' · área' : ''}</div>
+        {isArea && (
+          <div className="oc">
+            <div className="oc-row"><span>Orden</span>
+              <button onClick={() => setO(v => Math.max(0, v - 1))}>−</button><b>{o}</b><button onClick={() => setO(v => Math.min(5, v + 1))}>+</button>
+            </div>
+            <div className="oc-row"><span>Limpieza</span>
+              <button onClick={() => setC(v => Math.max(0, v - 1))}>−</button><b>{c}</b><button onClick={() => setC(v => Math.min(5, v + 1))}>+</button>
+            </div>
+          </div>
+        )}
+      </div>
+      {isArea
+        ? <button className="mini ok" onClick={() => onApproveArea(pid, t.id, o, c)}>Aprobar +{o + c}</button>
+        : <button className="mini ok" onClick={() => onApproveTask(pid, t.id)}>Aprobar +1</button>}
+      <button className="mini no" onClick={() => onReject(pid, t.id)}>✕</button>
+    </div>
+  );
+}
+
+function ParentPanel({ store, onApproveTask, onApproveArea, onReject, onGrant, showToast }) {
+  const [bonusPid, setBonusPid] = useState('taylor');
+  const [bonusType, setBonusType] = useState('hermano');
+
   const claims = [];
-  ORDER.forEach(pid => window.microTasksFor(pid).forEach(t => {
+  ORDER.forEach(pid => window.routinesFor(pid).forEach(t => {
     if (window.microMarkState(store.marks[pid + ':' + t.id]) === 'claim') claims.push({ pid, t });
   }));
 
@@ -115,60 +224,47 @@ function ParentPanel({ store, onApprove, onReject, onGrant, showToast }) {
 
   return (
     <>
-      {/* inspección */}
       <div className="card area">
         <div className="area-h"><span className="area-ic">🔍</span><div><div className="area-t">Por inspeccionar</div><div className="area-c">{claims.length} marcadas como listas</div></div></div>
         {claims.length === 0
           ? <div className="empty">¡Todo al día! Nada por revisar. ✨</div>
-          : claims.map(({ pid, t }) => {
-            const p = window.PERSON(pid);
-            return (
-              <div className="qrow" key={pid + ':' + t.id}>
-                <Avatar p={p} size={30} />
-                <div className="grow">
-                  <div className="mt-t">{t.icon} {t.label}</div>
-                  <div className="area-c">{NAME(p)} · {t.area}</div>
-                </div>
-                <button className="mini ok" onClick={() => onApprove(pid, t.id)}>Aprobar +1</button>
-                <button className="mini no" onClick={() => onReject(pid, t.id)}>✕</button>
-              </div>
-            );
-          })}
+          : claims.map(({ pid, t }) => (
+            <InspectRow key={pid + ':' + t.id} pid={pid} t={t}
+              onApproveTask={onApproveTask} onApproveArea={onApproveArea} onReject={onReject} />
+          ))}
       </div>
 
-      {/* ranking */}
       <div className="card area">
         <div className="area-h"><span className="area-ic">🏅</span><div><div className="area-t">Ranking de la semana</div><div className="area-c">puntos acumulados</div></div></div>
         {ranking.map((r, i) => (
           <div className="qrow" key={r.k.id}>
             <span style={{ width: 22, textAlign: 'center' }}>{medals[i] || ''}</span>
             <Avatar p={r.k} size={30} />
-            <div className="grow mt-t">{r.k.name}</div>
+            <div className="grow mt-t">{NICK(r.k)} <span className="real">· {REAL(r.k)}</span></div>
             <span className="chip pts">{r.pts} pts</span>
           </div>
         ))}
       </div>
 
-      {/* bonos */}
       <div className="card area">
-        <div className="area-h"><span className="area-ic">✨</span><div><div className="area-t">Dar un bono</div><div className="area-c">suma puntos extra</div></div></div>
+        <div className="area-h"><span className="area-ic">✨</span><div><div className="area-t">Dar un bono</div><div className="area-c">ayudas espontáneas (puntos extra)</div></div></div>
         <div className="sub">
           <div className="sub-h">¿A quién?</div>
           <select className="sel" value={bonusPid} onChange={e => setBonusPid(e.target.value)}>
-            {ORDER.map(id => <option key={id} value={id}>{NAME(window.PERSON(id))}</option>)}
+            {ORDER.map(id => { const p = window.PERSON(id); return <option key={id} value={id}>{NICK(p)} · {REAL(p)}</option>; })}
           </select>
         </div>
         <div className="sub">
           <div className="sub-h">Tipo de bono</div>
           {window.MICRO_BONUSES.map(b => (
             <div key={b.id} className={'mt ' + (bonusType === b.id ? 'claim' : 'todo')} onClick={() => setBonusType(b.id)}>
-              <span style={{ fontSize: 18 }}>{b.icon}</span>
+              <span className="mt-ic">{b.icon}</span>
               <span className="mt-t">{b.label}</span>
               <span className="tagp ok">+{b.pts}</span>
             </div>
           ))}
         </div>
-        <button className="btn-primary" onClick={() => { const b = window.MICRO_BONUS(bonusType); onGrant({ pid: bonusPid, type: bonusType, pts: b.pts, at: Date.now() }); showToast('Bono +' + b.pts + ' para ' + NAME(window.PERSON(bonusPid)) + ' ✨'); }}>
+        <button className="btn-primary" onClick={() => { const b = window.MICRO_BONUS(bonusType); onGrant({ pid: bonusPid, type: bonusType, pts: b.pts, at: Date.now() }); showToast('Bono +' + b.pts + ' para ' + NICK(window.PERSON(bonusPid)) + ' ✨'); }}>
           Dar bono
         </button>
       </div>
@@ -204,11 +300,11 @@ function PinGate({ onOk, onCancel }) {
 function App() {
   const [store, setStore] = useState(loadStore);
   const [profile, setProfile] = useState(store.profile);
-  const [tab, setTab] = useState('mis');     // 'mis' | 'padres'
+  const [tab, setTab] = useState('mis');
   const [pinOk, setPinOk] = useState(false);
   const [toast, setToast] = useState(null);
   const tRef = useRef(null);
-  const remoteRef = useRef(null);   // función de sync para subir
+  const remoteRef = useRef(null);
   const lastJSON = useRef('');
 
   const person = window.PERSON(profile);
@@ -223,11 +319,19 @@ function App() {
     localStorage.setItem(MKEY, json);
     if (remoteRef.current) remoteRef.current(json);
   }
-  // guardar perfil seleccionado
   useEffect(() => { const n = { ...store, profile }; setStore(n); const j = JSON.stringify(n); lastJSON.current = j; localStorage.setItem(MKEY, j); if (remoteRef.current) remoteRef.current(j); }, [profile]);
 
   function claim(pid, id, on) { const k = pid + ':' + id; const marks = { ...store.marks }; if (on) marks[k] = { s: 'claim' }; else delete marks[k]; persist({ ...store, marks }); if (on) showToast('Marcada como lista ⏳ (espera aprobación)'); }
-  function approve(pid, id) { persist({ ...store, marks: { ...store.marks, [pid + ':' + id]: { s: 'ok' } } }); showToast('Aprobada +1 ✓'); }
+  function check(pid, id, idx) {
+    const k = pid + ':' + id;
+    const checks = { ...store.checks };
+    const arr = (checks[k] || []).slice();
+    arr[idx] = !arr[idx];
+    checks[k] = arr;
+    persist({ ...store, checks });
+  }
+  function approveTask(pid, id) { persist({ ...store, marks: { ...store.marks, [pid + ':' + id]: { s: 'ok' } } }); showToast('Aprobada +1 ✓'); }
+  function approveArea(pid, id, o, c) { persist({ ...store, marks: { ...store.marks, [pid + ':' + id]: { s: 'ok', o, c } } }); showToast('Área aprobada +' + (o + c) + ' ✓'); }
   function reject(pid, id) { const marks = { ...store.marks }; delete marks[pid + ':' + id]; persist({ ...store, marks }); }
   function grant(b) { persist({ ...store, bonus: [...(store.bonus || []), b] }); }
 
@@ -235,7 +339,7 @@ function App() {
   useEffect(() => {
     const cfg = window.FIREBASE_CONFIG || {};
     const ok = cfg.apiKey && !/PEGA_AQUI|REEMPLAZAR/i.test(cfg.apiKey) && cfg.projectId;
-    if (!ok || typeof firebase === 'undefined') return;     // sin nube: solo local
+    if (!ok || typeof firebase === 'undefined') return;
     let ref;
     try { if (!firebase.apps.length) firebase.initializeApp(cfg); ref = firebase.firestore().collection('hogares').doc('hogar-micro'); }
     catch (e) { console.warn('[micro nube] no inició', e); return; }
@@ -245,7 +349,6 @@ function App() {
       clearTimeout(writeTimer);
       writeTimer = setTimeout(() => { ref.set({ state: json, updated: Date.now() }).catch(e => console.warn('[micro nube] guardar', e)); }, 600);
     };
-    // lectura inicial + escucha en vivo
     ref.get().then(snap => {
       if (snap.exists && snap.data().state) { applyRemote(snap.data().state); }
       else if (lastJSON.current) { ref.set({ state: lastJSON.current, updated: Date.now() }).catch(() => {}); }
@@ -254,9 +357,9 @@ function App() {
     });
 
     function applyRemote(json) {
-      if (json === lastJSON.current) return;   // eco propio
+      if (json === lastJSON.current) return;
       lastJSON.current = json;
-      try { const s = JSON.parse(json); const wk = weekKey(); if (s.week !== wk) { s.marks = {}; s.bonus = []; s.week = wk; } s.marks = s.marks || {}; s.bonus = s.bonus || []; localStorage.setItem(MKEY, JSON.stringify(s)); setStore(prev => ({ ...s, profile: prev.profile })); } catch (e) {}
+      try { const s = JSON.parse(json); const wk = weekKey(); if (s.week !== wk) { s.marks = {}; s.bonus = []; s.checks = {}; s.week = wk; } s.marks = s.marks || {}; s.bonus = s.bonus || []; s.checks = s.checks || {}; localStorage.setItem(MKEY, JSON.stringify(s)); setStore(prev => ({ ...s, profile: prev.profile })); } catch (e) {}
     }
     return () => { remoteRef.current = null; };
   }, []);
@@ -264,7 +367,7 @@ function App() {
   return (
     <div className="wrap">
       <div className="topbar">
-        <div className="hi"><Avatar p={person} /><div><div className="sm">Microtareas</div><div className="nm">{person.name} {person.emoji}</div></div></div>
+        <div className="hi"><Avatar p={person} /><div><div className="sm">Mi día</div><div className="nm">{NICK(person)} <span className="nm-real">· {REAL(person)}</span> {person.emoji}</div></div></div>
         <div className="row" style={{ gap: 8 }}>
           {person.isKid && <span className="chip pts big">⭐ {personPts(profile, store)}</span>}
           <a className="home" href="index.html" title="Volver a la app">🏠</a>
@@ -274,20 +377,22 @@ function App() {
       <div className="who">
         {window.FAMILY.map(p => (
           <div key={p.id} className={'w' + (p.id === profile ? ' on' : '')} onClick={() => setProfile(p.id)} style={{ '--wa': p.colors.a }}>
-            <Avatar p={p} size={46} /><span>{p.short}</span>
+            <Avatar p={p} size={46} />
+            <span>{p.short}</span>
+            <small>{REAL(p)}</small>
           </div>
         ))}
       </div>
 
       <div className="seg">
-        <button className={tab === 'mis' ? 'on' : ''} onClick={() => setTab('mis')}>🎯 Mis tareas</button>
+        <button className={tab === 'mis' ? 'on' : ''} onClick={() => setTab('mis')}>🎯 Mi día</button>
         <button className={tab === 'padres' ? 'on' : ''} onClick={() => setTab('padres')}>🔍 Padres</button>
       </div>
 
       <div className="content">
-        {tab === 'mis' && <MyTasks pid={profile} store={store} onClaim={claim} showToast={showToast} />}
+        {tab === 'mis' && <MyDay pid={profile} store={store} onClaim={claim} onCheck={check} showToast={showToast} />}
         {tab === 'padres' && (pinOk
-          ? <ParentPanel store={store} onApprove={approve} onReject={reject} onGrant={grant} showToast={showToast} />
+          ? <ParentPanel store={store} onApproveTask={approveTask} onApproveArea={approveArea} onReject={reject} onGrant={grant} showToast={showToast} />
           : <PinGate onOk={() => setPinOk(true)} onCancel={() => setTab('mis')} />)}
       </div>
 

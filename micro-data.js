@@ -1,150 +1,322 @@
 /* ============================================================
-   CATÁLOGO DE MICROTAREAS  —  Áreas → Subáreas → Microtareas
+   SISTEMA INTELIGENTE DE TAREAS — Catálogo por persona y momento
    ------------------------------------------------------------
-   Sistema nuevo (independiente del de "Tabla de Tareas"):
-   cada microtarea vale 1 PUNTO y requiere inspección del adulto.
+   Filosofía: las tareas siguen el flujo natural del día. Primero
+   se muestra lo que toca AHORA y luego se van abriendo los
+   siguientes momentos.
 
-   - owner:  a quién pertenece el área (reparto por edad/capacidad).
-   - shared: true  → se cuida por turnos (la bebé Che-Che).
-   - personal:true → área de autocuidado de esa persona.
-   - freq:   'diario' | 'semanal' | 'profundo' (por subárea).
+   Dos tipos de tarea:
+     • type 'task'  → microtarea de checklist = 1 punto
+                      (claim → aprobación del adulto).
+     • type 'area'  → un área completa = base 10 puntos, que el
+                      adulto califica por ORDEN (0-5) + LIMPIEZA (0-5).
+                      Lleva su propia lista de microtareas (guía).
 
-   Para cambiar quién hace un área, edita su "owner".
+   Cada bloque del PLAN:
+     { moment, group, freq, days?, type?, icon?, items? | micro? }
+       - moment : id de MOMENTS (orden del día)
+       - group  : subtítulo (p. ej. "Autocuidado")
+       - freq   : 'diario' | 'semanal'
+       - days   : [0..6] (Dom..Sáb) si la tarea es solo ciertos días
+       - items  : [ [label, icon], ... ]   (para type 'task')
+       - micro  : [ 'microtarea', ... ]     (para type 'area')
    ============================================================ */
 
 window.MICRO_POINTS = 1;
 
-/* ---- Reparto por edad/capacidad (responsable de cada área) ----
-   Yue y Max (adultos) + Tay-Yay (10) llevan las áreas pesadas;
-   Dondo (7) áreas livianas; Misifu (4) solo su autocuidado;
-   Che-Che (1) se cuida por turnos. */
-window.MICRO_AREAS = [
-  /* ===================== ÁREAS DE LA CASA ===================== */
-  { key:'entrada', area:'Entrada japonesa', icon:'🚪', cat:'Organización', owner:'emmeth', subs:[
-    { sub:'Orden', freq:'diario', items:['Guardar zapatos propios','Alinear zapatos familiares','Guardar pantuflas','Vaciar cesta de objetos perdidos','Sacudir felpudo','Organizar mochilas','Organizar bolsos','Colgar llaves'] },
-    { sub:'Limpieza', freq:'semanal', items:['Barrer entrada','Trapear entrada','Limpiar espejo','Limpiar zapatero','Limpiar puerta principal'] },
-  ]},
-  { key:'sala', area:'Sala', icon:'🛋️', cat:'Limpieza', owner:'taylor', subs:[
-    { sub:'Orden', freq:'diario', items:['Doblar cobijas','Acomodar cojines','Guardar juguetes','Guardar controles remotos','Organizar mesa central','Organizar juegos de mesa','Guardar cargadores'] },
-    { sub:'Limpieza', freq:'semanal', items:['Sacudir muebles','Limpiar televisor','Limpiar mesa central','Limpiar repisas','Barrer piso','Trapear piso','Aspirar sofá','Limpiar debajo del sofá'] },
-  ]},
-  { key:'comedor', area:'Comedor', icon:'🍴', cat:'Limpieza', owner:'emmeth', subs:[
-    { sub:'Orden', freq:'diario', items:['Retirar platos','Retirar vasos','Retirar cubiertos','Organizar centro de mesa','Organizar sillas'] },
-    { sub:'Limpieza', freq:'diario', items:['Limpiar mesa','Limpiar sillas','Barrer','Trapear','Limpiar interruptores'] },
-  ]},
-  { key:'cocina', area:'Cocina', icon:'🍳', cat:'Cocina y Alimentación', owner:'mama', subs:[
-    { sub:'Rutina diaria', freq:'diario', items:['Lavar platos desayuno','Lavar platos almuerzo','Lavar platos cena','Guardar platos','Limpiar fregadero','Secar fregadero','Limpiar cocina','Limpiar microondas exterior','Limpiar cafetera','Limpiar air fryer','Limpiar mesón principal','Limpiar área preparación','Barrer cocina','Trapear cocina','Vaciar basura'] },
-    { sub:'Organización', freq:'semanal', items:['Guardar alimentos','Etiquetar alimentos','Revisar vencimientos','Organizar especias','Organizar frascos','Organizar despensa'] },
-    { sub:'Profundo', freq:'profundo', items:['Limpiar nevera','Revisar alimentos vencidos','Limpiar congelador','Limpiar horno','Limpiar campana','Limpiar debajo cocina','Limpiar detrás nevera'] },
-  ]},
-  { key:'bano_principal', area:'Baño principal', icon:'🚿', cat:'Limpieza', owner:'mama', subs:[
-    { sub:'Orden', freq:'semanal', items:['Reponer papel higiénico','Reponer jabón','Reponer shampoo','Reponer acondicionador','Doblar toallas','Guardar productos'] },
-    { sub:'Limpieza', freq:'semanal', items:['Lavar poceta','Lavar asiento','Limpiar tanque','Lavar lavamanos','Limpiar espejo','Limpiar grifería','Lavar ducha','Limpiar paredes ducha','Barrer','Trapear','Vaciar papelera'] },
-  ]},
-  { key:'bano_comun', area:'Baño común', icon:'🚽', cat:'Limpieza', owner:'taylor', subs:[
-    { sub:'Orden', freq:'semanal', items:['Reponer papel higiénico','Reponer jabón','Doblar toallas','Guardar productos'] },
-    { sub:'Limpieza', freq:'semanal', items:['Lavar poceta','Lavar asiento','Lavar lavamanos','Limpiar espejo','Limpiar grifería','Lavar ducha','Barrer','Trapear','Vaciar papelera'] },
-  ]},
-  { key:'cuarto_principal', area:'Cuarto principal', icon:'🛏️', cat:'Organización', owner:'mama', subs:[
-    { sub:'Orden', freq:'diario', items:['Hacer cama','Doblar ropa','Guardar ropa','Colgar ropa','Organizar mesas noche','Organizar zapatos'] },
-    { sub:'Limpieza', freq:'semanal', items:['Sacudir muebles','Barrer','Trapear','Limpiar cabecera','Limpiar televisor','Limpiar espejo'] },
-  ]},
-  { key:'closet_principal', area:'Closet principal', icon:'👕', cat:'Organización', owner:'papa', subs:[
-    { sub:'Organización', freq:'semanal', items:['Colgar ropa','Doblar ropa','Organizar zapatos','Organizar bolsos','Revisar ropa dañada','Revisar ropa que no se usa'] },
-    { sub:'Limpieza', freq:'profundo', items:['Barrer','Trapear','Limpiar repisas','Revisar humedad','Ventilar closet'] },
-  ]},
-  { key:'cuarto_ninos', area:'Cuarto de los niños', icon:'🧸', cat:'Organización', owner:'taylor', subs:[
-    { sub:'Orden', freq:'diario', items:['Hacer cama Tay-Yay','Hacer cama Dondo','Hacer cama Misifu','Guardar juguetes','Guardar libros','Guardar ropa','Guardar zapatos'] },
-    { sub:'Limpieza', freq:'semanal', items:['Barrer','Trapear','Sacudir muebles','Limpiar ventanas'] },
-  ]},
-  { key:'oficina_ninos', area:'Oficina de los niños', icon:'📖', cat:'Organización', owner:'taylor', subs:[
-    { sub:'Orden', freq:'diario', items:['Organizar mochilas','Organizar útiles','Organizar cuadernos','Organizar libros','Organizar escritorio'] },
-    { sub:'Limpieza', freq:'semanal', items:['Limpiar escritorio','Barrer','Trapear','Sacudir biblioteca'] },
-  ]},
-  { key:'oficina_padres', area:'Oficina de los padres', icon:'💻', cat:'Organización', owner:'papa', subs:[
-    { sub:'Orden', freq:'semanal', items:['Organizar escritorio Yue','Organizar escritorio Max','Organizar cables','Organizar documentos','Organizar libros','Organizar bolsos'] },
-    { sub:'Limpieza', freq:'semanal', items:['Limpiar escritorios','Limpiar monitores','Limpiar teclados','Barrer','Trapear','Vaciar basura'] },
-  ]},
-  { key:'lavanderia', area:'Lavandería', icon:'🧺', cat:'Lavandería', owner:'papa', subs:[
-    { sub:'Ropa', freq:'diario', items:['Clasificar ropa','Iniciar lavado','Cambiar a secadora','Tender ropa','Doblar ropa','Guardar ropa'] },
-    { sub:'Limpieza', freq:'semanal', items:['Limpiar filtro secadora','Limpiar filtro lavadora','Limpiar área detergentes','Barrer','Trapear'] },
-  ]},
-  { key:'jardin', area:'Jardín y huerto', icon:'🌿', cat:'Jardinería', owner:'papa', subs:[
-    { sub:'Diario', freq:'diario', items:['Regar plantas','Revisar humedad tierra','Revisar plagas'] },
-    { sub:'Semanal', freq:'semanal', items:['Podar','Fertilizar','Cosechar','Sembrar'] },
-  ]},
-
-  /* ===================== AUTOCUIDADO ===================== */
-  { key:'auto_yue', area:'Autocuidado · Yue', icon:'💜', cat:'Cuidado Personal', owner:'mama', personal:true, subs:[
-    { sub:'Mañana', freq:'diario', items:['Tomar agua al despertar','Tomar vitaminas','Lavar rostro','Aplicar hidratante','Aplicar protector solar','Cepillar cabello','Preparar ropa del día'] },
-    { sub:'Noche', freq:'diario', items:['Desmaquillar (si aplica)','Lavar rostro','Hidratante facial','Cepillar cabello','Preparar ropa siguiente día'] },
-    { sub:'Semanal', freq:'semanal', items:['Mascarilla facial','Exfoliación facial','Exfoliación corporal','Baño de crema','Corte uñas manos','Corte uñas pies','Depilación','Cuidado cejas'] },
-    { sub:'Salud', freq:'diario', items:['Gimnasio','Cumplir meta de agua','Lactancia programada','Tomar suplementos'] },
-  ]},
-  { key:'auto_max', area:'Autocuidado · Max', icon:'💚', cat:'Cuidado Personal', owner:'papa', personal:true, subs:[
-    { sub:'Diario', freq:'diario', items:['Cepillado mañana','Cepillado tarde','Cepillado noche','Uso hilo dental','Bañarse','Lavarse manos antes de comer','Aplicar desodorante','Peinarse'] },
-    { sub:'Salud', freq:'diario', items:['Cumplir meta de agua','Gimnasio'] },
-  ]},
-  { key:'auto_tay', area:'Autocuidado · Tay-Yay', icon:'🌸', cat:'Cuidado Personal', owner:'taylor', personal:true, subs:[
-    { sub:'Diario', freq:'diario', items:['Cepillar dientes mañana','Cepillar dientes tarde','Cepillar dientes noche','Bañarse','Peinar cabello mañana','Peinar cabello noche','Protector solar','Desodorante','Preparar uniforme'] },
-    { sub:'Semanal', freq:'semanal', items:['Lavar cepillos cabello','Organizar accesorios cabello','Preparar bolso gimnasia','Guardar uniforme gimnasia'] },
-  ]},
-  { key:'auto_dondo', area:'Autocuidado · Dondo', icon:'⚡', cat:'Cuidado Personal', owner:'emmeth', personal:true, subs:[
-    { sub:'Diario', freq:'diario', items:['Cepillar dientes mañana','Cepillar dientes tarde','Cepillar dientes noche','Bañarse','Peinarse','Preparar uniforme'] },
-    { sub:'Fútbol', freq:'semanal', items:['Preparar uniforme','Guardar uniforme','Limpiar zapatos deportivos'] },
-  ]},
-  { key:'auto_misifu', area:'Autocuidado · Misifu', icon:'🌻', cat:'Cuidado Personal', owner:'christopher', personal:true, subs:[
-    { sub:'Diario', freq:'diario', items:['Cepillado mañana','Cepillado noche','Bañarse','Lavarse manos','Peinarse'] },
-  ]},
-
-  /* ===================== CUIDADO DE LA BEBÉ (por turnos) ===================== */
-  { key:'bebe_chche', area:'Cuidado de Che-Che', icon:'🍼', cat:'Responsabilidades Familiares', shared:true, turns:['mama','papa','taylor','emmeth'], subs:[
-    { sub:'Cuidados', freq:'diario', items:['Cambio pañal mañana','Cambio pañal tarde','Cambio pañal noche','Limpieza cara','Limpieza manos','Cambio ropa','Baño','Cepillado cabello','Lactancia','Siesta'] },
-  ]},
+/* ---- Momentos del día (en orden de flujo) ---- */
+window.MOMENTS = [
+  { id: 'manana',  label: 'Mañana',            icon: '🌅' },
+  { id: 'escuela', label: 'Listo para salir',  icon: '🎒' },
+  { id: 'tarde',   label: 'Al volver',         icon: '🏠' },
+  { id: 'estudio', label: 'Estudio',           icon: '📚' },
+  { id: 'familia', label: 'Cuidar a la familia', icon: '👶' },
+  { id: 'hogar',   label: 'La casa',           icon: '🧹' },
+  { id: 'noche',   label: 'Noche',             icon: '🌙' },
+  { id: 'semana',  label: 'Esta semana',       icon: '📅' },
 ];
+window.MOMENT = id => window.MOMENTS.find(m => m.id === id);
 
-/* ---- Aplanado: lista de microtareas con id único y dueño ----
-   id = areaKey-#  |  owner = dueño del área (o turnos para la bebé) */
-window.MICRO_TASKS = (function () {
+/* días: Dom=0 … Sáb=6 */
+const DOM_A_JUE = [0, 1, 2, 3, 4];
+const DOM_A_MIE = [0, 1, 2, 3];
+
+/* ============================================================
+   PLAN por persona
+   ============================================================ */
+window.PLAN = {
+
+  /* ===================== 👧 TAYLOR (10) ===================== */
+  taylor: [
+    { moment:'manana', group:'Autocuidado', freq:'diario', items:[
+      ['Despertarse','⏰'], ['Tender la cama','🛏️'], ['Cepillarse los dientes','🪥'],
+      ['Lavarse la cara','🧼'], ['Peinarse','💇'], ['Aplicar protector solar','🧴'],
+      ['Cambiarse al uniforme escolar','👔'], ['Desayunar','🥣'],
+      ['Lavar su plato, vaso y cubiertos','🍽️'], ['Preparar botella de agua','💧'],
+    ]},
+    { moment:'escuela', group:'Preparación para la escuela', freq:'diario', items:[
+      ['Revisar horario del día','🗓️'], ['Empacar cuadernos correctos','📓'],
+      ['Empacar útiles necesarios','✏️'], ['Preparar merienda','🍎'], ['Preparar mochila','🎒'],
+    ]},
+    { moment:'tarde', group:'Al volver de la escuela', freq:'diario', items:[
+      ['Guardar mochila','🎒'], ['Cambiarse el uniforme','👕'],
+      ['Colocar uniforme en su lugar o ropa sucia','🧺'], ['Comer merienda','🍎'],
+      ['Lavar sus utensilios','🍽️'],
+    ]},
+    { moment:'tarde', group:'Si tiene gimnasia', freq:'diario', items:[
+      ['Cambiarse al uniforme de gimnasia','🤸'], ['Llevar magnesio','🧴'],
+      ['Preparar botella de agua','💧'],
+    ]},
+    { moment:'estudio', group:'Desarrollo académico', freq:'diario', items:[
+      ['Hacer tarea','📝'], ['Estudiar','📚'], ['Avanzar proyectos escolares','📐'],
+      ['Leer un libro','📖'], ['Escribir un párrafo','✍️'],
+    ]},
+    { moment:'hogar', group:'Sala', type:'area', icon:'🛋️', freq:'diario', micro:[
+      'Barrer piso','Pasar coleto','Despejar muebles','Limpiar mesa del televisor',
+    ]},
+    { moment:'hogar', group:'Baño', type:'area', icon:'🚿', freq:'semanal', micro:[
+      'Lavar poceta','Lavar lavamanos','Lavar ducha','Limpiar paredes de la ducha','Limpiar piso',
+      'Reponer papel higiénico','Sacar basura','Colocar aromatizante','Limpiar mueble bajo el lavamanos',
+      'Reponer jabón líquido','Reponer jabón corporal','Reponer shampoo','Reponer acondicionador',
+    ]},
+    { moment:'hogar', group:'Cuarto', type:'area', icon:'🛏️', freq:'semanal', micro:[
+      'Cambiar sábanas','Cambiar fundas de almohadas','Doblar edredón','Guardar zapatos','Colgar ropa',
+      'Colocar ropa sucia en cesta','Vaciar deshumidificador','Sacudir alfombras','Barrer piso','Pasar coleto',
+    ]},
+    { moment:'noche', group:'Preparar para mañana', freq:'semanal', days:DOM_A_JUE, items:[
+      ['Preparar uniforme escolar para mañana','👔'],
+    ]},
+    { moment:'noche', group:'Antes de la gimnasia', freq:'semanal', days:[1,4], items:[
+      ['Preparar uniforme de gimnasia','🤸'], ['Verificar que lleva magnesio','🧴'],
+    ]},
+    { moment:'noche', group:'Antes de dormir', freq:'diario', items:[
+      ['Preparar ropa del día siguiente','👕'], ['Preparar mochila','🎒'], ['Dejar zapatos listos','👟'],
+      ['Cargar dispositivos electrónicos','🔌'], ['Colocar botella de agua lista','💧'],
+      ['Dejar escritorio ordenado','🗂️'], ['Revisar si hay tareas pendientes','✅'],
+    ]},
+    { moment:'noche', group:'Reinicio de 10 minutos', freq:'diario', items:[
+      ['Recoger objetos fuera de lugar','🧺'], ['Tirar basura','🗑️'], ['Acomodar cojines','🛋️'],
+      ['Revisar zapatos','👟'], ['Revisar ropa tirada','👕'],
+    ]},
+    { moment:'semana', group:'Autocuidado semanal', freq:'semanal', items:[
+      ['Mascarilla capilar','💆'], ['Mascarilla facial','🧖'],
+      ['Cortar uñas de manos','💅'], ['Cortar uñas de pies','🦶'],
+    ]},
+    { moment:'semana', group:'Habilidades para la vida', freq:'semanal', items:[
+      ['Preparar una merienda sencilla','🥪'], ['Doblar su propia ropa','🧺'],
+      ['Organizar su mochila sin ayuda','🎒'], ['Revisar que no olvida materiales','📚'],
+      ['Ayudar a preparar la mesa','🍽️'], ['Participar en la planificación semanal','🗓️'],
+    ]},
+  ],
+
+  /* ===================== 👦 EMMETH (7) ===================== */
+  emmeth: [
+    { moment:'manana', group:'Autocuidado', freq:'diario', items:[
+      ['Tender cama','🛏️'], ['Cepillarse dientes','🪥'], ['Lavarse cara','🧼'], ['Peinarse','💇'],
+      ['Cambiarse al uniforme','👔'], ['Desayunar','🥣'], ['Lavar plato, vaso y cubiertos','🍽️'],
+    ]},
+    { moment:'escuela', group:'Escuela', freq:'diario', items:[
+      ['Preparar mochila','🎒'], ['Revisar materias','📚'], ['Preparar útiles','✏️'],
+    ]},
+    { moment:'tarde', group:'Al volver de la escuela', freq:'diario', items:[
+      ['Guardar mochila','🎒'], ['Cambiarse de ropa','👕'], ['Guardar uniforme','🧺'],
+      ['Merendar','🍎'], ['Lavar utensilios','🍽️'],
+    ]},
+    { moment:'estudio', group:'Desarrollo académico', freq:'diario', items:[
+      ['Hacer tarea','📝'], ['Estudiar','📚'], ['Leer un libro','📖'], ['Escribir un párrafo','✍️'],
+    ]},
+    { moment:'hogar', group:'Comedor', type:'area', icon:'🍴', freq:'diario', micro:[
+      'Llevar platos al fregadero','Lavar platos','Barrer piso','Despejar mesa','Limpiar superficie de mesa',
+      'Colocar mantel','Organizar decoraciones','Acomodar sillas','Despejar mesón','Limpiar mesón',
+    ]},
+    { moment:'hogar', group:'Oficina de los niños', type:'area', icon:'📖', freq:'diario', micro:[
+      'Guardar ropa','Guardar zapatos','Despejar escritorios','Barrer piso','Pasar coleto','Colgar ropa',
+    ]},
+    { moment:'noche', group:'Preparar para mañana', freq:'semanal', days:DOM_A_JUE, items:[
+      ['Preparar uniforme escolar','👔'],
+    ]},
+    { moment:'noche', group:'Antes del fútbol', freq:'semanal', days:[5], items:[
+      ['Preparar uniforme de fútbol','⚽'],
+    ]},
+    { moment:'noche', group:'Antes de dormir', freq:'diario', items:[
+      ['Preparar ropa del día siguiente','👕'], ['Preparar mochila','🎒'], ['Dejar zapatos listos','👟'],
+      ['Colocar botella de agua lista','💧'], ['Dejar escritorio ordenado','🗂️'],
+      ['Revisar si hay tareas pendientes','✅'],
+    ]},
+    { moment:'noche', group:'Reinicio de 10 minutos', freq:'diario', items:[
+      ['Recoger objetos fuera de lugar','🧺'], ['Tirar basura','🗑️'], ['Acomodar cojines','🛋️'],
+      ['Revisar zapatos','👟'], ['Revisar ropa tirada','👕'],
+    ]},
+    { moment:'semana', group:'Habilidades para la vida', freq:'semanal', items:[
+      ['Preparar una merienda sencilla','🥪'], ['Doblar su propia ropa','🧺'],
+      ['Organizar su mochila sin ayuda','🎒'], ['Ayudar a preparar la mesa','🍽️'],
+    ]},
+  ],
+
+  /* ===================== 👦 CHRISTOPHER (4) ===================== */
+  christopher: [
+    { moment:'manana', group:'Autocuidado', freq:'diario', items:[
+      ['Cepillarse dientes (mañana)','🪥'], ['Bañarse','🛁'], ['Peinarse','💇'],
+      ['Lavarse las manos antes de comer','🧼'],
+    ]},
+    { moment:'hogar', group:'Organización', freq:'diario', items:[
+      ['Guardar juguetes','🧸'], ['Recoger basura del piso','🗑️'], ['Guardar zapatos','👟'],
+      ['Colocar objetos donde pertenecen','📦'],
+    ]},
+    { moment:'hogar', group:'Cochera', type:'area', icon:'🚗', freq:'semanal', micro:[
+      'Recoger basura','Barrer piso','Guardar zapatos','Despejar área','Guardar ropa u objetos fuera de lugar',
+    ]},
+    { moment:'familia', group:'Servicio (con ayuda)', freq:'diario', items:[
+      ['Llevar un objeto a su lugar','📦'], ['Ayudar a recoger','🤝'], ['Llevar sus platos al fregadero','🍽️'],
+    ]},
+    { moment:'noche', group:'Autocuidado', freq:'diario', items:[
+      ['Cepillarse dientes (noche)','🪥'], ['Lavarse las manos después del baño','🧼'],
+    ]},
+  ],
+
+  /* ===================== 👨 MAYKOL ===================== */
+  papa: [
+    { moment:'hogar', group:'Cocina', freq:'diario', items:[
+      ['Descongelar carne','🥩'], ['Preparar alimentos','🔪'], ['Cocinar','🍳'], ['Servir comida','🍽️'],
+      ['Limpiar encimeras','🧽'], ['Limpiar cocina después de cocinar','🧼'], ['Dejar fregadero despejado','🚰'],
+    ]},
+    { moment:'hogar', group:'Lavandería', freq:'diario', items:[
+      ['Separar ropa blanca','⚪'], ['Separar ropa de color','🌈'], ['Cargar lavadora','🧺'],
+      ['Pasar ropa a secadora','🌀'], ['Llevar ropa limpia a la sala para doblar','🛋️'],
+    ]},
+    { moment:'manana', group:'Bienestar', freq:'diario', items:[
+      ['Hacer ejercicio (1 hora)','💪'],
+    ]},
+    { moment:'semana', group:'Bienestar', freq:'semanal', items:[
+      ['Cortar uñas','💅'],
+    ]},
+  ],
+
+  /* ===================== 👩 VERÓNICA ===================== */
+  mama: [
+    { moment:'familia', group:'Cuidado de Rachel', freq:'diario', items:[
+      ['Dar pecho','🤱'], ['Alimentar a Rachel','🍼'], ['Cambiar pañales','🧷'],
+      ['Supervisar siestas','😴'], ['Supervisar higiene','🧼'],
+    ]},
+    { moment:'familia', group:'Alimentación infantil', freq:'diario', items:[
+      ['Dar desayuno a Emmeth','🥣'], ['Dar almuerzo a Emmeth','🍲'], ['Dar cena a Emmeth','🍽️'],
+      ['Dar desayuno a Christopher','🥣'], ['Dar almuerzo a Christopher','🍲'], ['Dar cena a Christopher','🍽️'],
+    ]},
+    { moment:'manana', group:'Autocuidado (mañana)', freq:'diario', items:[
+      ['Cepillarse dientes','🪥'], ['Bañarse','🛁'], ['Skincare mañana','🧴'],
+      ['Protector solar','☀️'], ['Peinarse','💇'],
+    ]},
+    { moment:'manana', group:'Bienestar', freq:'diario', items:[
+      ['Hacer ejercicio (1 hora)','💪'],
+    ]},
+    { moment:'hogar', group:'Lavandería', freq:'diario', items:[
+      ['Doblar ropa','🧺'], ['Guardar ropa doblada','🗄️'],
+    ]},
+    { moment:'hogar', group:'Cuarto principal', type:'area', icon:'🛏️', freq:'semanal', micro:[
+      'Cambiar sábanas','Despejar habitación','Barrer','Pasar coleto','Limpiar mueble del televisor',
+    ]},
+    { moment:'hogar', group:'Baño principal', type:'area', icon:'🚿', freq:'semanal', micro:[
+      'Limpieza profunda del baño','Lavar poceta','Lavar lavamanos','Lavar ducha','Limpiar espejo',
+      'Barrer','Trapear','Vaciar papelera',
+    ]},
+    { moment:'semana', group:'Closet', freq:'semanal', items:[
+      ['Ordenar ropa','👗'], ['Identificar ropa pequeña','📏'], ['Identificar ropa dañada','🧵'],
+      ['Identificar ropa que no se usa','📦'], ['Separar para donar','🎁'], ['Separar para desechar','🗑️'],
+    ]},
+    { moment:'noche', group:'Autocuidado (noche)', freq:'diario', items:[
+      ['Cepillarse dientes','🪥'], ['Skincare noche','🌙'],
+    ]},
+    { moment:'semana', group:'Autocuidado semanal', freq:'semanal', items:[
+      ['Mascarilla capilar','💆'], ['Mascarilla facial','🧖'], ['Plancharse el cabello','💇'],
+      ['Cortar uñas manos','💅'], ['Cortar uñas pies','🦶'],
+    ]},
+    { moment:'semana', group:'Afeitado', freq:'semanal', days:[6], items:[
+      ['Afeitar piernas','🪒'],
+    ]},
+  ],
+
+  /* ===================== 👶 RACHEL (1) — la cuidan los padres ===================== */
+  rachel: [
+    { moment:'familia', group:'Rutina del bebé', freq:'diario', items:[
+      ['Lactancia','🤱'], ['Alimentación complementaria','🥄'], ['Cambio de pañal','🧷'],
+      ['Cambio de ropa','👶'], ['Baño','🛁'], ['Cepillado de cabello','💇'],
+      ['Limpieza de manos y cara','🧼'], ['Siestas','😴'],
+    ]},
+  ],
+};
+
+/* ============================================================
+   Aplanado: lista de tareas con id único por persona
+   ============================================================ */
+window.ROUTINES = (function () {
   const out = [];
-  window.MICRO_AREAS.forEach(a => {
+  Object.keys(window.PLAN).forEach(pid => {
     let n = 0;
-    a.subs.forEach(s => {
-      s.items.forEach(label => {
-        out.push({
-          id: a.key + '-' + (n++),
-          label, area: a.area, areaKey: a.key, icon: a.icon,
-          cat: a.cat, sub: s.sub, freq: s.freq,
-          owner: a.owner || null, shared: !!a.shared, personal: !!a.personal,
-          turns: a.turns || null, pts: 1,
+    (window.PLAN[pid] || []).forEach(blk => {
+      const base = {
+        pid, moment: blk.moment, group: blk.group,
+        freq: blk.freq || 'diario', days: blk.days || null,
+      };
+      if (blk.type === 'area') {
+        out.push(Object.assign({}, base, {
+          id: pid + '-' + (n++), type: 'area',
+          label: blk.group, icon: blk.icon || '🧹',
+          micro: (blk.micro || []).slice(), pts: 10,
+        }));
+      } else {
+        (blk.items || []).forEach(it => {
+          out.push(Object.assign({}, base, {
+            id: pid + '-' + (n++), type: 'task',
+            label: it[0], icon: it[1] || '•', pts: 1,
+          }));
         });
-      });
+      }
     });
   });
   return out;
 })();
-window.MICRO_TASK = id => window.MICRO_TASKS.find(t => t.id === id);
+window.ROUTINE = id => window.ROUTINES.find(t => t.id === id);
 
-/* ---- Microtareas que le tocan a una persona ----
-   - Áreas normales: las del dueño del área.
-   - Áreas por turnos (bebé): a todos los que están en "turns".
-   - Autocuidado: solo de esa persona. */
-window.microTasksFor = pid =>
-  window.MICRO_TASKS.filter(t => t.shared ? (t.turns || []).includes(pid) : t.owner === pid);
+/* tareas de una persona */
+window.routinesFor = pid => window.ROUTINES.filter(t => t.pid === pid);
 
-/* ---- Bonos (1 punto por acción, salvo los grandes) ---- */
+/* ¿la tarea aplica hoy?  (para el flujo del día)
+   - days definido  → solo esos días de la semana
+   - moment 'semana'→ siempre visible (bolsa semanal)
+   - resto          → siempre visible */
+window.appliesToday = (t, d = new Date()) => {
+  if (t.days && t.days.length) return t.days.includes(d.getDay());
+  return true;
+};
+
+/* ============================================================
+   Modelo de puntos + inspección
+   marks[pid + ':' + id]:
+     • tarea: { s:'claim'|'ok' }            → 1 punto si 'ok'
+     • área : { s:'claim'|'ok', o, c }      → o+c puntos si 'ok'
+   ============================================================ */
+window.MAX_ORDER = 5;
+window.MAX_CLEAN = 5;
+window.microMarkState = m => !m ? 'todo' : (m.s === 'ok' ? 'ok' : 'claim');
+
+/* puntos de una tarea según su tipo y su marca */
+window.routinePoints = (t, m) => {
+  if (!m || m.s !== 'ok') return 0;
+  if (t && t.type === 'area') return (m.o || 0) + (m.c || 0);
+  return window.MICRO_POINTS;
+};
+/* compat: puntos de una microtarea simple aprobada */
+window.microMarkPoints = m => (m && m.s === 'ok') ? window.MICRO_POINTS : 0;
+
+/* ---- Bonos: ayudas espontáneas (puntos extra) ---- */
 window.MICRO_BONUSES = [
-  { id: 'ayuda',      label: 'Ayudar a otro miembro',                 icon: '🤝', pts: 1 },
-  { id: 'iniciativa', label: 'Hacer una tarea sin que se la pidan',   icon: '✨', pts: 1 },
-  { id: 'reparacion', label: 'Detectar una reparación necesaria',     icon: '🔧', pts: 1 },
-  { id: 'dia',        label: 'Completar todas sus tareas del día',    icon: '🌟', pts: 5 },
-  { id: 'area',       label: 'Completar toda su área de la semana',   icon: '🏆', pts: 10 },
+  { id: 'hermano',    label: 'Ayudar a un hermano',                      icon: '🤝', pts: 2 },
+  { id: 'derrame',    label: 'Limpiar un derrame sin que se lo pidan',   icon: '🧽', pts: 2 },
+  { id: 'insumo',     label: 'Reponer un insumo',                        icon: '🧴', pts: 1 },
+  { id: 'mantenim',   label: 'Detectar un problema de mantenimiento',    icon: '🔧', pts: 2 },
+  { id: 'basura',     label: 'Recoger basura de otra área',              icon: '🗑️', pts: 1 },
+  { id: 'orden',      label: 'Ordenar algo que estaba fuera de lugar',   icon: '✨', pts: 1 },
+  { id: 'iniciativa', label: 'Hacer una tarea sin que se la pidan',      icon: '🌟', pts: 3 },
+  { id: 'dia',        label: 'Completar todas sus tareas del día',       icon: '🏅', pts: 5 },
 ];
 window.MICRO_BONUS = id => window.MICRO_BONUSES.find(b => b.id === id);
-
-/* ---- Modelo de puntos + inspección (1 pt por microtarea aprobada) ----
-   mmarks[pid + ':' + microId] = { s }
-     s: 'claim' = marcada como lista (espera aprobación, 0 pts)
-        'ok'    = aprobada por un adulto  → 1 punto                     */
-window.microMarkState  = m => !m ? 'todo' : (m.s === 'ok' ? 'ok' : 'claim');
-window.microMarkPoints = m => (m && m.s === 'ok') ? window.MICRO_POINTS : 0;
