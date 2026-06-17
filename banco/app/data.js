@@ -1,6 +1,6 @@
 /* ============================================================
    Banco Crece — Configuración y economía de la familia
-   1 punto = $1 (dólares ficticios)
+   Moneda única: PUNTOS (salario virtual). 1 tarea = 10 puntos base.
    ============================================================ */
 (function () {
   // ---- Cuentas (fusión) ----
@@ -82,9 +82,11 @@
     return EXPENSES.reduce((s, e) => s + (e[childId] || 0), 0);
   }
 
+  // Única moneda del sistema: PUNTOS. Antes se mostraba en "$"; ahora todo
+  // el banco habla en puntos (el salario virtual de cada integrante).
   function money(n) {
     const v = Math.round(n);
-    return "$" + v.toLocaleString("en-US");
+    return v.toLocaleString("en-US") + " pts";
   }
 
   const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];

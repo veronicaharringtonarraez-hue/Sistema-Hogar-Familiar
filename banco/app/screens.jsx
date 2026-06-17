@@ -13,7 +13,7 @@ function ScreenInicio({ child, nav }) {
     <div className="bc-screen">
       <div className="bc-balance-card" style={{ background: `linear-gradient(135deg, ${child.color}, ${shade(child.color, -18)})` }}>
         <div className="bc-balance-top">
-          <span>Mi dinero</span>
+          <span>Mi saldo</span>
           <Avatar child={child} size={44} ring={false} />
         </div>
         <div className="bc-balance-amount">{BC.money(s.balance)}</div>
@@ -99,19 +99,19 @@ function ScreenGanar({ child, nav }) {
   return (
     <div className="bc-screen">
       <div className="bc-screen-head">
-        <h2>⭐ Cómo gano dinero</h2>
-        <p>Tu dinero entra solo: por cada punto que Mamá o Papá te aprueban por tus tareas, recibes <strong>1 $</strong>. 🎉</p>
+        <h2>⭐ Cómo gano mi salario</h2>
+        <p>Tu salario entra solo: cada tarea aprobada por Mamá o Papá vale <strong>10 puntos</strong> (más si fue un trabajo excelente). 🎉</p>
       </div>
 
       <Card className="bc-goal-card">
         <div className="bc-how-step"><span className="bc-how-ic">✅</span><div><strong>1. Haz tus tareas</strong><div className="muted">Marca "listo" cuando termines.</div></div></div>
-        <div className="bc-how-step"><span className="bc-how-ic">👀</span><div><strong>2. Mamá o Papá revisan</strong><div className="muted">Te dan puntos por orden y limpieza.</div></div></div>
-        <div className="bc-how-step"><span className="bc-how-ic">💰</span><div><strong>3. El dinero llega a tu banco</strong><div className="muted">1 punto aprobado = 1 $, automático.</div></div></div>
+        <div className="bc-how-step"><span className="bc-how-ic">👀</span><div><strong>2. Mamá o Papá revisan</strong><div className="muted">10 puntos base, y pueden subirlos por buen trabajo.</div></div></div>
+        <div className="bc-how-step"><span className="bc-how-ic">💰</span><div><strong>3. Tu salario llega al banco</strong><div className="muted">Los puntos aprobados se depositan automático.</div></div></div>
       </Card>
 
       <div className="bc-mini-grid">
         <Stat label="Ganado este mes" value={BC.money(s.income)} color="#1FB85A" icon="⭐" />
-        <Stat label="Mi dinero ahora" value={BC.money(s.balance)} color="#2E8BFF" icon="💰" />
+        <Stat label="Mi saldo ahora" value={BC.money(s.balance)} color="#2E8BFF" icon="💰" />
       </div>
 
       {fromTasks.length > 0 && (

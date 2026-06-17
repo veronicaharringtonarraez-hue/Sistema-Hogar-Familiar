@@ -12,11 +12,11 @@ const MICRO_KEY = "fam_micro_v1";
 
 // Puntos de una marca del nuevo sistema, sin depender del catálogo:
 //   • aprobada con orden/limpieza (área) → o + c
-//   • aprobada simple (rutina)           → 1
+//   • aprobada con valor ajustado (rutina) → m.pts (10 base por defecto)
 function microMarkPoints(m) {
   if (!m || m.s !== "ok") return 0;
   if (typeof m.o === "number" || typeof m.c === "number") return (m.o || 0) + (m.c || 0);
-  return 1;
+  return (typeof m.pts === "number") ? m.pts : 10;
 }
 
 function freshMonth() {

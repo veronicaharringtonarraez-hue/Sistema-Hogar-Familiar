@@ -56,7 +56,8 @@ function Avatar({ p, size = 44 }) {
    VISTA NIÑOS: mi día (por momentos)
    ========================================================= */
 function TaskRow({ pid, t, store, onClaim, showToast }) {
-  const st = window.microMarkState(store.marks[pid + ':' + t.id]);
+  const mark = store.marks[pid + ':' + t.id];
+  const st = window.microMarkState(mark);
   return (
     <div className={'mt ' + st} onClick={() => {
       if (st === 'ok') { showToast('Ya está aprobada ✓'); return; }
@@ -66,7 +67,7 @@ function TaskRow({ pid, t, store, onClaim, showToast }) {
       <span className="mt-ic">{t.icon}</span>
       <span className="mt-t">{t.label}</span>
       {st === 'claim' && <span className="tagp">por revisar</span>}
-      {st === 'ok' && <span className="tagp ok">+1</span>}
+      {st === 'ok' && <span className="tagp ok">+{window.routinePoints(t, mark)}</span>}
     </div>
   );
 }
@@ -182,6 +183,7 @@ function InspectRow({ pid, t, onApproveTask, onApproveArea, onReject }) {
   const p = window.PERSON(pid);
   const [o, setO] = useState(5);
   const [c, setC] = useState(5);
+  const [pts, setPts] = useState(window.MICRO_POINTS); // rutina: 10 base, ajustable
   const isArea = t.type === 'area';
 
   return (
@@ -190,7 +192,7 @@ function InspectRow({ pid, t, onApproveTask, onApproveArea, onReject }) {
       <div className="grow">
         <div className="mt-t">{t.icon} {t.label}</div>
         <div className="area-c">{NICK(p)} · {t.group}{isArea ? ' · área' : ''}</div>
-        {isArea && (
+        {isArea ? (
           <div className="oc">
             <div className="oc-row"><span>Orden</span>
               <button onClick={() => setO(v => Math.max(0, v - 1))}>−</button><b>{o}</b><button onClick={() => setO(v => Math.min(5, v + 1))}>+</button>
@@ -199,11 +201,21 @@ function InspectRow({ pid, t, onApproveTask, onApproveArea, onReject }) {
               <button onClick={() => setC(v => Math.max(0, v - 1))}>−</button><b>{c}</b><button onClick={() => setC(v => Math.min(5, v + 1))}>+</button>
             </div>
           </div>
+        ) : (
+          <div className="oc">
+            <div className="oc-row"><span>Puntos</span>
+              <button onClick={() => setPts(v => Math.max(0, v - 5))}>−5</button>
+              <button onClick={() => setPts(v => Math.max(0, v - 1))}>−</button>
+              <b>{pts}</b>
+              <button onClick={() => setPts(v => v + 1)}>+</button>
+              <button onClick={() => setPts(v => v + 5)}>+5</button>
+            </div>
+          </div>
         )}
       </div>
       {isArea
         ? <button className="mini ok" onClick={() => onApproveArea(pid, t.id, o, c)}>Aprobar +{o + c}</button>
-        : <button className="mini ok" onClick={() => onApproveTask(pid, t.id)}>Aprobar +1</button>}
+        : <button className="mini ok" onClick={() => onApproveTask(pid, t.id, pts)}>Aprobar +{pts}</button>}
       <button className="mini no" onClick={() => onReject(pid, t.id)}>✕</button>
     </div>
   );
@@ -330,7 +342,7 @@ function App() {
     checks[k] = arr;
     persist({ ...store, checks });
   }
-  function approveTask(pid, id) { persist({ ...store, marks: { ...store.marks, [pid + ':' + id]: { s: 'ok' } } }); showToast('Aprobada +1 ✓'); }
+  function approveTask(pid, id, pts) { const v = (typeof pts === 'number') ? pts : window.MICRO_POINTS; persist({ ...store, marks: { ...store.marks, [pid + ':' + id]: { s: 'ok', pts: v } } }); showToast('Aprobada +' + v + ' ✓'); }
   function approveArea(pid, id, o, c) { persist({ ...store, marks: { ...store.marks, [pid + ':' + id]: { s: 'ok', o, c } } }); showToast('Área aprobada +' + (o + c) + ' ✓'); }
   function reject(pid, id) { const marks = { ...store.marks }; delete marks[pid + ':' + id]; persist({ ...store, marks }); }
   function grant(b) { persist({ ...store, bonus: [...(store.bonus || []), b] }); }

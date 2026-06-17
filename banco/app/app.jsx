@@ -115,7 +115,7 @@ function AppShell({ t, setTweak }) {
     <div className="bc-app">
       <header className="bc-header">
         <div className="bc-brand">
-          <span className="bc-coin">$</span>
+          <span className="bc-coin">P</span>
           <span className="bc-brand-name">Banco&nbsp;Crece</span>
         </div>
         <button className="bc-parent-btn" onClick={() => { setPinErr(""); setPinOpen(true); }}>

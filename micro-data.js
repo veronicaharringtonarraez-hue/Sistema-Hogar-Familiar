@@ -22,7 +22,10 @@
        - micro  : [ 'microtarea', ... ]     (para type 'area')
    ============================================================ */
 
-window.MICRO_POINTS = 1;
+/* Valor base de toda tarea/rutina = 10 puntos (el adulto puede ajustarlo
+   con + / − al aprobar; sin tope). Las áreas se siguen calificando por
+   orden (0-5) + limpieza (0-5). */
+window.MICRO_POINTS = 10;
 
 /* ---- Momentos del día (en orden de flujo) ---- */
 window.MOMENTS = [
@@ -267,7 +270,7 @@ window.ROUTINES = (function () {
         (blk.items || []).forEach(it => {
           out.push(Object.assign({}, base, {
             id: pid + '-' + (n++), type: 'task',
-            label: it[0], icon: it[1] || '•', pts: 1,
+            label: it[0], icon: it[1] || '•', pts: 10,
           }));
         });
       }
@@ -292,31 +295,36 @@ window.appliesToday = (t, d = new Date()) => {
 /* ============================================================
    Modelo de puntos + inspección
    marks[pid + ':' + id]:
-     • tarea: { s:'claim'|'ok' }            → 1 punto si 'ok'
-     • área : { s:'claim'|'ok', o, c }      → o+c puntos si 'ok'
+     • tarea: { s:'claim'|'ok', pts? }       → pts (o 10 base) si 'ok'
+     • área : { s:'claim'|'ok', o, c }       → o+c puntos si 'ok'
    ============================================================ */
 window.MAX_ORDER = 5;
 window.MAX_CLEAN = 5;
 window.microMarkState = m => !m ? 'todo' : (m.s === 'ok' ? 'ok' : 'claim');
 
-/* puntos de una tarea según su tipo y su marca */
+/* puntos de una tarea según su tipo y su marca:
+   - área   → orden + limpieza (0-5 / 0-5)
+   - rutina → el valor ajustado por el adulto (m.pts) o 10 base */
 window.routinePoints = (t, m) => {
   if (!m || m.s !== 'ok') return 0;
   if (t && t.type === 'area') return (m.o || 0) + (m.c || 0);
-  return window.MICRO_POINTS;
+  return (typeof m.pts === 'number') ? m.pts : window.MICRO_POINTS;
 };
-/* compat: puntos de una microtarea simple aprobada */
-window.microMarkPoints = m => (m && m.s === 'ok') ? window.MICRO_POINTS : 0;
+/* compat */
+window.microMarkPoints = m => {
+  if (!m || m.s !== 'ok') return 0;
+  return (typeof m.pts === 'number') ? m.pts : window.MICRO_POINTS;
+};
 
 /* ---- Bonos: ayudas espontáneas (puntos extra) ---- */
 window.MICRO_BONUSES = [
-  { id: 'hermano',    label: 'Ayudar a un hermano',                      icon: '🤝', pts: 2 },
-  { id: 'derrame',    label: 'Limpiar un derrame sin que se lo pidan',   icon: '🧽', pts: 2 },
-  { id: 'insumo',     label: 'Reponer un insumo',                        icon: '🧴', pts: 1 },
-  { id: 'mantenim',   label: 'Detectar un problema de mantenimiento',    icon: '🔧', pts: 2 },
-  { id: 'basura',     label: 'Recoger basura de otra área',              icon: '🗑️', pts: 1 },
-  { id: 'orden',      label: 'Ordenar algo que estaba fuera de lugar',   icon: '✨', pts: 1 },
-  { id: 'iniciativa', label: 'Hacer una tarea sin que se la pidan',      icon: '🌟', pts: 3 },
-  { id: 'dia',        label: 'Completar todas sus tareas del día',       icon: '🏅', pts: 5 },
+  { id: 'hermano',    label: 'Ayudar a un hermano',                      icon: '🤝', pts: 20 },
+  { id: 'derrame',    label: 'Limpiar un derrame sin que se lo pidan',   icon: '🧽', pts: 20 },
+  { id: 'insumo',     label: 'Reponer un insumo',                        icon: '🧴', pts: 10 },
+  { id: 'mantenim',   label: 'Detectar un problema de mantenimiento',    icon: '🔧', pts: 20 },
+  { id: 'basura',     label: 'Recoger basura de otra área',              icon: '🗑️', pts: 10 },
+  { id: 'orden',      label: 'Ordenar algo que estaba fuera de lugar',   icon: '✨', pts: 10 },
+  { id: 'iniciativa', label: 'Hacer una tarea sin que se la pidan',      icon: '🌟', pts: 30 },
+  { id: 'dia',        label: 'Completar todas sus tareas del día',       icon: '🏅', pts: 50 },
 ];
 window.MICRO_BONUS = id => window.MICRO_BONUSES.find(b => b.id === id);
