@@ -152,6 +152,18 @@
   .chip.gray{background:#f0eef8;color:var(--ink-2);}
   .chip.out{background:transparent;border:1.5px dashed #cfc9e4;color:var(--muted);}
 
+  /* ===== Misiones: desplegables + listas de microtareas ===== */
+  .fold .fold-h{cursor:pointer;padding:12px 14px;align-items:center;gap:10px;}
+  .fold .chev{font-size:14px;color:var(--ink-2);font-weight:800;flex:0 0 auto;}
+  .fold .fold-b{padding:2px 14px 12px;border-top:1px solid var(--line,#eee);}
+  .fold .m-ic{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-size:21px;flex:0 0 auto;background:var(--c,#f0eef8);}
+  .micro-li{display:flex;align-items:center;gap:9px;padding:7px 2px;font-size:14px;font-weight:600;color:var(--ink);}
+  .micro-li + .micro-li{border-top:1px dashed #efecf8;}
+  .micro-li .mli-ic{width:24px;text-align:center;flex:0 0 auto;font-size:16px;}
+  .micro-li .grow{flex:1;min-width:0;}
+  .micro-li .prio{width:22px;height:22px;flex:0 0 auto;display:grid;place-items:center;border-radius:50%;background:var(--a,#7C5CFF);color:#fff;font-family:var(--font-display);font-weight:800;font-size:12px;}
+  .day-select{width:100%;border:2px solid #e0dcef;background:#fff;border-radius:14px;padding:12px 14px;font-family:var(--font-display);font-weight:700;font-size:15px;color:var(--ink);}
+
   /* ===== segmented control ===== */
   .seg{display:flex;background:#e7e3f5;border-radius:16px;padding:4px;gap:4px;}
   .seg button{
@@ -333,6 +345,8 @@
 
   <script src="images.js"></script>
   <script src="data.js"></script>
+  <!-- Catálogo de "Mi día" (Microtareas): la sección Misiones usa estas listas -->
+  <script src="micro-data.js"></script>
   <script type="text/babel" src="app.jsx"></script>
 </body>
 </html>
