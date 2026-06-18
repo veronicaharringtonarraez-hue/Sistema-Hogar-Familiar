@@ -15,7 +15,47 @@ window.FAMILY = [
     note: 'Trabaja desde casa · horario flexible',
     colors: { a: '#7C5CFF', b: '#B69DFF', c: '#E9E2FF', ink: '#3A2D7A' },
     emoji: '💜', isKid: false, caresBaby: true,
-    pet: { name: 'Luna', species: 'Buhito con lentes', img: window.IMG.mama, kind: 'ave', face: '🦉', food: '🐭', toy: '🪶', dir: 'luna' }, petCared: true,
+    pet: {
+      name: 'Luna', species: 'Buhito con lentes · ENTJ', img: window.IMG.mama,
+      kind: 'ave', face: '🦉', food: '🐭', toy: '🪶', dir: 'luna',
+      persona: {
+        btn: '🦉 Sabiduría de Luna',
+        idle: [
+          "Agenda de hoy: dominar el día. Punto uno: existir con estilo. 🦉",
+          "No procrastino, priorizo. Ahora toca observar majestuosamente. 👓",
+          "Un búho ENTJ no espera el momento: lo agenda.",
+          "Lidero con la mirada; creen que solo parpadeo. 😏",
+        ],
+        carino: [
+          "Cariño aprobado. Lo agendé en mi cronograma de afecto. 🦉",
+          "Acepta mi gratitud ejecutiva: un asentimiento solemne. 👌",
+        ],
+        comida: [
+          "Excelente logística de alimentos. Te ascenderé… mentalmente. 🍽️",
+          "Combustible recibido. La directora opera a máxima eficiencia.",
+        ],
+        jugar: [
+          "Jugar es networking con alas. Hagámoslo estratégico. 🪶",
+          "Cinco minutos de juego: óptimos para la productividad.",
+        ],
+        casa: [
+          "A la oficina-nido: desde aquí superviso el imperio. 🏠",
+          "Vuelvo a mi cuartel general a planear el mañana. 🌙",
+        ],
+        phrases: [
+          [0,    "Plan maestro: ser sabia y verme bien haciéndolo. 🦉"],
+          [40,   "Delego todo… menos verme adorable. Eso lo hago yo."],
+          [90,   "Mis lentes no son para ver: son para juzgar con precisión. 👓"],
+          [150,  "Liderazgo es 10% visión y 90% no despeinarse."],
+          [250,  "Si no está en la agenda, no existe. Tu siesta tampoco."],
+          [400,  "Tomo decisiones rápidas: ya decidí que tengo razón."],
+          [600,  "Eficiencia búho: giro la cabeza y superviso en 360°."],
+          [850,  "El fracaso no es opción; el plan B también es mío."],
+          [1150, "Construyo imperios… y un nido muy bien decorado."],
+          [1500, "Conclusión ejecutiva: nací para liderar (y dormir de día). 🌙"],
+        ],
+      },
+    }, petCared: true,
   },
   {
     id: 'papa', name: 'Max', short: 'Max', age: null, role: 'adulto', title: 'Director de Mantenimiento',
@@ -26,6 +66,7 @@ window.FAMILY = [
       name: 'Croqueta', species: 'Bulldog inglés · chef ENTP', img: window.IMG.papa,
       kind: 'perro', face: '🐶', food: '🦴', toy: '🍳', dir: 'brutus',
       persona: {
+        btn: '🎤 Frase del chef',
         idle: [
           "El chef está horizontal: descanso creativo. 🛋️",
           "Bulldog ENTP: mil ideas geniales y cero ganas de correr. 💡",
@@ -70,7 +111,47 @@ window.FAMILY = [
     colors: { a: '#42BDEE', b: '#B98FE8', c: '#FBC4DA', ink: '#5A3E7A' },
     palette: ['#42BDEE', '#B98FE8', '#FBC4DA'],
     emoji: '🌸', isKid: true, caresBaby: true, petCared: true,
-    pet: { name: 'Mochi', species: 'Perrito mini toy', img: window.IMG.taylor, kind: 'perro', face: '🐶', food: '🦴', toy: '🎾', dir: 'mochi' },
+    pet: {
+      name: 'Mochi', species: 'Perrito mini toy · ENFJ', img: window.IMG.taylor,
+      kind: 'perro', face: '🐶', food: '🦴', toy: '🎾', dir: 'mochi',
+      persona: {
+        btn: '🌸 Ánimo de Mochi',
+        idle: [
+          "¡Hoy vas a brillar! Y yo voy a aplaudirte sin parar. 🌟",
+          "Creo en ti más que en mi propia colita esponjosa. 💛",
+          "Un buen líder anima a su equipo. ¡Equipo, eres increíble!",
+          "Estoy aquí para ti, siempre. (Y para las galletas.) 🍪",
+        ],
+        carino: [
+          "¡Gracias por tu cariño! Me llenas el corazón. 💞",
+          "Tú cuidas de mí y yo creo en ti. ¡Buen trato! 🥰",
+        ],
+        comida: [
+          "¡Qué detalle! Como con el alma, igual que tú haces todo. 🌸",
+          "Gracias por alimentarme; eres pura bondad. 💛",
+        ],
+        jugar: [
+          "¡Equipo en acción! Jugar contigo es lo máximo. 🎉",
+          "Cada salto es para celebrarte a ti. ✨",
+        ],
+        casa: [
+          "A casita, donde el cariño nunca se acaba. 🏠",
+          "Hogar dulce hogar… porque tú estás cerca. 💛",
+        ],
+        phrases: [
+          [0,    "Tú puedes con todo. Yo te lo recuerdo con la cola. 🐶"],
+          [40,   "Cuidarnos es querernos. ¡Qué buen equipo somos!"],
+          [90,   "Hoy alguien necesita una sonrisa. Spoiler: eres tú. 😊"],
+          [150,  "Lidero con el corazón… y con muchas lamiditas."],
+          [250,  "Tus tareas de hoy son tu superpoder de mañana. 💪"],
+          [400,  "Creo en ti incluso los lunes. Eso es amor real."],
+          [600,  "Un abrazo arregla casi todo. El resto, dos abrazos."],
+          [850,  "Eres más fuerte de lo que crees. Palabra de Mochi."],
+          [1150, "Juntos llegamos lejos; separados, te extraño. 🥺"],
+          [1500, "Mi misión: que sepas lo valioso que eres. ✨"],
+        ],
+      },
+    },
     quota: 3,
   },
   {
@@ -80,7 +161,47 @@ window.FAMILY = [
     colors: { a: '#2962FF', b: '#E53935', c: '#E2E9FF', ink: '#11235A' },
     palette: ['#2962FF', '#E53935', '#111111'],
     emoji: '⚡', isKid: true, caresBaby: true, petCared: true,
-    pet: { name: 'Rayo', species: 'Gato gris', img: window.IMG.emmeth, kind: 'gato', face: '🐱', food: '🐟', toy: '🧶', dir: 'rayo' },
+    pet: {
+      name: 'Rayo', species: 'Gato atigrado · ENFP', img: window.IMG.emmeth,
+      kind: 'gato', face: '🐱', food: '🐟', toy: '🧶', dir: 'rayo',
+      persona: {
+        btn: '⚡ Idea de Rayo',
+        idle: [
+          "¡Tengo 47 ideas nuevas y todas son geniales! ⚡",
+          "¿Y si la caja es una nave espacial? ¡VAMOS! 🚀",
+          "Me distraje persiguiendo un sueño… y una mosca. 🦋",
+          "¡Hoy será el mejor día! Otra vez. ¡Como ayer!",
+        ],
+        carino: [
+          "¡SÍ! ¡Mimos! Mi parte favorita… ¡junto con todo! 🥰",
+          "Me cargaste de energía. ¡Aventura activada! ⚡",
+        ],
+        comida: [
+          "¡Comida sorpresa! ¡La mejor trama del día! 🐟",
+          "¡Ñam! Ahora tengo energía para mil travesuras. 🎉",
+        ],
+        jugar: [
+          "¡JUGAR! ¡Mi deporte favorito del universo! 🤸",
+          "¡Persigo la pelota como si fuera un tesoro legendario! ✨",
+        ],
+        casa: [
+          "A casa… ¡pero corriendo y dando una vuelta extra! 🏠",
+          "Mi casita es la base secreta de mis aventuras. 🚀",
+        ],
+        phrases: [
+          [0,    "¡Soñar es gratis y yo sueño en grande! 🌈"],
+          [40,   "Empiezo mil cosas… ¡todas emocionantes! 🎉"],
+          [90,   "¿Plan? ¡El plan es la diversión! ⚡"],
+          [150,  "Cada caja es un portal secreto. ¡Confía en mí! 📦"],
+          [250,  "Me emociono con TODO. ¿Viste eso? ¿¡VISTE!? 👀"],
+          [400,  "Tengo amigos imaginarios y los presento a todos."],
+          [600,  "Si me aburro, invento un juego nuevo en 3 segundos."],
+          [850,  "La curiosidad no asustó al gato: lo hizo famoso. 😼"],
+          [1150, "Hoy descubrí que el mundo es ENORME. ¡Vamos! 🌍"],
+          [1500, "Conclusión: la vida es una aventura y tú vienes conmigo. 🚀"],
+        ],
+      },
+    },
     quota: 2,
   },
   {
@@ -90,7 +211,47 @@ window.FAMILY = [
     colors: { a: '#F5B500', b: '#5CB85C', c: '#E8D5A8', ink: '#6B5410' },
     palette: ['#FFC107', '#5CB85C', '#E8D5A8'],
     emoji: '🌻', isKid: true, caresBaby: false, petCared: true,
-    pet: { name: 'Oreo', species: 'Gato blanco y negro', img: window.IMG.christopher, kind: 'gato', face: '🐱', food: '🐟', toy: '🧶', dir: 'oreo' },
+    pet: {
+      name: 'Oreo', species: 'Gato blanco y negro · ESTJ', img: window.IMG.christopher,
+      kind: 'gato', face: '🐱', food: '🐟', toy: '🧶', dir: 'oreo',
+      persona: {
+        btn: '📋 Regla de Oreo',
+        idle: [
+          "Todo en su lugar. Incluyéndome a mí, en el sofá. 😼",
+          "Reglas claras, siesta segura. Así funciona esto. 📋",
+          "Soy el jefe del orden. Mi oficina: la caja. 📦",
+          "Inspección sorpresa: ¿guardaste los juguetes? 👀",
+        ],
+        carino: [
+          "Cariño correcto, en el horario correcto. Aprobado. 👌",
+          "Bien hecho. El cariño organizado es el mejor cariño.",
+        ],
+        comida: [
+          "Comida puntual. Así me gusta: con orden. 🐟",
+          "Ración correcta a la hora correcta. ¡Buena gestión!",
+        ],
+        jugar: [
+          "Jugamos 10 minutos. Lo anoté en el reglamento. 🧶",
+          "Orden primero, diversión después. ¡Ahora a jugar!",
+        ],
+        casa: [
+          "A casa, que es donde todo está en su sitio. 🏠",
+          "Mi casita: ordenada, puntual y sin desorden. 👌",
+        ],
+        phrases: [
+          [0,    "Una cosa a la vez, y bien hecha. 😼"],
+          [40,   "Las reglas existen por algo. Yo las escribí. 📋"],
+          [90,   "Si no está guardado, no está terminado. 📦"],
+          [150,  "Puntualidad es respeto. Llega a tiempo a mi siesta."],
+          [250,  "Ordeno los juguetes por tamaño, color y ronroneo."],
+          [400,  "Plan, lista y a ejecutar. Así se hacen las cosas. ✅"],
+          [600,  "El desorden me da escalofríos en los bigotes."],
+          [850,  "Liderar es dar el ejemplo… y vigilar que cumplas."],
+          [1150, "Tradición: cena, orden, siesta. No se negocia."],
+          [1500, "Conclusión: una casa ordenada es una casa feliz. 👌"],
+        ],
+      },
+    },
     quota: 1,
   },
   {
@@ -100,7 +261,47 @@ window.FAMILY = [
     colors: { a: '#F48FB1', b: '#CE93D8', c: '#F8E7F3', ink: '#7A4A6A' },
     palette: ['#F48FB1', '#CE93D8', '#F3E5F5'],
     emoji: '🌷', isKid: false, isBaby: true, caresBaby: false, petCared: true,
-    pet: { name: 'Nube', species: 'Gato blanco peludo', img: window.IMG.rachel, kind: 'gato', face: '🐱', food: '🐟', toy: '🧶', dir: 'nube' },
+    pet: {
+      name: 'Nube', species: 'Gato blanco peludo · ISFJ', img: window.IMG.rachel,
+      kind: 'gato', face: '🐱', food: '🐟', toy: '🧶', dir: 'nube',
+      persona: {
+        btn: '☁️ Mimo de Nube',
+        idle: [
+          "Cuido a Che-Che en silencio, como un angelito. ☁️",
+          "Me gusta que estemos todos juntos y a salvo. 💛",
+          "Soy tímida, pero mi corazón es enorme. 🤍",
+          "Acomodo la cobijita y vigilo que nadie tenga frío.",
+        ],
+        carino: [
+          "Gracias… me pongo feliz y un poquito tímida. 🥺",
+          "Tu cariño me hace sentir en casa. 🤍",
+        ],
+        comida: [
+          "Gracias por cuidarme. Comparto con quien lo necesite. 🐟",
+          "Comidita rica. Ahora a cuidar a la bebé. 💛",
+        ],
+        jugar: [
+          "Juego suavecito, no vaya a despertar a Che-Che. 🧶",
+          "Me gusta jugar tranquila, cerquita de la familia.",
+        ],
+        casa: [
+          "A casita, calientita y segura para todos. 🏠",
+          "Mi lugar favorito: el regazo de la familia. 🤍",
+        ],
+        phrases: [
+          [0,    "Cuidar a los que amo es lo que más me gusta. 🤍"],
+          [40,   "Si alguien está triste, yo llego en silencio. ☁️"],
+          [90,   "Recuerdo cómo le gusta su cobijita a cada quien. 💛"],
+          [150,  "No hago ruido, pero siempre estoy para ti. 🥺"],
+          [250,  "La familia unida me hace ronronear de paz. 😌"],
+          [400,  "Guardo los detallitos que a otros se les olvidan."],
+          [600,  "Un hogar tranquilo es mi mayor tesoro. 🏠"],
+          [850,  "Te protejo aunque sea chiquita y peludita. 🤍"],
+          [1150, "Mi amor es calladito, pero nunca se acaba. 💞"],
+          [1500, "Conclusión: mientras nos cuidemos, todo está bien. ☁️"],
+        ],
+      },
+    },
     quota: 0,
   },
 ];

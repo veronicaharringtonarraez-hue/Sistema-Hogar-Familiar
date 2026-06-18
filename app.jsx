@@ -744,8 +744,8 @@ function PetCard({ p }) {
       {/* frases que se desbloquean con cada punto (mascota con personalidad) */}
       {persona && (
         <div className="pet-phrases">
-          <button className="pet-phrase-btn" disabled={!phrasesOpen.length} onClick={sayPhrase}>🎤 Frase del chef</button>
-          <span className="pet-phrase-count">🍖 {phrasesOpen.length}/{phrasesAll.length} frases desbloqueadas</span>
+          <button className="pet-phrase-btn" disabled={!phrasesOpen.length} onClick={sayPhrase}>{persona.btn || '🎤 Frase'}</button>
+          <span className="pet-phrase-count">💬 {phrasesOpen.length}/{phrasesAll.length} frases desbloqueadas</span>
         </div>
       )}
     </div>
