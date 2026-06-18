@@ -200,7 +200,7 @@ window.PLAN = {
     { moment:'hogar', group:'Qué lavar el sábado', freq:'semanal', days:[6], items:[
       ['Ropa de iglesia','⛪'], ['Sábanas o edredones (según calendario)','🛏️'],
     ]},
-    { moment:'hogar', group:'Basura (martes y viernes)', freq:'semanal', days:[2,5], items:[
+    { moment:'hogar', group:'Basura (martes)', freq:'semanal', days:[2], items:[
       ['Sacar basura de cocina','🗑️'], ['Sacar basura de baños','🚮'],
       ['Sacar basura de oficinas y cuartos','🧺'], ['Sacar reciclaje','♻️'],
     ]},
@@ -243,6 +243,13 @@ window.PLAN = {
     ]},
     { moment:'hogar', group:'Qué lavar el jueves', freq:'semanal', days:[4], items:[
       ['Ropa de gimnasia de Taylor','🤸'], ['Toallas de baño','🛁'],
+    ]},
+    { moment:'hogar', group:'Basura (viernes)', freq:'semanal', days:[5], items:[
+      ['Sacar basura de cocina','🗑️'], ['Sacar basura de baños','🚮'],
+      ['Sacar basura de oficinas y cuartos','🧺'], ['Sacar reciclaje','♻️'],
+    ]},
+    { moment:'hogar', group:'Limpieza profunda de la semana', freq:'semanal', items:[
+      ['Hacer la limpieza profunda que toca según el calendario mensual','🧽'],
     ]},
     { moment:'hogar', group:'Manías', type:'area', icon:'🍳', freq:'diario', micro:[
       'Limpiar nevera','Limpiar mesa de trabajo','Hacer inventario',
