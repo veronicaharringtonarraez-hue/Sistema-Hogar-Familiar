@@ -614,6 +614,7 @@ function PetCard({ p }) {
   const pet = p.pet;
   const name = pet.name;
   const kind = pet.kind;
+  const persona = pet.persona;          // mascota con personalidad (mensajes propios)
   const isRachel = p.id === 'rachel';
 
   // Puntos que dan ánimo a la mascota (esfuerzo de la semana en "Mi día").
@@ -646,26 +647,38 @@ function PetCard({ p }) {
     emocionado: `¡${name} está súper emocionado contigo! 🤩`,
     amoroso: `${name} te quiere muchísimo 🥰 ¡Gran trabajo!`,
   };
-  const message = act ? act.msg : (idleMsg[base] || idleMsg.feliz);
+  const message = act ? act.msg : (persona ? pick(persona.idle) : (idleMsg[base] || idleMsg.feliz));
 
-  // mensajes según el tipo de animal
-  const carinoMsgs = kind === 'perro' ? [`${name} mueve la colita de felicidad 💖`, `¡A ${name} le encantan tus mimos! 🥰`]
+  // mensajes según el tipo de animal (o su personalidad, si la tiene)
+  const carinoMsgs = persona ? persona.carino
+    : kind === 'perro' ? [`${name} mueve la colita de felicidad 💖`, `¡A ${name} le encantan tus mimos! 🥰`]
     : kind === 'gato' ? [`${name} ronronea con tus mimos 💖`, `¡A ${name} le encantan tus caricias! 🥰`]
     : [`${name} se acurruca contento con tus mimos 💖`, `¡A ${name} le encanta tu cariño! 🥰`];
   const foodLabel = kind === 'perro' ? 'Dar hueso' : kind === 'gato' ? 'Dar pescado' : 'Dar comida';
-  const foodMsgs = kind === 'perro' ? [`¡${name} mueve la cola! Ñam ñam 🦴`, `${name} te lo agradece con un lametón 🐶💕`]
+  const foodMsgs = persona ? persona.comida
+    : kind === 'perro' ? [`¡${name} mueve la cola! Ñam ñam 🦴`, `${name} te lo agradece con un lametón 🐶💕`]
     : kind === 'gato' ? [`¡${name} ronronea! Comió rico 🐟`, `${name} se relame feliz 😺`]
     : [`¡${name} ulula contento! 🦉`, `${name} agita sus alitas de felicidad ✨`];
+  const jugarMsgs = persona ? persona.jugar : [`¡${name} salta y juega contigo! 🎉`, `${name} está muy juguetón 😜`];
+  const casaMsgs = persona ? persona.casa : [`${name} entró feliz a su casita 🏠`, `¡${name} se siente seguro en casa! 💛`];
 
   // premios interactivos, se desbloquean con los puntos de la semana
   const treats = [
     { id: 'carino', icon: '💖', label: 'Dar cariño', min: 0, mood: 'amoroso', msgs: carinoMsgs },
     { id: 'comida', icon: pet.food, label: foodLabel, min: 150, mood: 'amoroso', msgs: foodMsgs },
-    { id: 'jugar', icon: pet.toy || '🎾', label: 'Jugar', min: 400, mood: 'jugueton',
-      msgs: [`¡${name} salta y juega contigo! 🎉`, `${name} está muy juguetón 😜`] },
-    { id: 'casa', icon: '🏠', label: 'Llevar a casa', min: 800, mood: 'amoroso', home: true,
-      msgs: [`${name} entró feliz a su casita 🏠`, `¡${name} se siente seguro en casa! 💛`] },
+    { id: 'jugar', icon: pet.toy || '🎾', label: 'Jugar', min: 400, mood: 'jugueton', msgs: jugarMsgs },
+    { id: 'casa', icon: '🏠', label: 'Llevar a casa', min: 800, mood: 'amoroso', home: true, msgs: casaMsgs },
   ];
+
+  // frases que se desbloquean con cada punto (mascotas con personalidad)
+  const phrasesAll = persona ? persona.phrases : [];
+  const phrasesOpen = phrasesAll.filter(ph => pts >= ph[0]);
+  function sayPhrase() {
+    if (!phrasesOpen.length) return;
+    clearTimeout(timer.current);
+    setAct({ type: 'frase', mood: 'jugueton', msg: phrasesOpen[Math.floor(Math.random() * phrasesOpen.length)][1] });
+    timer.current = setTimeout(() => setAct(null), 3400);
+  }
 
   function doTreat(t) {
     if (pts < t.min) return;
@@ -727,6 +740,14 @@ function PetCard({ p }) {
           );
         })}
       </div>
+
+      {/* frases que se desbloquean con cada punto (mascota con personalidad) */}
+      {persona && (
+        <div className="pet-phrases">
+          <button className="pet-phrase-btn" disabled={!phrasesOpen.length} onClick={sayPhrase}>🎤 Frase del chef</button>
+          <span className="pet-phrase-count">🍖 {phrasesOpen.length}/{phrasesAll.length} frases desbloqueadas</span>
+        </div>
+      )}
     </div>
   );
 }
