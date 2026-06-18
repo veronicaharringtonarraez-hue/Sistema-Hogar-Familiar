@@ -1,32 +1,29 @@
 IMÁGENES DE LAS MASCOTAS (versiones animadas)
 =============================================
 
-La pantalla "Mascotas" ya está cableada para usar una imagen por emoción.
-Solo tienes que subir los archivos aquí; aparecen solos, sin tocar el código.
+La pantalla "Mascotas" usa una imagen por emoción de cada mascota.
+Ya están recortadas desde el issue "mascotas" (#17). Para cambiarlas por
+versiones CON MOVIMIENTO, solo reemplaza el archivo (mismo nombre) por un
+.gif o .webp animado: aparece solo, sin tocar el código.
 
 Carpetas (una por mascota):
-  assets/mochi/   -> Mochi  (perrito de Taylor · "Mi Mini Toy")
-  assets/rayo/    -> Rayo   (gato gris de Emmeth · "Gatito atigrado")
-  assets/oreo/    -> Oreo   (gato blanco y negro de Christopher)
-  assets/nube/    -> Nube   (gatita blanca de Rachel)
+  assets/luna/    -> Luna   (buhito con lentes · Verónica)
+  assets/brutus/  -> Brutus (bulldog inglés · Maykol)
+  assets/mochi/   -> Mochi  (perrito mini toy · Taylor)
+  assets/rayo/    -> Rayo   (gato atigrado · Emmeth)
+  assets/oreo/    -> Oreo   (gato blanco y negro · Christopher)
+  assets/nube/    -> Nube   (gatito blanco · Rachel)
 
 Nombre de cada archivo = la emoción (en minúsculas, sin acentos):
   feliz, emocionado, tranquilo, curioso, dormido, triste,
   asustado, enfadado, timido, amoroso, jugueton, sorprendido
 
-Ejemplos:
-  assets/mochi/feliz.png
-  assets/rayo/triste.gif
-  assets/oreo/amoroso.webp
-
 Formatos aceptados (se prueban en este orden): .png  ->  .gif  ->  .webp
-  - Para imágenes ANIMADAS / con movimiento usa .gif o .webp animado: se mueven solas.
+  - Para imágenes ANIMADAS / con movimiento usa .gif o .webp animado.
   - Si falta alguna emoción, esa cara se muestra con un emoji (respaldo).
 
 Emociones que el sistema usa según los puntos / acciones:
   - Por puntos de la semana: triste, timido, tranquilo, feliz, emocionado, amoroso
   - Al jugar: jugueton     - Al dar cariño/comida/llevar a casa: amoroso
-  (Si subes las 12, pídele a Claude que amplíe el uso de curioso, dormido,
-   asustado, enfadado y sorprendido.)
-
-Tamaño sugerido: cuadradas, ~300x300 px o más, fondo transparente (PNG/WebP).
+  (Ya existen las 12; pídele a Claude que use también curioso, dormido,
+   asustado, enfadado y sorprendido en más situaciones si lo quieres.)
