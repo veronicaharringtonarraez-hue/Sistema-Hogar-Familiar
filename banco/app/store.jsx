@@ -225,14 +225,45 @@ function StoreProvider({ children }) {
     });
   }
 
+  // Sistema nuevo ("Mi día"): abona por EVENTO del ledger (cada aprobación quedó
+  // registrada con su fecha). Idempotente por marca de tiempo: solo abona los
+  // eventos más nuevos que el último ya abonado. Así re-aprobar una tarea otro
+  // día suma de nuevo, y nunca se duplica ni se pierde lo anterior.
+  function reconcileMicro() {
+    let tasks;
+    try { tasks = JSON.parse(localStorage.getItem(MICRO_KEY)); } catch (e) { return; }
+    if (!tasks || !Array.isArray(tasks.ledger)) return;
+    setState((prev) => {
+      let changed = false;
+      const next = JSON.parse(JSON.stringify(prev));
+      if (!next.pointsCreditedMicro) next.pointsCreditedMicro = {};
+      BC.CHILDREN.forEach((c) => {
+        if (!next.data[c.id]) return;
+        const rec = next.pointsCreditedMicro[c.id];
+        const lastAt = (rec && typeof rec.at === "number") ? rec.at : 0;
+        let sum = 0, maxAt = lastAt;
+        tasks.ledger.forEach((e) => {
+          if (e && e.pid === c.id && typeof e.pts === "number" && typeof e.at === "number" && e.at > lastAt) {
+            sum += e.pts; if (e.at > maxAt) maxAt = e.at;
+          }
+        });
+        if (sum > 0) {
+          creditIncome(next, c.id, sum, "Puntos de tareas aprobados", "tareas", "⭐");
+          next.pointsCreditedMicro[c.id] = { at: maxAt };
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
+    });
+  }
+
   const reconcilePoints = useCallback(() => {
     // Sistema anterior (Panel de Padres): usa window.markPoints si está cargado.
     reconcileSource(TASKS_KEY, "pointsCredited",
       (m) => (typeof window.markPoints === "function") ? window.markPoints(m) : 0,
       "Puntos de tareas aprobados");
-    // Sistema nuevo ("Mi día"): rutinas (1 pt) y áreas por orden + limpieza.
-    reconcileSource(MICRO_KEY, "pointsCreditedMicro", microMarkPoints,
-      "Puntos de tareas aprobados");
+    // Sistema nuevo ("Mi día"): abono por evento del ledger.
+    reconcileMicro();
   }, []);
 
   // Reconcilia al abrir el banco y cada vez que cambian las tareas (otra

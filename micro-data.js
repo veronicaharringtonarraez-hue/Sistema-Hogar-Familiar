@@ -498,20 +498,11 @@ window.possibleInRange = (pid, from, to) => {
 };
 
 /* puntos GANADOS (aprobados) en un rango [from..to] (timestamps ms).
-   includeUndated: cuenta marcas sin fecha (compat con marcas antiguas). */
-window.earnedInRange = (pid, store, from, to, includeUndated) => {
+   Se leen del LEDGER permanente (cada aprobación quedó registrada con su fecha). */
+window.earnedInRange = (pid, store, from, to) => {
   let s = 0;
-  const marks = (store && store.marks) || {};
-  window.routinesFor(pid).forEach(t => {
-    const m = marks[pid + ':' + t.id];
-    if (!m || m.s !== 'ok') return;
-    if (m.at) { if (m.at >= from && m.at <= to) s += window.routinePoints(t, m); }
-    else if (includeUndated) s += window.routinePoints(t, m);
-  });
-  (store && store.bonus || []).forEach(b => {
-    if (b.pid !== pid) return;
-    if (b.at) { if (b.at >= from && b.at <= to) s += b.pts || 0; }
-    else if (includeUndated) s += b.pts || 0;
+  (store && store.ledger || []).forEach(e => {
+    if (e && e.pid === pid && typeof e.pts === 'number' && e.at >= from && e.at <= to) s += e.pts;
   });
   return s;
 };
