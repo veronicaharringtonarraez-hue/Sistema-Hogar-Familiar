@@ -362,11 +362,15 @@ window.PLAN = {
 window.ROUTINES = (function () {
   const out = [];
   Object.keys(window.PLAN).forEach(pid => {
-    let n = 0;
+    let n = 0, wrot = 0; // wrot reparte las semanales sin día fijo (Lun-Sáb)
     (window.PLAN[pid] || []).forEach(blk => {
+      let days = blk.days || null;
+      // Semanal sin día (ni semana del mes): se le asigna un día fijo de la
+      // semana para que SOLO aparezca ese día (no todos los días).
+      if (blk.freq === 'semanal' && !days && !blk.weeks) { days = [1 + (wrot % 6)]; wrot++; }
       const base = {
         pid, moment: blk.moment, group: blk.group,
-        freq: blk.freq || 'diario', days: blk.days || null, weeks: blk.weeks || null,
+        freq: blk.freq || 'diario', days: days, weeks: blk.weeks || null,
       };
       if (blk.type === 'area') {
         out.push(Object.assign({}, base, {
@@ -375,10 +379,12 @@ window.ROUTINES = (function () {
           micro: (blk.micro || []).slice(), pts: 10,
         }));
       } else {
+        // Tarea diaria = 10 pts. Tarea semanal = 15 pts (premio de oro).
+        const val = (blk.freq === 'semanal') ? 15 : 10;
         (blk.items || []).forEach(it => {
           out.push(Object.assign({}, base, {
             id: pid + '-' + (n++), type: 'task',
-            label: it[0], icon: it[1] || '•', pts: 10,
+            label: it[0], icon: it[1] || '•', pts: val,
           }));
         });
       }
@@ -420,7 +426,7 @@ window.microMarkState = m => !m ? 'todo' : (m.s === 'ok' ? 'ok' : 'claim');
 window.routinePoints = (t, m) => {
   if (!m || m.s !== 'ok') return 0;
   if (t && t.type === 'area') return (m.o || 0) + (m.c || 0);
-  return (typeof m.pts === 'number') ? m.pts : window.MICRO_POINTS;
+  return (typeof m.pts === 'number') ? m.pts : (t && t.pts ? t.pts : window.MICRO_POINTS);
 };
 /* compat */
 window.microMarkPoints = m => {

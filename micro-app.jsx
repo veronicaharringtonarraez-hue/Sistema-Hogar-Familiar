@@ -71,14 +71,16 @@ function Avatar({ p, size = 44 }) {
 function TaskRow({ pid, t, store, onClaim, showToast }) {
   const mark = store.marks[pid + ':' + t.id];
   const st = window.microMarkState(mark);
+  const gold = t.freq === 'semanal'; // premio de oro (solo su día)
   return (
-    <div className={'mt ' + st} onClick={() => {
+    <div className={'mt ' + st + (gold ? ' gold' : '')} onClick={() => {
       if (st === 'ok') { showToast('Ya está aprobada ✓'); return; }
       onClaim(pid, t.id, st !== 'claim');
     }}>
       <div className={'box ' + st}>{st === 'ok' ? '✓' : st === 'claim' ? '⏳' : ''}</div>
-      <span className="mt-ic">{t.icon}</span>
-      <span className="mt-t">{t.label}</span>
+      <span className="mt-ic">{gold ? '🥇' : t.icon}</span>
+      <span className="mt-t">{t.label}{gold && <span className="oro-lb"> · oro, solo hoy</span>}</span>
+      {st === 'todo' && gold && <span className="tagp oro">+15</span>}
       {st === 'claim' && <span className="tagp">por revisar</span>}
       {st === 'ok' && <span className="tagp ok">+{window.routinePoints(t, mark)}</span>}
     </div>
@@ -307,7 +309,7 @@ function InspectRow({ pid, t, onApproveTask, onApproveArea, onReject }) {
   const p = window.PERSON(pid);
   const [o, setO] = useState(5);
   const [c, setC] = useState(5);
-  const [pts, setPts] = useState(window.MICRO_POINTS); // rutina: 10 base, ajustable
+  const [pts, setPts] = useState(t.pts || window.MICRO_POINTS); // diaria 10 / semanal 15, ajustable
   const isArea = t.type === 'area';
 
   return (
