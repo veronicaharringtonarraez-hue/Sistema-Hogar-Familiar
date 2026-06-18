@@ -248,8 +248,77 @@ window.PLAN = {
       ['Sacar basura de cocina','🗑️'], ['Sacar basura de baños','🚮'],
       ['Sacar basura de oficinas y cuartos','🧺'], ['Sacar reciclaje','♻️'],
     ]},
-    { moment:'hogar', group:'Limpieza profunda de la semana', freq:'semanal', items:[
-      ['Hacer la limpieza profunda que toca según el calendario mensual','🧽'],
+    /* ---- Limpiezas profundas de Verónica (por día y semana del mes) ---- */
+    { moment:'hogar', group:'Dormitorios · profunda', type:'area', icon:'🛏️', freq:'semanal', days:[1], micro:[
+      'Cambiar sábanas y fundas','Lavar edredón cuando corresponda','Aspirar y rotar colchón',
+      'Limpiar mesas de noche y cabecera','Limpiar muebles por dentro/fuera y detrás',
+      'Sacudir lámparas','Limpiar ventiladores','Aspirar debajo de la cama','Vaciar deshumidificador',
+    ]},
+    { moment:'hogar', group:'Cocina · profunda', type:'area', icon:'🍳', freq:'semanal', days:[2], weeks:[1,3], micro:[
+      'Horno por dentro','Desengrasar campana extractora','Parrillas y quemadores','Interior del microondas',
+      'Desinfectar cafetera, licuadora, freidora y olla','Gabinetes: puertas, interiores y encima',
+      'Destapar drenajes preventivamente','Detrás y debajo de electrodomésticos','Juntas de azulejos',
+    ]},
+    { moment:'hogar', group:'Despensa · profunda', type:'area', icon:'🥫', freq:'semanal', days:[2], weeks:[2,4], micro:[
+      'Vaciar completamente los estantes','Limpiar y desinfectar superficies','Revisar fechas de vencimiento',
+      'Desechar productos vencidos','Reorganizar por categorías y aplicar FIFO','Etiquetar recipientes',
+      'Revisar signos de plagas','Limpiar recipientes herméticos por fuera',
+    ]},
+    { moment:'hogar', group:'Oficina · profunda', type:'area', icon:'💼', freq:'semanal', days:[2], weeks:[2], micro:[
+      'Limpiar monitor, teclado y mouse','Limpiar impresora','Desinfectar audífonos',
+      'Organizar y archivar documentos','Eliminar documentos innecesarios','Limpiar cables','Limpiar libreros',
+    ]},
+    { moment:'hogar', group:'Refrigerador · profunda', type:'area', icon:'❄️', freq:'semanal', days:[2], weeks:[4], micro:[
+      'Vaciar completamente','Desechar alimentos vencidos','Limpiar repisas y cajones','Limpiar sellos de goma',
+      'Desinfectar superficies internas','Reorganizar usando FIFO','Registrar productos próximos a vencer',
+    ]},
+    { moment:'hogar', group:'Área de Rachel · profunda', type:'area', icon:'👶', freq:'semanal', days:[3], micro:[
+      'Desinfectar juguetes','Limpiar cambiador','Revisar stock de pañales y toallitas',
+      'Revisar fechas de productos de higiene','Lavar mantitas y baberos',
+      'Desinfectar accesorios de alimentación','Reorganizar el almacenamiento',
+    ]},
+    { moment:'hogar', group:'Baño · profunda', type:'area', icon:'🚿', freq:'semanal', days:[4], micro:[
+      'Desinfectar inodoro, tanque y desincrustar sarro','Lavamanos: desagüe y pulir grifería',
+      'Ducha: paredes, juntas, moho, puertas y desagüe','Vaciar y limpiar muebles y debajo del lavamanos',
+      'Revisar y desechar productos vencidos','Limpiar espejo y desinfectar dispensadores','Limpiar extractor o ventilación',
+    ]},
+    { moment:'hogar', group:'Sala · profunda', type:'area', icon:'🛋️', freq:'semanal', days:[5], weeks:[1,3], micro:[
+      'Sacudir lámparas y pantallas','Limpiar cuadros, marcos e interruptores','Limpiar puertas, manijas y zócalos',
+      'Limpiar mesas por debajo','Mueble del TV por dentro y detrás','Pantalla del TV con producto adecuado',
+      'Aspirar el sofá y debajo de los cojines','Mover muebles y limpiar detrás/debajo','Aspirar o lavar alfombras',
+    ]},
+    { moment:'hogar', group:'Comedor · profunda', type:'area', icon:'🍽️', freq:'semanal', days:[5], weeks:[1,3], micro:[
+      'Limpiar patas y base de la mesa','Limpiar sillas completas (asiento, respaldo, patas)',
+      'Lavar o cambiar el mantel','Limpiar centro de mesa y decoración','Zócalos y esquinas','Mover la mesa y limpiar debajo',
+    ]},
+    { moment:'hogar', group:'Lavandería · mantenimiento', type:'area', icon:'🧺', freq:'semanal', days:[5], weeks:[2,4], micro:[
+      'Limpiar interior de la lavadora','Limpiar filtro de la lavadora','Limpiar filtro de pelusas de la secadora',
+      'Limpiar detrás de los equipos','Limpiar estantes','Revisar productos y organizar suministros',
+    ]},
+    { moment:'hogar', group:'Cochera · profunda', type:'area', icon:'🚗', freq:'semanal', days:[6], weeks:[1], micro:[
+      'Eliminar telarañas','Limpiar portón','Limpiar estanterías y herramientas','Limpiar esquinas',
+      'Revisar humedad','Revisar posibles refugios de plagas',
+    ]},
+    { moment:'hogar', group:'Patio o jardín · profunda', type:'area', icon:'🌿', freq:'semanal', days:[6], weeks:[1], micro:[
+      'Podar plantas','Retirar maleza','Limpiar muebles exteriores','Revisar drenajes','Limpiar macetas','Revisar agua estancada',
+    ]},
+    { moment:'hogar', group:'Ventanas · profunda', type:'area', icon:'🪟', freq:'semanal', days:[6], weeks:[2], micro:[
+      'Cristales interiores y exteriores','Limpiar marcos','Limpiar rieles','Limpiar persianas','Limpiar mosquiteros',
+    ]},
+    { moment:'hogar', group:'Closet · trimestral', type:'area', icon:'👕', freq:'semanal', days:[6], weeks:[3], micro:[
+      'Revisar tallas y probar ropa a los niños','Separar dañada, para donar y para vender',
+      'Rotar ropa por temporada','Revisar zapatos, mochilas y accesorios',
+      'Limpiar cajas organizadoras','Limpiar estantes y paredes internas','Revisar humedad o moho',
+    ]},
+    { moment:'hogar', group:'Vehículo familiar · profunda', type:'area', icon:'🚙', freq:'semanal', days:[6], weeks:[3], micro:[
+      'Aspirar alfombras y tapicería','Limpiar asientos, tablero, consola y compartimentos','Vidrios interiores',
+      'Lavar carrocería, llantas y rines','Vidrios exteriores','Revisar presión de neumáticos',
+      'Revisar niveles de aceite y líquidos','Revisar fecha de mantenimiento',
+    ]},
+    { moment:'hogar', group:'Control de plagas', type:'area', icon:'🐜', freq:'semanal', days:[6], weeks:[4], micro:[
+      'Mover muebles y electrodomésticos y aspirar detrás/debajo','Revisar trampas adhesivas y cambiar cebos',
+      'Sellar grietas detectadas','Revisar drenajes y humedad','Eliminar cajas de cartón innecesarias',
+      'Inspeccionar puntos de ingreso de insectos',
     ]},
     { moment:'hogar', group:'Manías', type:'area', icon:'🍳', freq:'diario', micro:[
       'Limpiar nevera','Limpiar mesa de trabajo','Hacer inventario',
@@ -297,7 +366,7 @@ window.ROUTINES = (function () {
     (window.PLAN[pid] || []).forEach(blk => {
       const base = {
         pid, moment: blk.moment, group: blk.group,
-        freq: blk.freq || 'diario', days: blk.days || null,
+        freq: blk.freq || 'diario', days: blk.days || null, weeks: blk.weeks || null,
       };
       if (blk.type === 'area') {
         out.push(Object.assign({}, base, {
@@ -322,12 +391,16 @@ window.ROUTINE = id => window.ROUTINES.find(t => t.id === id);
 /* tareas de una persona */
 window.routinesFor = pid => window.ROUTINES.filter(t => t.pid === pid);
 
-/* ¿la tarea aplica hoy?  (para el flujo del día)
-   - days definido  → solo esos días de la semana
-   - moment 'semana'→ siempre visible (bolsa semanal)
-   - resto          → siempre visible */
+/* semana del mes: 1 (días 1-7) … 5 */
+window.weekOfMonth = (d = new Date()) => Math.ceil(d.getDate() / 7);
+
+/* ¿la tarea aplica en una fecha?
+   - days  → solo esos días de la semana
+   - weeks → solo esas semanas del mes (para rotaciones mensuales)
+   - resto → siempre visible */
 window.appliesToday = (t, d = new Date()) => {
-  if (t.days && t.days.length) return t.days.includes(d.getDay());
+  if (t.days && t.days.length && !t.days.includes(d.getDay())) return false;
+  if (t.weeks && t.weeks.length && !t.weeks.includes(window.weekOfMonth(d))) return false;
   return true;
 };
 
