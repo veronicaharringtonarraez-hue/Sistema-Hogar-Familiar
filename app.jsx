@@ -966,7 +966,11 @@ function App() {
   const init = useMemo(loadState, []);
   const [profile, setProfile] = useState(init.profile);
   const [dist, setDist] = useState(init.dist);
-  const [tab, setTab] = useState(init.tab);
+  const [tab, setTab] = useState(() => {
+    const h = (location.hash || '').replace('#', '');
+    return ['inicio', 'misiones', 'mascotas', 'banco', 'familia'].includes(h) ? h : init.tab;
+  });
+  useEffect(() => { if (location.hash) history.replaceState(null, '', location.pathname + location.search); }, []);
   const [done, setDone] = useState(init.done);
   const [custom, setCustom] = useState(init.custom);
   const [accum, setAccum] = useState(init.accum);

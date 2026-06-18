@@ -622,6 +622,16 @@ function App() {
       </div>
 
       {toast && <div className="toast">{toast}</div>}
+
+      <nav className="mnav">
+        <div className="mnav-in">
+          <a href="index.html#inicio"><span className="mnav-ic">🏠</span><span>Inicio</span></a>
+          <a href="index.html#misiones"><span className="mnav-ic">🎯</span><span>Misiones</span></a>
+          <a href="index.html#mascotas"><span className="mnav-ic">🐾</span><span>Mascotas</span></a>
+          <a href="index.html#banco"><span className="mnav-ic">🏦</span><span>Banco</span></a>
+          <a href="index.html#familia"><span className="mnav-ic">👨‍👩‍👧‍👦</span><span>Familia</span></a>
+        </div>
+      </nav>
     </div>
   );
 }
