@@ -586,7 +586,12 @@ const PET_EMO = {
   amoroso:    { emoji: '🥰', label: 'Amoroso' },
   jugueton:   { emoji: '😜', label: 'Juguetón' },
   sorprendido:{ emoji: '😮', label: 'Sorprendido' },
+  curioso:    { emoji: '🤔', label: 'Curioso' },
+  dormido:    { emoji: '😴', label: 'Dormido' },
+  asustado:   { emoji: '😨', label: 'Asustado' },
+  enfadado:   { emoji: '😠', label: 'Enfadado' },
 };
+const PET_ALL_EMOS = ['feliz', 'emocionado', 'tranquilo', 'curioso', 'dormido', 'triste', 'asustado', 'enfadado', 'timido', 'amoroso', 'jugueton', 'sorprendido'];
 /* el ánimo base depende de los puntos ganados esta semana en "Mi día" */
 function petMood(pts) {
   if (pts <= 0) return 'triste';
@@ -615,6 +620,8 @@ function PetCard({ p }) {
   const name = pet.name;
   const kind = pet.kind;
   const persona = pet.persona;          // mascota con personalidad (mensajes propios)
+  const voices = (window.PET_VOICES && window.PET_VOICES[pet.dir]) || null; // 10 frases x 12 emociones
+  const sayEmo = (e) => { const a = voices && voices[e]; return (a && a.length) ? a[Math.floor(Math.random() * a.length)] : null; };
   const isRachel = p.id === 'rachel';
 
   // Puntos que dan ánimo a la mascota (esfuerzo de la semana en "Mi día").
@@ -647,7 +654,7 @@ function PetCard({ p }) {
     emocionado: `¡${name} está súper emocionado contigo! 🤩`,
     amoroso: `${name} te quiere muchísimo 🥰 ¡Gran trabajo!`,
   };
-  const message = act ? act.msg : (persona ? pick(persona.idle) : (idleMsg[base] || idleMsg.feliz));
+  const message = act ? act.msg : (sayEmo(base) || (persona ? pick(persona.idle) : (idleMsg[base] || idleMsg.feliz)));
 
   // mensajes según el tipo de animal (o su personalidad, si la tiene)
   const carinoMsgs = persona ? persona.carino
@@ -670,20 +677,30 @@ function PetCard({ p }) {
     { id: 'casa', icon: '🏠', label: 'Llevar a casa', min: 800, mood: 'amoroso', home: true, msgs: casaMsgs },
   ];
 
-  // frases que se desbloquean con cada punto (mascotas con personalidad)
+  // frases por emoción (voces) — fallback a las frases por puntos de la persona
   const phrasesAll = persona ? persona.phrases : [];
   const phrasesOpen = phrasesAll.filter(ph => pts >= ph[0]);
+  const voiceCount = voices ? PET_ALL_EMOS.reduce((s, e) => s + ((voices[e] || []).length), 0) : phrasesAll.length;
+  // Cada "frase" muestra una emoción al azar (con su carita) y una frase acorde.
   function sayPhrase() {
-    if (!phrasesOpen.length) return;
+    let e, m;
+    if (voices) {
+      const avail = PET_ALL_EMOS.filter(x => voices[x] && voices[x].length);
+      e = avail[Math.floor(Math.random() * avail.length)];
+      m = sayEmo(e);
+    } else if (phrasesOpen.length) {
+      e = base; m = phrasesOpen[Math.floor(Math.random() * phrasesOpen.length)][1];
+    }
+    if (!m) return;
     clearTimeout(timer.current);
-    setAct({ type: 'frase', mood: 'jugueton', msg: phrasesOpen[Math.floor(Math.random() * phrasesOpen.length)][1] });
-    timer.current = setTimeout(() => setAct(null), 3400);
+    setAct({ type: 'frase', mood: e, msg: m });
+    timer.current = setTimeout(() => setAct(null), 3600);
   }
 
   function doTreat(t) {
     if (pts < t.min) return;
     clearTimeout(timer.current);
-    setAct({ type: t.id, mood: t.mood, msg: pick(t.msgs), home: !!t.home });
+    setAct({ type: t.id, mood: t.mood, msg: (sayEmo(t.mood) || pick(t.msgs)), home: !!t.home });
     timer.current = setTimeout(() => setAct(null), t.home ? 2600 : 2200);
   }
   useEffect(() => () => clearTimeout(timer.current), []);
@@ -741,11 +758,11 @@ function PetCard({ p }) {
         })}
       </div>
 
-      {/* frases que se desbloquean con cada punto (mascota con personalidad) */}
-      {persona && (
+      {/* frases por emoción según la personalidad */}
+      {(voices || persona) && (
         <div className="pet-phrases">
-          <button className="pet-phrase-btn" disabled={!phrasesOpen.length} onClick={sayPhrase}>{persona.btn || '🎤 Frase'}</button>
-          <span className="pet-phrase-count">💬 {phrasesOpen.length}/{phrasesAll.length} frases desbloqueadas</span>
+          <button className="pet-phrase-btn" disabled={!voices && !phrasesOpen.length} onClick={sayPhrase}>{(persona && persona.btn) || '🎤 Frase'}</button>
+          <span className="pet-phrase-count">💬 {voiceCount} frases</span>
         </div>
       )}
     </div>
