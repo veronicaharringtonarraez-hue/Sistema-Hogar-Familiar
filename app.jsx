@@ -598,6 +598,18 @@ function petMood(pts) {
 }
 function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
+/* Imagen de la mascota por emoción. Busca assets/<dir>/<emocion>.(png|gif|webp);
+   si no existe ninguna, muestra el emoji del animal. Soporta imágenes animadas
+   (GIF/WebP) sin cambiar nada más: basta con subir el archivo al repositorio. */
+const PET_EXTS = ['png', 'gif', 'webp'];
+function PetVisual({ pet, emotion }) {
+  const [i, setI] = useState(0);
+  useEffect(() => { setI(0); }, [emotion, pet && pet.dir]);
+  if (!pet.dir || i >= PET_EXTS.length) return <span className="pet-face-emoji">{pet.face}</span>;
+  const src = 'assets/' + pet.dir + '/' + emotion + '.' + PET_EXTS[i];
+  return <img className="pet-img" src={src} alt="" onError={() => setI(i + 1)} />;
+}
+
 function PetCard({ p }) {
   const pet = p.pet;
   const name = pet.name;
@@ -617,7 +629,7 @@ function PetCard({ p }) {
         <div className="pet-stage bouncy">
           <div className="pet-house">🏠</div>
           <div className="pet-hearts"><span>💕</span><span>💖</span><span>💗</span></div>
-          <div className="pet-char">{pet.face}<span className="pet-emo">🥰</span></div>
+          <div className="pet-char"><PetVisual pet={pet} emotion="amoroso" /><span className="pet-emo">🥰</span></div>
         </div>
         <div className="pet-msg">{name} es feliz cuando toda la familia cuida a {p.short} 💛</div>
       </div>
@@ -687,7 +699,7 @@ function PetCard({ p }) {
         {(emo === 'amoroso') && <div className="pet-hearts"><span>💕</span><span>💖</span><span>💗</span></div>}
         {act && act.type === 'comida' && <div className="pet-treat">{pet.food}</div>}
         {act && act.type === 'jugar' && <div className="pet-treat">{pet.toy || '🎾'}</div>}
-        <div className="pet-char">{pet.face}<span className="pet-emo">{E.emoji}</span></div>
+        <div className="pet-char"><PetVisual pet={pet} emotion={emo} /><span className="pet-emo">{E.emoji}</span></div>
         {base === 'triste' && !act && <div className="pet-zzz">💤</div>}
       </div>
 
