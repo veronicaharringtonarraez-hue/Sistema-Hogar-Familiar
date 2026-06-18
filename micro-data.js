@@ -183,6 +183,10 @@ window.PLAN = {
       ['Descongelar carne','🥩'], ['Preparar alimentos','🔪'], ['Cocinar','🍳'], ['Servir comida','🍽️'],
       ['Limpiar encimeras','🧽'], ['Limpiar cocina después de cocinar','🧼'], ['Dejar fregadero despejado','🚰'],
     ]},
+    { moment:'hogar', group:'Manías', type:'area', icon:'🍳', freq:'diario', micro:[
+      'Limpiar cocina','Limpiar utensilios','Barrer y coletear','Preparar la logística del día',
+      'Hacer mercado','Botar la basura',
+    ]},
     { moment:'hogar', group:'Lavandería', freq:'diario', items:[
       ['Separar ropa blanca','⚪'], ['Separar ropa de color','🌈'], ['Cargar lavadora','🧺'],
       ['Pasar ropa a secadora','🌀'], ['Llevar ropa limpia a la sala para doblar','🛋️'],
@@ -214,6 +218,9 @@ window.PLAN = {
     ]},
     { moment:'hogar', group:'Lavandería', freq:'diario', items:[
       ['Doblar ropa','🧺'], ['Guardar ropa doblada','🗄️'],
+    ]},
+    { moment:'hogar', group:'Manías', type:'area', icon:'🍳', freq:'diario', micro:[
+      'Limpiar nevera','Limpiar mesa de trabajo','Hacer inventario',
     ]},
     { moment:'hogar', group:'Cuarto principal', type:'area', icon:'🛏️', freq:'semanal', micro:[
       'Cambiar sábanas','Despejar habitación','Barrer','Pasar coleto','Limpiar mueble del televisor',
