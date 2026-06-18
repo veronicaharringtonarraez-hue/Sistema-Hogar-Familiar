@@ -20,20 +20,33 @@ function weekKey(d = new Date()) {
   return dt.getUTCFullYear() + '-W' + week;
 }
 
+/* clave del día con corte a las 3:00 a.m. (las marcas se reinician a esa hora) */
+function dayKey(d = new Date()) { const x = new Date(d.getTime() - 3 * 3600 * 1000); return x.getFullYear() + '-' + x.getMonth() + '-' + x.getDate(); }
+/* inicio (lunes 00:00) de la semana actual, para "ganado esta semana" */
+function weekStartTs(d = new Date()) { const x = new Date(d); const w = x.getDay(); x.setDate(x.getDate() + (w === 0 ? -6 : 1 - w)); x.setHours(0, 0, 0, 0); return x.getTime(); }
+
 function loadStore() {
   let s = {};
   try { s = JSON.parse(localStorage.getItem(MKEY)) || {}; } catch (e) {}
-  const wk = weekKey();
-  if (s.week !== wk) { s.marks = {}; s.bonus = []; s.checks = {}; s.week = wk; }
-  s.marks = s.marks || {}; s.bonus = s.bonus || []; s.checks = s.checks || {};
+  const dk = dayKey();
+  // Reinicio DIARIO (3 a.m.): se limpian las marcas del día; el ledger se conserva.
+  if (s.day !== dk) { s.marks = {}; s.checks = {}; s.day = dk; }
+  s.marks = s.marks || {}; s.checks = s.checks || {}; s.bonus = s.bonus || [];
+  s.ledger = Array.isArray(s.ledger) ? s.ledger : [];
+  // poda: el ledger conserva ~180 días (suficiente para semana/mes y mascotas)
+  const cutoff = Date.now() - 180 * 86400000;
+  s.ledger = s.ledger.filter(e => e && typeof e.at === 'number' && e.at >= cutoff);
   s.profile = s.profile || 'taylor';
   return s;
 }
 
-/* ---- puntos ---- */
-function bonusPts(pid, bonus) { return (bonus || []).filter(b => b.pid === pid).reduce((s, b) => s + (b.pts || 0), 0); }
-function taskPts(pid, marks) { return window.routinesFor(pid).reduce((s, t) => s + window.routinePoints(t, marks[pid + ':' + t.id]), 0); }
-function personPts(pid, store) { return taskPts(pid, store.marks) + bonusPts(pid, store.bonus); }
+/* ---- puntos ----
+   Los puntos ganados viven en el LEDGER (registro permanente de aprobaciones),
+   así desmarcar tareas no quita puntos y re-aprobar otro día suma de nuevo. */
+function ledgerSince(pid, store, from) {
+  return (store.ledger || []).reduce((s, e) => s + ((e && e.pid === pid && typeof e.pts === 'number' && e.at >= from) ? e.pts : 0), 0);
+}
+function personPts(pid, store) { return ledgerSince(pid, store, weekStartTs()); }
 
 /* ---- momento sugerido según la hora ---- */
 function currentMoment(d = new Date()) {
@@ -500,10 +513,25 @@ function App() {
     checks[k] = arr;
     persist({ ...store, checks });
   }
-  function approveTask(pid, id, pts) { const v = (typeof pts === 'number') ? pts : window.MICRO_POINTS; persist({ ...store, marks: { ...store.marks, [pid + ':' + id]: { s: 'ok', pts: v, at: Date.now() } } }); showToast('Aprobada +' + v + ' ✓'); }
-  function approveArea(pid, id, o, c) { persist({ ...store, marks: { ...store.marks, [pid + ':' + id]: { s: 'ok', o, c, at: Date.now() } } }); showToast('Área aprobada +' + (o + c) + ' ✓'); }
+  function approveTask(pid, id, pts) {
+    const v = (typeof pts === 'number') ? pts : window.MICRO_POINTS; const at = Date.now();
+    const ledger = [...(store.ledger || []), { pid, id, pts: v, at, src: 'task' }];
+    persist({ ...store, ledger, marks: { ...store.marks, [pid + ':' + id]: { s: 'ok', pts: v, at } } });
+    showToast('Aprobada +' + v + ' ✓');
+  }
+  function approveArea(pid, id, o, c) {
+    const at = Date.now(); const v = (o || 0) + (c || 0);
+    const ledger = [...(store.ledger || []), { pid, id, pts: v, at, src: 'area' }];
+    persist({ ...store, ledger, marks: { ...store.marks, [pid + ':' + id]: { s: 'ok', o, c, at } } });
+    showToast('Área aprobada +' + v + ' ✓');
+  }
+  // Desmarcar no quita puntos: solo limpia la marca (el ledger se conserva).
   function reject(pid, id) { const marks = { ...store.marks }; delete marks[pid + ':' + id]; persist({ ...store, marks }); }
-  function grant(b) { persist({ ...store, bonus: [...(store.bonus || []), b] }); }
+  function grant(b) {
+    const at = b.at || Date.now();
+    const ledger = [...(store.ledger || []), { pid: b.pid, pts: b.pts, at, src: 'bonus', type: b.type }];
+    persist({ ...store, ledger, bonus: [...(store.bonus || []), b] });
+  }
   function setPrivCfg(section, key, value) { const cfg = { ...(store.privCfg || {}) }; cfg[section] = { ...(cfg[section] || {}), [key]: value }; persist({ ...store, privCfg: cfg }); }
 
   /* ---- sincronización en la nube (documento propio: hogar-micro) ---- */
@@ -530,9 +558,31 @@ function App() {
     function applyRemote(json) {
       if (json === lastJSON.current) return;
       lastJSON.current = json;
-      try { const s = JSON.parse(json); const wk = weekKey(); if (s.week !== wk) { s.marks = {}; s.bonus = []; s.checks = {}; s.week = wk; } s.marks = s.marks || {}; s.bonus = s.bonus || []; s.checks = s.checks || {}; localStorage.setItem(MKEY, JSON.stringify(s)); setStore(prev => ({ ...s, profile: prev.profile })); } catch (e) {}
+      try {
+        const s = JSON.parse(json); const dk = dayKey();
+        if (s.day !== dk) { s.marks = {}; s.checks = {}; s.day = dk; }
+        s.marks = s.marks || {}; s.checks = s.checks || {}; s.bonus = s.bonus || [];
+        s.ledger = Array.isArray(s.ledger) ? s.ledger : [];
+        localStorage.setItem(MKEY, JSON.stringify(s));
+        setStore(prev => ({ ...s, profile: prev.profile }));
+      } catch (e) {}
     }
     return () => { remoteRef.current = null; };
+  }, []);
+
+  /* Reinicio diario a las 3 a.m. con la app abierta (revisa cada minuto). */
+  useEffect(() => {
+    const iv = setInterval(() => {
+      setStore(prev => {
+        const dk = dayKey();
+        if (prev.day === dk) return prev;
+        const n = { ...prev, marks: {}, checks: {}, day: dk };
+        const j = JSON.stringify(n); lastJSON.current = j;
+        localStorage.setItem(MKEY, j); if (remoteRef.current) remoteRef.current(j);
+        return n;
+      });
+    }, 60000);
+    return () => clearInterval(iv);
   }, []);
 
   return (

@@ -61,6 +61,15 @@ function microPtsByPerson() {
   let store;
   try { store = JSON.parse(localStorage.getItem('fam_micro_v1')); } catch (e) { return out; }
   if (!store || typeof store !== 'object') return out;
+  // Modelo nuevo: puntos ganados en el LEDGER (esta semana, desde el lunes).
+  if (Array.isArray(store.ledger)) {
+    const now = new Date(); const w = now.getDay();
+    const mon = new Date(now); mon.setDate(now.getDate() + (w === 0 ? -6 : 1 - w)); mon.setHours(0, 0, 0, 0);
+    const from = mon.getTime();
+    store.ledger.forEach(e => { if (e && e.pid && typeof e.pts === 'number' && e.at >= from) out[e.pid] = (out[e.pid] || 0) + e.pts; });
+    return out;
+  }
+  // Compat con el modelo anterior (marcas + bonos).
   const marks = store.marks || {};
   Object.keys(marks).forEach(k => {
     const m = marks[k];
