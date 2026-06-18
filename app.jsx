@@ -512,8 +512,11 @@ function ByDay() {
   const hogar = ROUTS().filter(t => t.moment === 'hogar');
   // Cada día: diarias sin día específico.
   const daily = hogar.filter(t => t.freq !== 'semanal' && !(t.days && t.days.length)).slice().sort(byPrio);
-  // Específicas del día (lavandería, basura, etc. con días asignados).
-  const dayTasks = hogar.filter(t => t.days && t.days.length && t.days.includes(day));
+  // Fecha del día elegido en la semana actual (para respetar la semana del mes).
+  const now = new Date();
+  const selDate = new Date(now); selDate.setDate(now.getDate() + (day - now.getDay()));
+  // Específicas del día (lavandería, basura, limpiezas profundas con días/semana).
+  const dayTasks = hogar.filter(t => t.days && t.days.length && window.appliesToday(t, selDate));
   // Áreas semanales sin día fijo: se reparten de lunes a sábado.
   const weeklyAreas = hogar.filter(t => t.freq === 'semanal' && t.type === 'area' && !(t.days && t.days.length)).slice().sort(byPrio);
   const weeklyForDay = weeklyAreas.filter((t, i) => (1 + (i % 6)) === day);
