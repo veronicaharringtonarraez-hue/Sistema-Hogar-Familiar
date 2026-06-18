@@ -641,6 +641,9 @@ function PetCard({ p }) {
   const timer = useRef(null);
   const emo = act ? act.mood : base;
   const E = PET_EMO[emo] || PET_EMO.feliz;
+  // Si la mascota tiene videos (Mochi), se elige un clip según la emoción.
+  const anim = (pet.anim && pet.anim.length) ? pet.anim : null;
+  const clip = anim ? anim[Math.max(0, PET_ALL_EMOS.indexOf(emo)) % anim.length] : null;
 
   const idleMsg = isRachel ? {
     triste: `${name} extraña mimos 🥺 ¡Cuidemos juntos a ${p.short}!`,
@@ -731,8 +734,13 @@ function PetCard({ p }) {
         {(emo === 'amoroso') && <div className="pet-hearts"><span>💕</span><span>💖</span><span>💗</span></div>}
         {act && act.type === 'comida' && <div className="pet-treat">{pet.food}</div>}
         {act && act.type === 'jugar' && <div className="pet-treat">{pet.toy || '🎾'}</div>}
-        <div className="pet-char"><PetVisual pet={pet} emotion={emo} /><span className="pet-emo">{E.emoji}</span></div>
-        {base === 'triste' && !act && <div className="pet-zzz">💤</div>}
+        <div className="pet-char">
+          {clip
+            ? <video key={clip} className="pet-vid" src={clip} autoPlay loop muted playsInline />
+            : <PetVisual pet={pet} emotion={emo} />}
+          <span className="pet-emo">{E.emoji}</span>
+        </div>
+        {base === 'triste' && !act && !clip && <div className="pet-zzz">💤</div>}
       </div>
 
       {/* mensaje motivador */}
