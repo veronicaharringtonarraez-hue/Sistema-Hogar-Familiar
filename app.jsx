@@ -359,11 +359,12 @@ function MissionRow({ task, owner, done, toggle, showOwner, onDelete }) {
 /* =========================================================
    PANTALLA: MISIONES (Persona / Área / Día)
    ========================================================= */
-function MissionsScreen({ dist, done, toggle, view, setView, onAdd, onDelete }) {
+function MissionsScreen({ view, setView, onAdd }) {
   return (
     <div className="pad fade">
       <div className="sec-h" style={{ marginTop: 8 }}>
         <h2>Misiones</h2>
+        <a className="link" href="Microtareas.html" style={{ textDecoration: 'none' }}>Abrir Microtareas 🧩</a>
       </div>
       <button className="add-btn" onClick={onAdd}><span style={{ fontSize: 18 }}>➕</span> Agregar una tarea</button>
       <div className="seg" style={{ marginBottom: 16 }}>
@@ -371,91 +372,180 @@ function MissionsScreen({ dist, done, toggle, view, setView, onAdd, onDelete }) 
           <button key={k} className={view === k ? 'on' : ''} onClick={() => setView(k)}>{l}</button>
         ))}
       </div>
-      {view === 'persona' && <ByPerson dist={dist} done={done} toggle={toggle} onDelete={onDelete} />}
-      {view === 'area' && <ByArea dist={dist} done={done} toggle={toggle} />}
-      {view === 'dia' && <ByDay dist={dist} done={done} toggle={toggle} />}
+      {view === 'persona' && <ByPerson />}
+      {view === 'area' && <ByArea />}
+      {view === 'dia' && <ByDay />}
     </div>
   );
 }
 
-function ByPerson({ dist, done, toggle, onDelete }) {
-  const people = window.FAMILY.filter(p => tasksFor(p.id, dist).length > 0);
-  return people.map(p => {
-    const ts = tasksFor(p.id, dist);
-    const c = ts.filter(t => done[p.id + ':' + t.id]).length;
-    return (
-      <div key={p.id} style={{ marginBottom: 20 }}>
-        <div className="row between" style={{ marginBottom: 10 }}>
-          <div className="row" style={{ gap: 10 }}>
-            <Avatar p={p} size={38} />
-            <div>
-              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 17, lineHeight: 1, whiteSpace: 'nowrap' }}>{p.name}{p.age ? ' (' + p.age + ')' : ''}</div>
-              <div className="muted" style={{ fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>{c}/{ts.length} tareas · {c * PPT} pts</div>
-            </div>
-          </div>
-          {p.isKid && <span className="chip pts">⭐ {totalPts(p.id, dist, done)}</span>}
-        </div>
-        {ts.map(t => <MissionRow key={t.id} task={t} owner={p} done={done} toggle={toggle} onDelete={onDelete} />)}
-      </div>
-    );
+/* ---- helpers de Misiones (catálogo de Microtareas / "Mi día") ---- */
+const ROUTS = () => (window.ROUTINES || []);
+/* prioridad de limpieza: espacios comunes primero, dormitorios al final */
+const CLEAN_PRIORITY = ['cocina', 'comedor', 'sala', 'baño', 'bano', 'lavand', 'entrada', 'recibidor', 'pasillo', 'escalera', 'patio', 'garaje', 'jard', 'cuarto', 'habitaci', 'dormitor', 'closet', 'clóset'];
+function cleanPrio(group) {
+  const g = (group || '').toLowerCase();
+  for (let i = 0; i < CLEAN_PRIORITY.length; i++) if (g.indexOf(CLEAN_PRIORITY[i]) >= 0) return i;
+  return 99;
+}
+/* rutinas de una persona agrupadas por momento → grupo (como en "Mi día") */
+function microGrouped(pid) {
+  const rs = ROUTS().filter(t => t.pid === pid);
+  const out = [];
+  (window.MOMENTS || []).forEach(mo => {
+    const inMo = rs.filter(t => t.moment === mo.id);
+    if (!inMo.length) return;
+    const groups = [];
+    inMo.forEach(t => {
+      let g = groups.find(x => x.name === t.group);
+      if (!g) { g = { name: t.group, items: [] }; groups.push(g); }
+      g.items.push(t);
+    });
+    out.push({ moment: mo, groups });
   });
+  return out;
 }
 
-function ByArea({ dist, done, toggle }) {
-  return window.TASKS.map(t => {
-    const owner = ownerOf(t.id, dist);
-    if (!owner) return null;
-    const p = window.PERSON(owner);
-    return (
-      <div key={t.id} className={'mission' + (done[owner + ':' + t.id] ? ' done' : '')} onClick={() => toggle(owner, t.id)}>
-        <div className="m-ic">{t.icon}</div>
-        <div className="m-body">
-          <div className="m-title">{t.area}</div>
-          <div className="m-sub">
-            <span className="chip gray">{p.short}</span>
-            <span className="chip">{t.freq === 'diario' ? 'Cada día' : window.DAYS_SHORT[t.day]}</span>
-          </div>
-        </div>
-        <div className={'check' + (done[owner + ':' + t.id] ? ' on' : '')}>{done[owner + ':' + t.id] ? '✓' : ''}</div>
+/* fila desplegable reutilizable */
+function Foldable({ open, onToggle, children, head }) {
+  return (
+    <div className="card fold" style={{ marginBottom: 10, overflow: 'hidden' }}>
+      <div className="fold-h row between" onClick={onToggle}>
+        {head}
+        <span className="chev">{open ? '▾' : '▸'}</span>
       </div>
-    );
-  });
+      {open && <div className="fold-b">{children}</div>}
+    </div>
+  );
 }
 
-function ByDay({ dist, done, toggle }) {
-  const daily = window.TASKS.filter(t => t.freq === 'diario');
-  const groups = [];
-  for (let d = 1; d <= 6; d++) {
-    const ts = window.TASKS.filter(t => t.freq === 'semanal' && t.day === d);
-    if (ts.length) groups.push({ day: d, ts });
-  }
-  const todayIdx = new Date().getDay();
-  const Section = ({ title, ts, hot }) => (
-    <div style={{ marginBottom: 18 }}>
-      <div className="row between" style={{ marginBottom: 8 }}>
-        <span className="eyebrow" style={hot ? { color: 'var(--a)' } : null}>{title}{hot ? ' · hoy' : ''}</span>
-      </div>
-      {ts.map(t => {
-        const owner = t.id === 'bebe' ? null : ownerOf(t.id, dist);
-        const p = owner ? window.PERSON(owner) : null;
-        const isDone = owner && done[owner + ':' + t.id];
+function ByPerson() {
+  const people = window.FAMILY.filter(p => ROUTS().some(t => t.pid === p.id));
+  const [open, setOpen] = useState(null);
+  return (
+    <div>
+      <p className="muted" style={{ fontWeight: 600, fontSize: 13, margin: '0 0 12px' }}>
+        Las mismas listas de cada persona en Microtareas. Toca un nombre para desplegar.
+      </p>
+      {people.map(p => {
+        const rs = ROUTS().filter(t => t.pid === p.id);
+        const isOpen = open === p.id;
         return (
-          <div key={t.id} className={'mission' + (isDone ? ' done' : '')} onClick={() => owner && toggle(owner, t.id)} style={!owner ? { cursor: 'default' } : null}>
-            <div className="m-ic">{t.icon}</div>
-            <div className="m-body">
-              <div className="m-title">{t.label}</div>
-              <div className="m-sub">{p ? <span className="chip gray">{p.short}</span> : <span className="chip out">por turnos</span>}<span className="chip">{t.area}</span></div>
-            </div>
-            {owner && <div className={'check' + (isDone ? ' on' : '')}>{isDone ? '✓' : ''}</div>}
-          </div>
+          <Foldable key={p.id} open={isOpen} onToggle={() => setOpen(isOpen ? null : p.id)}
+            head={
+              <div className="row" style={{ gap: 10 }}>
+                <Avatar p={p} size={36} />
+                <div>
+                  <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 16, lineHeight: 1 }}>{p.name}{p.age ? ' (' + p.age + ')' : ''}</div>
+                  <div className="muted" style={{ fontSize: 12, fontWeight: 700 }}>{rs.length} tareas</div>
+                </div>
+              </div>
+            }>
+            {microGrouped(p.id).map(blk => (
+              <div key={blk.moment.id} style={{ marginBottom: 12 }}>
+                <div className="eyebrow" style={{ marginBottom: 6 }}>{blk.moment.icon} {blk.moment.label}</div>
+                {blk.groups.map((g, gi) => (
+                  <div key={gi} style={{ marginBottom: 8 }}>
+                    <div style={{ fontWeight: 800, fontSize: 13, color: 'var(--ink-2,#667)', marginBottom: 4 }}>{g.name}</div>
+                    {g.items.map(t => (
+                      <div key={t.id} className="micro-li">
+                        <span className="mli-ic">{t.icon}</span>
+                        <span className="grow">{t.label}{t.type === 'area' ? ' · área' : ''}</span>
+                        {t.type === 'area' && t.micro ? <span className="chip">{t.micro.length} pasos</span> : null}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </Foldable>
         );
       })}
     </div>
   );
+}
+
+function ByArea() {
+  const areas = ROUTS().filter(t => t.type === 'area')
+    .slice().sort((a, b) => cleanPrio(a.group) - cleanPrio(b.group) || a.group.localeCompare(b.group));
+  const [open, setOpen] = useState(null);
   return (
     <div>
-      <Section title="Cada día" ts={daily} hot />
-      {groups.map(g => <Section key={g.day} title={window.DAYS[g.day]} ts={g.ts} hot={g.day === todayIdx} />)}
+      <p className="muted" style={{ fontWeight: 600, fontSize: 13, margin: '0 0 12px' }}>
+        Áreas de limpieza de la casa. Toca un área para ver sus microtareas.
+      </p>
+      {areas.length === 0 && <div className="card muted" style={{ padding: 16, textAlign: 'center' }}>No hay áreas en el catálogo.</div>}
+      {areas.map(t => {
+        const p = window.PERSON(t.pid);
+        const key = t.pid + ':' + t.id;
+        const isOpen = open === key;
+        return (
+          <Foldable key={key} open={isOpen} onToggle={() => setOpen(isOpen ? null : key)}
+            head={
+              <div className="row" style={{ gap: 10 }}>
+                <div className="m-ic">{t.icon}</div>
+                <div>
+                  <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 15, lineHeight: 1 }}>{t.group}</div>
+                  <div className="m-sub" style={{ marginTop: 4 }}>
+                    {p && <span className="chip gray">{p.short}</span>}
+                    <span className="chip">{t.freq === 'semanal' ? 'Semanal' : 'Cada día'}</span>
+                  </div>
+                </div>
+              </div>
+            }>
+            {(t.micro || []).map((m, i) => (
+              <div key={i} className="micro-li"><span className="mli-ic">·</span><span className="grow">{m}</span></div>
+            ))}
+          </Foldable>
+        );
+      })}
+    </div>
+  );
+}
+
+function ByDay() {
+  const [day, setDay] = useState(new Date().getDay());
+  const areas = ROUTS().filter(t => t.type === 'area');
+  const byPrio = (a, b) => cleanPrio(a.group) - cleanPrio(b.group) || a.group.localeCompare(b.group);
+  const daily = areas.filter(t => t.freq !== 'semanal').slice().sort(byPrio);
+  // áreas semanales: se reparten de lunes a sábado para tener un plan por día
+  const weekly = areas.filter(t => t.freq === 'semanal').slice().sort(byPrio);
+  const weeklyForDay = weekly.filter((t, i) => (1 + (i % 6)) === day);
+
+  const opts = [[1, 'Lunes'], [2, 'Martes'], [3, 'Miércoles'], [4, 'Jueves'], [5, 'Viernes'], [6, 'Sábado'], [0, 'Domingo']];
+  const today = new Date().getDay();
+
+  const Item = ({ t, n }) => {
+    const p = window.PERSON(t.pid);
+    return (
+      <div className="micro-li">
+        <span className="prio">{n}</span>
+        <span className="mli-ic">{t.icon}</span>
+        <span className="grow">{t.group}</span>
+        {p && <span className="chip gray">{p.short}</span>}
+      </div>
+    );
+  };
+
+  return (
+    <div>
+      <p className="muted" style={{ fontWeight: 600, fontSize: 13, margin: '0 0 10px' }}>
+        Plan de limpieza de la casa por día, en orden de prioridad (sin tareas de cuidado personal).
+      </p>
+      <select className="day-select" value={day} onChange={e => setDay(Number(e.target.value))}>
+        {opts.map(([v, l]) => <option key={v} value={v}>{l}{v === today ? ' · hoy' : ''}</option>)}
+      </select>
+
+      <div className="eyebrow" style={{ margin: '14px 0 8px' }}>🧹 Cada día</div>
+      {daily.length === 0 && <div className="muted" style={{ fontSize: 13 }}>Nada diario.</div>}
+      {daily.map((t, i) => <Item key={t.pid + t.id} t={t} n={i + 1} />)}
+
+      <div className="eyebrow" style={{ margin: '16px 0 8px' }}>📅 {opts.find(o => o[0] === day)[1]} — limpieza de la semana</div>
+      {day === 0
+        ? <div className="muted" style={{ fontSize: 13 }}>Domingo de descanso: solo lo de cada día. 💛</div>
+        : (weeklyForDay.length === 0
+          ? <div className="muted" style={{ fontSize: 13 }}>Sin áreas semanales asignadas a este día.</div>
+          : weeklyForDay.map((t, i) => <Item key={t.pid + t.id} t={t} n={i + 1} />))}
     </div>
   );
 }
