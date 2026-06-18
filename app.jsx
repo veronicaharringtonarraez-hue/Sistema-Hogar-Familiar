@@ -504,24 +504,31 @@ function ByArea() {
 }
 
 function ByDay() {
-  const [day, setDay] = useState(new Date().getDay());
-  const areas = ROUTS().filter(t => t.type === 'area');
+  const today = new Date().getDay();
+  const [day, setDay] = useState(today);
   const byPrio = (a, b) => cleanPrio(a.group) - cleanPrio(b.group) || a.group.localeCompare(b.group);
-  const daily = areas.filter(t => t.freq !== 'semanal').slice().sort(byPrio);
-  // áreas semanales: se reparten de lunes a sábado para tener un plan por día
-  const weekly = areas.filter(t => t.freq === 'semanal').slice().sort(byPrio);
-  const weeklyForDay = weekly.filter((t, i) => (1 + (i % 6)) === day);
+
+  // Solo tareas de la casa (momento 'hogar'); sin cuidado personal.
+  const hogar = ROUTS().filter(t => t.moment === 'hogar');
+  // Cada día: diarias sin día específico.
+  const daily = hogar.filter(t => t.freq !== 'semanal' && !(t.days && t.days.length)).slice().sort(byPrio);
+  // Específicas del día (lavandería, basura, etc. con días asignados).
+  const dayTasks = hogar.filter(t => t.days && t.days.length && t.days.includes(day));
+  // Áreas semanales sin día fijo: se reparten de lunes a sábado.
+  const weeklyAreas = hogar.filter(t => t.freq === 'semanal' && t.type === 'area' && !(t.days && t.days.length)).slice().sort(byPrio);
+  const weeklyForDay = weeklyAreas.filter((t, i) => (1 + (i % 6)) === day);
+  const forDay = dayTasks.concat(weeklyForDay).sort(byPrio);
 
   const opts = [[1, 'Lunes'], [2, 'Martes'], [3, 'Miércoles'], [4, 'Jueves'], [5, 'Viernes'], [6, 'Sábado'], [0, 'Domingo']];
-  const today = new Date().getDay();
 
   const Item = ({ t, n }) => {
     const p = window.PERSON(t.pid);
+    const label = t.type === 'area' ? t.group : t.label;
     return (
       <div className="micro-li">
         <span className="prio">{n}</span>
         <span className="mli-ic">{t.icon}</span>
-        <span className="grow">{t.group}</span>
+        <span className="grow">{label}{t.type === 'area' ? ' · área' : ''}</span>
         {p && <span className="chip gray">{p.short}</span>}
       </div>
     );
@@ -530,7 +537,7 @@ function ByDay() {
   return (
     <div>
       <p className="muted" style={{ fontWeight: 600, fontSize: 13, margin: '0 0 10px' }}>
-        Plan de limpieza de la casa por día, en orden de prioridad (sin tareas de cuidado personal).
+        Prioridades de la casa por día, en orden (sin tareas de cuidado personal). Hoy es <b>{opts.find(o => o[0] === today)[1]}</b>.
       </p>
       <select className="day-select" value={day} onChange={e => setDay(Number(e.target.value))}>
         {opts.map(([v, l]) => <option key={v} value={v}>{l}{v === today ? ' · hoy' : ''}</option>)}
@@ -540,12 +547,10 @@ function ByDay() {
       {daily.length === 0 && <div className="muted" style={{ fontSize: 13 }}>Nada diario.</div>}
       {daily.map((t, i) => <Item key={t.pid + t.id} t={t} n={i + 1} />)}
 
-      <div className="eyebrow" style={{ margin: '16px 0 8px' }}>📅 {opts.find(o => o[0] === day)[1]} — limpieza de la semana</div>
-      {day === 0
-        ? <div className="muted" style={{ fontSize: 13 }}>Domingo de descanso: solo lo de cada día. 💛</div>
-        : (weeklyForDay.length === 0
-          ? <div className="muted" style={{ fontSize: 13 }}>Sin áreas semanales asignadas a este día.</div>
-          : weeklyForDay.map((t, i) => <Item key={t.pid + t.id} t={t} n={i + 1} />))}
+      <div className="eyebrow" style={{ margin: '16px 0 8px' }}>📅 {opts.find(o => o[0] === day)[1]} — además, hoy toca</div>
+      {forDay.length === 0
+        ? <div className="muted" style={{ fontSize: 13 }}>{day === 0 ? 'Domingo de descanso: solo lo de cada día. 💛' : 'Nada extra asignado a este día.'}</div>
+        : forDay.map((t, i) => <Item key={t.pid + t.id} t={t} n={i + 1} />)}
     </div>
   );
 }
