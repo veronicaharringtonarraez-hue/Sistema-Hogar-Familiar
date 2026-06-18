@@ -15,14 +15,14 @@ window.FAMILY = [
     note: 'Trabaja desde casa · horario flexible',
     colors: { a: '#7C5CFF', b: '#B69DFF', c: '#E9E2FF', ink: '#3A2D7A' },
     emoji: '💜', isKid: false, caresBaby: true,
-    pet: { name: 'Luna', species: 'Búho', img: window.IMG.mama, emoji: '🦉' }, petCared: false,
+    pet: { name: 'Luna', species: 'Buhito con lentes', img: window.IMG.mama, kind: 'ave', face: '🦉', food: '🐭', toy: '🪶', dir: 'luna' }, petCared: true,
   },
   {
     id: 'papa', name: 'Max', short: 'Max', age: null, role: 'adulto', title: 'Director de Mantenimiento',
     note: 'Trabaja 5am–2pm · oficina 2 días/semana', realName: 'Maykol',
     colors: { a: '#1FB6A6', b: '#5FD3C6', c: '#D7F4F0', ink: '#0C5A52' },
     emoji: '💚', isKid: false, caresBaby: true,
-    pet: { name: 'Brutus', species: 'Bulldog inglés', img: window.IMG.papa, emoji: '🐶' }, petCared: false,
+    pet: { name: 'Brutus', species: 'Bulldog inglés', img: window.IMG.papa, kind: 'perro', face: '🐶', food: '🦴', toy: '🎾', dir: 'brutus' }, petCared: true,
   },
   {
     id: 'taylor', name: 'Tay-Yay', short: 'Tay-Yay', realName: 'Taylor', age: 10, role: 'hija', title: 'Guardiana del Orden',

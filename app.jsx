@@ -613,31 +613,16 @@ function PetVisual({ pet, emotion }) {
 function PetCard({ p }) {
   const pet = p.pet;
   const name = pet.name;
-  const isDog = pet.kind === 'perro';
+  const kind = pet.kind;
+  const isRachel = p.id === 'rachel';
 
-  // La bebé no hace tareas: su mascota siempre está feliz porque la cuida la familia.
-  if (!p.isKid) {
-    return (
-      <div className="card pet-card" style={{ padding: 14, marginBottom: 16, '--a': p.colors.a, '--b': p.colors.b, '--c': p.colors.c, '--tink': p.colors.ink }}>
-        <div className="row between" style={{ marginBottom: 8 }}>
-          <div>
-            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 20, lineHeight: 1 }}>{name}</div>
-            <div className="muted" style={{ fontSize: 12.5, fontWeight: 700 }}>de {p.name} · {pet.species}</div>
-          </div>
-          <span className="chip" style={{ background: 'var(--c)', color: 'var(--tink)' }}>🥰 Amoroso</span>
-        </div>
-        <div className="pet-stage bouncy">
-          <div className="pet-house">🏠</div>
-          <div className="pet-hearts"><span>💕</span><span>💖</span><span>💗</span></div>
-          <div className="pet-char"><PetVisual pet={pet} emotion="amoroso" /><span className="pet-emo">🥰</span></div>
-        </div>
-        <div className="pet-msg">{name} es feliz cuando toda la familia cuida a {p.short} 💛</div>
-      </div>
-    );
-  }
-
-  const pts = microPtsByPerson()[p.id] || 0;     // esfuerzo de la semana
-  const goal = 1500;
+  // Puntos que dan ánimo a la mascota (esfuerzo de la semana en "Mi día").
+  // La mascota de la bebé depende de cómo la cuida la familia (mamá, papá, Tay-Yay y Dondo).
+  const micro = microPtsByPerson();
+  const pts = isRachel
+    ? ['mama', 'papa', 'taylor', 'emmeth'].reduce((s, id) => s + (micro[id] || 0), 0)
+    : (micro[p.id] || 0);
+  const goal = isRachel ? 3000 : 1500;
   const happy = Math.min(100, Math.round(pts / goal * 100));
   const base = petMood(pts);
 
@@ -646,7 +631,14 @@ function PetCard({ p }) {
   const emo = act ? act.mood : base;
   const E = PET_EMO[emo] || PET_EMO.feliz;
 
-  const idleMsg = {
+  const idleMsg = isRachel ? {
+    triste: `${name} extraña mimos 🥺 ¡Cuidemos juntos a ${p.short}!`,
+    timido: `${name} pide un poco más de cariño para ${p.short}.`,
+    tranquilo: `${name} está tranquilo cuando cuidan a ${p.short}.`,
+    feliz: `${name} está feliz: la familia cuida bien a ${p.short} 😊`,
+    emocionado: `¡${name} está feliz porque todos cuidan a ${p.short}! 🤩`,
+    amoroso: `${name} y ${p.short} se sienten muy amados 🥰`,
+  } : {
     triste: `${name} te extraña 🥺 Haz tus tareas para alegrarlo.`,
     timido: `${name} es un poco tímido… un poco más de cariño lo animará.`,
     tranquilo: `${name} está tranquilo. ¡Sigue cumpliendo tus tareas!`,
@@ -656,13 +648,19 @@ function PetCard({ p }) {
   };
   const message = act ? act.msg : (idleMsg[base] || idleMsg.feliz);
 
+  // mensajes según el tipo de animal
+  const carinoMsgs = kind === 'perro' ? [`${name} mueve la colita de felicidad 💖`, `¡A ${name} le encantan tus mimos! 🥰`]
+    : kind === 'gato' ? [`${name} ronronea con tus mimos 💖`, `¡A ${name} le encantan tus caricias! 🥰`]
+    : [`${name} se acurruca contento con tus mimos 💖`, `¡A ${name} le encanta tu cariño! 🥰`];
+  const foodLabel = kind === 'perro' ? 'Dar hueso' : kind === 'gato' ? 'Dar pescado' : 'Dar comida';
+  const foodMsgs = kind === 'perro' ? [`¡${name} mueve la cola! Ñam ñam 🦴`, `${name} te lo agradece con un lametón 🐶💕`]
+    : kind === 'gato' ? [`¡${name} ronronea! Comió rico 🐟`, `${name} se relame feliz 😺`]
+    : [`¡${name} ulula contento! 🦉`, `${name} agita sus alitas de felicidad ✨`];
+
   // premios interactivos, se desbloquean con los puntos de la semana
   const treats = [
-    { id: 'carino', icon: '💖', label: 'Dar cariño', min: 0, mood: 'amoroso',
-      msgs: [`${name} ${isDog ? 'mueve la colita' : 'ronronea'} de felicidad 💖`, `¡A ${name} le encantan tus mimos! 🥰`] },
-    { id: 'comida', icon: pet.food, label: isDog ? 'Dar hueso' : 'Dar pescado', min: 150, mood: 'amoroso',
-      msgs: isDog ? [`¡${name} mueve la cola! Ñam ñam 🦴`, `${name} te lo agradece con un lametón 🐶💕`]
-                  : [`¡${name} ronronea! Ese pescado estaba rico 🐟`, `${name} se relame feliz 😺`] },
+    { id: 'carino', icon: '💖', label: 'Dar cariño', min: 0, mood: 'amoroso', msgs: carinoMsgs },
+    { id: 'comida', icon: pet.food, label: foodLabel, min: 150, mood: 'amoroso', msgs: foodMsgs },
     { id: 'jugar', icon: pet.toy || '🎾', label: 'Jugar', min: 400, mood: 'jugueton',
       msgs: [`¡${name} salta y juega contigo! 🎉`, `${name} está muy juguetón 😜`] },
     { id: 'casa', icon: '🏠', label: 'Llevar a casa', min: 800, mood: 'amoroso', home: true,
