@@ -22,7 +22,46 @@ window.FAMILY = [
     note: 'Trabaja 5am–2pm · oficina 2 días/semana', realName: 'Maykol',
     colors: { a: '#1FB6A6', b: '#5FD3C6', c: '#D7F4F0', ink: '#0C5A52' },
     emoji: '💚', isKid: false, caresBaby: true,
-    pet: { name: 'Brutus', species: 'Bulldog inglés', img: window.IMG.papa, kind: 'perro', face: '🐶', food: '🦴', toy: '🎾', dir: 'brutus' }, petCared: true,
+    pet: {
+      name: 'Croqueta', species: 'Bulldog inglés · chef ENTP', img: window.IMG.papa,
+      kind: 'perro', face: '🐶', food: '🦴', toy: '🍳', dir: 'brutus',
+      persona: {
+        idle: [
+          "El chef está horizontal: descanso creativo. 🛋️",
+          "Bulldog ENTP: mil ideas geniales y cero ganas de correr. 💡",
+          "Hoy el especial de la casa es sarcasmo a la plancha. 🍳",
+          "Ronco fuerte, pero lo registro como ambiente de cocina. 😤",
+        ],
+        carino: [
+          "No soy de abrazos… bueno, uno. Y no le cuentes a la parrilla. 🤫",
+          "Acaríciame como a un buen corte: con respeto. 😎",
+        ],
+        comida: [
+          "¡Servido! El chef se da cinco estrellas a sí mismo. ⭐⭐⭐⭐⭐",
+          "Hueso recibido. Lo marido con una siesta de campeón. 😴",
+        ],
+        jugar: [
+          "Corro 3 metros y pido descanso sindical. 🐾",
+          "Juego con la elegancia de un grumete tras el banquete. 🚢",
+        ],
+        casa: [
+          "A mi casita-restaurante. Mesa para uno: yo. 🏠",
+          "Entro a supervisar la cocina… o sea, a roncar cerca. 😅",
+        ],
+        phrases: [
+          [0,    "Soy bulldog: ronco como motor diésel y lo llamo ambiente. 😤"],
+          [40,   "¿Dieta? Yo solo creo en la mise en place de las croquetas. 🥐"],
+          [90,   "De grumete a chef ejecutivo… del tazón. 🍲"],
+          [150,  "Mi cara de malo es puro marketing; por dentro soy un flan. 🍮"],
+          [250,  "Teoría: si babeo el plato, técnicamente ya es salsa. 🤤"],
+          [400,  "Te debato una hora por qué el hueso va antes que la sopa. 🦴"],
+          [600,  "Plan de negocios: food truck. Producto estrella: yo, durmiendo. 🚚"],
+          [850,  "Soy rudo, pero lloro cortando cebolla. ¡Es la cebolla! 🧅"],
+          [1150, "Cocina de barco: si se cae al piso, es estilo rústico. 🚢"],
+          [1500, "Conclusión del chef: trabajo por aplausos… y por chuletón. 👏🥩"],
+        ],
+      },
+    }, petCared: true,
   },
   {
     id: 'taylor', name: 'Tay-Yay', short: 'Tay-Yay', realName: 'Taylor', age: 10, role: 'hija', title: 'Guardiana del Orden',
