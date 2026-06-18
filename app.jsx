@@ -569,67 +569,154 @@ function PetsScreen({ dist, done, person, setProfile }) {
         <h2>Mascotas 🐾</h2>
       </div>
       <p className="muted" style={{ fontWeight: 600, fontSize: 14, margin: '2px 0 14px' }}>
-        Cada vez que limpian un área, su mascota se pone más feliz y desbloquean premios.
+        Mientras más tareas cumplen, más feliz está su mascota. ¡Cuídala y dale premios con los puntos que ganas!
       </p>
       {owners.map(p => <PetCard key={p.id} p={p} dist={dist} done={done} />)}
     </div>
   );
 }
 
-function PetCard({ p, dist, done }) {
-  const h = happinessFor(p.id, dist, done);
-  const mood = moodFor(h);
-  const pts = p.isKid ? totalPts(p.id, dist, done) : null;
-  const next = p.isKid ? window.REWARDS.find(r => r.at > pts) : null;
+/* emociones de la mascota (versión animada) */
+const PET_EMO = {
+  triste:     { emoji: '😢', label: 'Triste' },
+  timido:     { emoji: '😳', label: 'Tímido' },
+  tranquilo:  { emoji: '😌', label: 'Tranquilo' },
+  feliz:      { emoji: '😊', label: 'Feliz' },
+  emocionado: { emoji: '🤩', label: 'Emocionado' },
+  amoroso:    { emoji: '🥰', label: 'Amoroso' },
+  jugueton:   { emoji: '😜', label: 'Juguetón' },
+  sorprendido:{ emoji: '😮', label: 'Sorprendido' },
+};
+/* el ánimo base depende de los puntos ganados esta semana en "Mi día" */
+function petMood(pts) {
+  if (pts <= 0) return 'triste';
+  if (pts < 150) return 'timido';
+  if (pts < 400) return 'tranquilo';
+  if (pts < 800) return 'feliz';
+  if (pts < 1500) return 'emocionado';
+  return 'amoroso';
+}
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function PetCard({ p }) {
+  const pet = p.pet;
+  const name = pet.name;
+  const isDog = pet.kind === 'perro';
+
+  // La bebé no hace tareas: su mascota siempre está feliz porque la cuida la familia.
+  if (!p.isKid) {
+    return (
+      <div className="card pet-card" style={{ padding: 14, marginBottom: 16, '--a': p.colors.a, '--b': p.colors.b, '--c': p.colors.c, '--tink': p.colors.ink }}>
+        <div className="row between" style={{ marginBottom: 8 }}>
+          <div>
+            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 20, lineHeight: 1 }}>{name}</div>
+            <div className="muted" style={{ fontSize: 12.5, fontWeight: 700 }}>de {p.name} · {pet.species}</div>
+          </div>
+          <span className="chip" style={{ background: 'var(--c)', color: 'var(--tink)' }}>🥰 Amoroso</span>
+        </div>
+        <div className="pet-stage bouncy">
+          <div className="pet-house">🏠</div>
+          <div className="pet-hearts"><span>💕</span><span>💖</span><span>💗</span></div>
+          <div className="pet-char">{pet.face}<span className="pet-emo">🥰</span></div>
+        </div>
+        <div className="pet-msg">{name} es feliz cuando toda la familia cuida a {p.short} 💛</div>
+      </div>
+    );
+  }
+
+  const pts = microPtsByPerson()[p.id] || 0;     // esfuerzo de la semana
+  const goal = 1500;
+  const happy = Math.min(100, Math.round(pts / goal * 100));
+  const base = petMood(pts);
+
+  const [act, setAct] = useState(null);          // { type, mood, msg, home }
+  const timer = useRef(null);
+  const emo = act ? act.mood : base;
+  const E = PET_EMO[emo] || PET_EMO.feliz;
+
+  const idleMsg = {
+    triste: `${name} te extraña 🥺 Haz tus tareas para alegrarlo.`,
+    timido: `${name} es un poco tímido… un poco más de cariño lo animará.`,
+    tranquilo: `${name} está tranquilo. ¡Sigue cumpliendo tus tareas!`,
+    feliz: `${name} está feliz porque cumpliste tus tareas 😊`,
+    emocionado: `¡${name} está súper emocionado contigo! 🤩`,
+    amoroso: `${name} te quiere muchísimo 🥰 ¡Gran trabajo!`,
+  };
+  const message = act ? act.msg : (idleMsg[base] || idleMsg.feliz);
+
+  // premios interactivos, se desbloquean con los puntos de la semana
+  const treats = [
+    { id: 'carino', icon: '💖', label: 'Dar cariño', min: 0, mood: 'amoroso',
+      msgs: [`${name} ${isDog ? 'mueve la colita' : 'ronronea'} de felicidad 💖`, `¡A ${name} le encantan tus mimos! 🥰`] },
+    { id: 'comida', icon: pet.food, label: isDog ? 'Dar hueso' : 'Dar pescado', min: 150, mood: 'amoroso',
+      msgs: isDog ? [`¡${name} mueve la cola! Ñam ñam 🦴`, `${name} te lo agradece con un lametón 🐶💕`]
+                  : [`¡${name} ronronea! Ese pescado estaba rico 🐟`, `${name} se relame feliz 😺`] },
+    { id: 'jugar', icon: pet.toy || '🎾', label: 'Jugar', min: 400, mood: 'jugueton',
+      msgs: [`¡${name} salta y juega contigo! 🎉`, `${name} está muy juguetón 😜`] },
+    { id: 'casa', icon: '🏠', label: 'Llevar a casa', min: 800, mood: 'amoroso', home: true,
+      msgs: [`${name} entró feliz a su casita 🏠`, `¡${name} se siente seguro en casa! 💛`] },
+  ];
+
+  function doTreat(t) {
+    if (pts < t.min) return;
+    clearTimeout(timer.current);
+    setAct({ type: t.id, mood: t.mood, msg: pick(t.msgs), home: !!t.home });
+    timer.current = setTimeout(() => setAct(null), t.home ? 2600 : 2200);
+  }
+  useEffect(() => () => clearTimeout(timer.current), []);
+
+  const stageCls = 'pet-stage'
+    + (act && act.home ? ' to-home' : '')
+    + (act && act.type === 'jugar' ? ' playing' : '')
+    + ((emo === 'amoroso' || emo === 'feliz' || emo === 'emocionado') ? ' bouncy' : '')
+    + (base === 'triste' && !act ? ' sad' : '');
+
   return (
-    <div className="card" style={{ padding: 14, marginBottom: 14, '--a': p.colors.a, '--b': p.colors.b, '--c': p.colors.c, '--tink': p.colors.ink }}>
-      <div className="row" style={{ gap: 14, alignItems: 'flex-start' }}>
-        <div style={{ position: 'relative', flex: '0 0 auto' }}>
-          <img className={h >= 60 ? 'float' : ''} src={p.pet.img} style={{ width: 84, height: 84, borderRadius: 22, objectFit: 'cover', boxShadow: 'var(--shadow-sm)' }} />
-          <div style={{ position: 'absolute', bottom: -6, right: -6, background: '#fff', borderRadius: '50%', width: 30, height: 30, display: 'grid', placeItems: 'center', fontSize: 18, boxShadow: 'var(--shadow-sm)' }}>{mood.face}</div>
+    <div className="card pet-card" style={{ padding: 14, marginBottom: 16, '--a': p.colors.a, '--b': p.colors.b, '--c': p.colors.c, '--tink': p.colors.ink }}>
+      <div className="row between" style={{ marginBottom: 8 }}>
+        <div>
+          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 20, lineHeight: 1 }}>{name}</div>
+          <div className="muted" style={{ fontSize: 12.5, fontWeight: 700 }}>de {p.name} · {pet.species}</div>
         </div>
-        <div className="grow">
-          <div className="row between">
-            <div>
-              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 20, lineHeight: 1 }}>{p.pet.name}</div>
-              <div className="muted" style={{ fontSize: 12.5, fontWeight: 700 }}>de {p.name} · {p.pet.species}</div>
-            </div>
-            <span className="chip" style={{ background: 'var(--c)', color: 'var(--tink)' }}>{mood.label}</span>
-          </div>
-          <div style={{ marginTop: 10 }}>
-            <div className="row between" style={{ marginBottom: 4 }}>
-              <span className="eyebrow" style={{ fontSize: 11 }}>Felicidad</span>
-              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 13, color: p.colors.ink }}>{h}%</span>
-            </div>
-            <div className="bar"><i style={{ width: h + '%' }} /></div>
-          </div>
-        </div>
+        <span className="chip" style={{ background: 'var(--c)', color: 'var(--tink)' }}>{E.emoji} {E.label}</span>
       </div>
 
-      {p.isKid && (
-        <>
-          <div className="row between" style={{ margin: '14px 2px 8px' }}>
-            <span className="eyebrow" style={{ fontSize: 11 }}>Premios para {p.pet.name}</span>
-            {next
-              ? <span className="chip" style={{ background: 'var(--c)', color: 'var(--tink)' }}>faltan {next.at - pts} pts → {next.icon}</span>
-              : <span className="chip pts">¡todo desbloqueado! 🎉</span>}
-          </div>
-          <div className="rewards">
-            {window.REWARDS.map(r => (
-              <div key={r.at} className={'reward' + (pts >= r.at ? ' unlocked' : '')}>
-                <div className="ri">{r.icon}</div>
-                <div className="rp">{pts >= r.at ? '✓' : r.at}</div>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-      {p.isBaby && (
-        <div className="row" style={{ gap: 8, marginTop: 12, background: 'var(--c)', borderRadius: 14, padding: '10px 12px' }}>
-          <span style={{ fontSize: 18 }}>🍼</span>
-          <span style={{ fontWeight: 700, fontSize: 13, color: p.colors.ink }}>{p.pet.name} es feliz cuando todos cuidan a Che-Che por turnos</span>
+      {/* escena animada */}
+      <div className={stageCls}>
+        <div className="pet-house">🏠</div>
+        {(emo === 'amoroso') && <div className="pet-hearts"><span>💕</span><span>💖</span><span>💗</span></div>}
+        {act && act.type === 'comida' && <div className="pet-treat">{pet.food}</div>}
+        {act && act.type === 'jugar' && <div className="pet-treat">{pet.toy || '🎾'}</div>}
+        <div className="pet-char">{pet.face}<span className="pet-emo">{E.emoji}</span></div>
+        {base === 'triste' && !act && <div className="pet-zzz">💤</div>}
+      </div>
+
+      {/* mensaje motivador */}
+      <div className="pet-msg">{message}</div>
+
+      {/* felicidad por puntos */}
+      <div style={{ marginTop: 10 }}>
+        <div className="row between" style={{ marginBottom: 4 }}>
+          <span className="eyebrow" style={{ fontSize: 11 }}>Felicidad esta semana</span>
+          <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 13, color: p.colors.ink }}>{happy}% · {pts} pts</span>
         </div>
-      )}
+        <div className="bar"><i style={{ width: happy + '%' }} /></div>
+      </div>
+
+      {/* premios interactivos */}
+      <div className="pet-treats">
+        {treats.map(t => {
+          const locked = pts < t.min;
+          return (
+            <button key={t.id} className={'pet-btn' + (locked ? ' locked' : '')}
+              onClick={() => doTreat(t)} disabled={locked}>
+              <span className="pet-btn-ic">{t.icon}</span>
+              <span className="pet-btn-lb">{t.label}</span>
+              {locked && <span className="pet-btn-lock">🔒 {t.min} pts</span>}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
