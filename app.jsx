@@ -53,9 +53,30 @@ function taskPtsOf(t) { return (t && t.pts != null) ? t.pts : PPT; }
 function pointsFor(pid, distKey, done) {
   return tasksFor(pid, distKey).reduce((s, t) => s + (done[pid + ':' + t.id] ? taskPtsOf(t) : 0), 0);
 }
-/* puntos totales = acumulado de días anteriores + lo de hoy */
+/* puntos aprobados en el sistema "Mi día" (Microtareas), leídos directo de
+   su almacenamiento (misma clave que usa el banco). No depende del catálogo:
+   las áreas traen orden+limpieza (o/c) y las rutinas su valor (pts, 10 base). */
+function microPtsByPerson() {
+  const out = {};
+  let store;
+  try { store = JSON.parse(localStorage.getItem('fam_micro_v1')); } catch (e) { return out; }
+  if (!store || typeof store !== 'object') return out;
+  const marks = store.marks || {};
+  Object.keys(marks).forEach(k => {
+    const m = marks[k];
+    if (!m || m.s !== 'ok') return;
+    const pid = k.split(':')[0];
+    const pts = (typeof m.o === 'number' || typeof m.c === 'number')
+      ? ((m.o || 0) + (m.c || 0))
+      : (typeof m.pts === 'number' ? m.pts : 10);
+    out[pid] = (out[pid] || 0) + pts;
+  });
+  (store.bonus || []).forEach(b => { if (b && b.pid && b.pts) out[b.pid] = (out[b.pid] || 0) + b.pts; });
+  return out;
+}
+/* puntos totales = acumulado de días anteriores + lo de hoy + Microtareas */
 function totalPts(pid, distKey, done) {
-  return (ACCUM[pid] || 0) + pointsFor(pid, distKey, done);
+  return (ACCUM[pid] || 0) + pointsFor(pid, distKey, done) + (microPtsByPerson()[pid] || 0);
 }
 function maxPointsFor(pid, distKey) {
   return tasksFor(pid, distKey).reduce((s, t) => s + taskPtsOf(t), 0);
@@ -244,11 +265,6 @@ function HomeScreen({ person, dist, done, toggle, go, onDelete, onAdd }) {
     .sort((a, b) => b.pts - a.pts);
   const king = ranking[0];
 
-  // misiones de hoy para el perfil activo
-  const todayIdx = new Date().getDay();
-  const mine = tasksFor(person.id, dist).filter(t => t.freq === 'diario' || t.day === todayIdx);
-  const myDoneCount = mine.filter(t => done[person.id + ':' + t.id]).length;
-
   return (
     <div className="pad fade">
       {/* fecha de hoy (las tareas se reinician cada día a medianoche) */}
@@ -299,37 +315,6 @@ function HomeScreen({ person, dist, done, toggle, go, onDelete, onAdd }) {
           <span style={{ fontSize: 18 }}>➕</span> Agregar tarea
         </button>
       </div>
-
-      {/* misiones de hoy del perfil activo */}
-      <div className="sec-h">
-        <h2>Lo de hoy</h2>
-        <span className="link" onClick={() => go('misiones')}>Ver todo</span>
-      </div>
-
-      {mine.length === 0 && (
-        <div className="card" style={{ padding: 18, textAlign: 'center' }}>
-          <div style={{ fontSize: 30 }}>🎉</div>
-          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, marginTop: 4 }}>
-            {person.id === 'christopher' ? '¡Hoy Misifu ayuda a recoger juguetes!' : 'Sin tareas asignadas hoy'}
-          </div>
-        </div>
-      )}
-
-      {mine.length > 0 && (
-        <div className="card" style={{ padding: '12px 14px 4px', marginBottom: 10 }}>
-          <div className="row between" style={{ marginBottom: 10 }}>
-            <span className="eyebrow">{myDoneCount} de {mine.length} hechas</span>
-            <span className="chip pts">+{mine.reduce((s, t) => s + taskPtsOf(t), 0)} posibles</span>
-          </div>
-          <div className="bar" style={{ marginBottom: 12 }}>
-            <i style={{ width: (mine.length ? (myDoneCount / mine.length * 100) : 0) + '%' }} />
-          </div>
-        </div>
-      )}
-
-      {mine.map(t => (
-        <MissionRow key={t.id} task={t} owner={person} done={done} toggle={toggle} onDelete={onDelete} />
-      ))}
 
       {person.isBaby && (
         <div className="card" style={{ padding: 16, marginTop: 4 }}>
