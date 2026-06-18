@@ -114,6 +114,7 @@ window.FAMILY = [
     pet: {
       name: 'Mochi', species: 'Perrito mini toy · ENFJ', img: window.IMG.taylor,
       kind: 'perro', face: '🐶', food: '🦴', toy: '🎾', dir: 'mochi',
+      anim: ['assets/mochi/anim/1.mp4', 'assets/mochi/anim/2.mp4', 'assets/mochi/anim/3.mp4', 'assets/mochi/anim/4.mp4', 'assets/mochi/anim/5.mp4'],
       persona: {
         btn: '🌸 Ánimo de Mochi',
         idle: [
