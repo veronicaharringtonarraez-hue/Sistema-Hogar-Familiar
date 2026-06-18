@@ -621,7 +621,10 @@ function PetCard({ p }) {
   const kind = pet.kind;
   const persona = pet.persona;          // mascota con personalidad (mensajes propios)
   const voices = (window.PET_VOICES && window.PET_VOICES[pet.dir]) || null; // 10 frases x 12 emociones
-  const sayEmo = (e) => { const a = voices && voices[e]; return (a && a.length) ? a[Math.floor(Math.random() * a.length)] : null; };
+  const sayEmo = (e) => {
+    if (window.petTalk) { const g = window.petTalk(pet.dir, e); if (g) return g; }
+    const a = voices && voices[e]; return (a && a.length) ? a[Math.floor(Math.random() * a.length)] : null;
+  };
   const isRachel = p.id === 'rachel';
 
   // Puntos que dan ánimo a la mascota (esfuerzo de la semana en "Mi día").
@@ -680,7 +683,8 @@ function PetCard({ p }) {
   // frases por emoción (voces) — fallback a las frases por puntos de la persona
   const phrasesAll = persona ? persona.phrases : [];
   const phrasesOpen = phrasesAll.filter(ph => pts >= ph[0]);
-  const voiceCount = voices ? PET_ALL_EMOS.reduce((s, e) => s + ((voices[e] || []).length), 0) : phrasesAll.length;
+  const voiceCount = (window.petTalkCount && window.petTalkCount(pet.dir))
+    || (voices ? PET_ALL_EMOS.reduce((s, e) => s + ((voices[e] || []).length), 0) : phrasesAll.length);
   // Cada "frase" muestra una emoción al azar (con su carita) y una frase acorde.
   function sayPhrase() {
     let e, m;
