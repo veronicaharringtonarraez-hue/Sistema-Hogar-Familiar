@@ -58,6 +58,8 @@
   @media(min-width:480px){
     .phone{margin:18px 0;min-height:calc(100vh - 36px);border-radius:38px;}
     .stage{padding:0 16px;}
+    /* en tarjeta (tablet/escritorio) la barra vuelve a quedar dentro del marco */
+    .nav{position:absolute;left:0;right:0;transform:none;max-width:none;width:auto;border-radius:0 0 38px 38px;}
   }
 
   /* ===== scroll area ===== */
@@ -181,7 +183,7 @@
 
   /* ===== bottom nav ===== */
   .nav{
-    position:absolute;left:0;right:0;bottom:0;z-index:30;
+    position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:440px;z-index:60;
     display:flex;justify-content:space-around;align-items:center;
     background:rgba(255,255,255,.92);backdrop-filter:blur(14px);
     border-top:1px solid var(--line);
