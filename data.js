@@ -212,10 +212,10 @@ window.FAMILY = [
     palette: ['#FFC107', '#5CB85C', '#E8D5A8'],
     emoji: '🌻', isKid: true, caresBaby: false, petCared: true,
     pet: {
-      name: 'Oreo', species: 'Gato blanco y negro · ESTJ', img: window.IMG.christopher,
+      name: 'Oreo', species: 'Gato blanco y negro · ESTP', img: window.IMG.christopher,
       kind: 'gato', face: '🐱', food: '🐟', toy: '🧶', dir: 'oreo',
       persona: {
-        btn: '📋 Regla de Oreo',
+        btn: '🎮 Reto de Oreo',
         idle: [
           "Todo en su lugar. Incluyéndome a mí, en el sofá. 😼",
           "Reglas claras, siesta segura. Así funciona esto. 📋",
@@ -262,10 +262,10 @@ window.FAMILY = [
     palette: ['#F48FB1', '#CE93D8', '#F3E5F5'],
     emoji: '🌷', isKid: false, isBaby: true, caresBaby: false, petCared: true,
     pet: {
-      name: 'Nube', species: 'Gato blanco peludo · ISFJ', img: window.IMG.rachel,
+      name: 'Nube', species: 'Gato blanco peludo · ESFJ', img: window.IMG.rachel,
       kind: 'gato', face: '🐱', food: '🐟', toy: '🧶', dir: 'nube',
       persona: {
-        btn: '☁️ Mimo de Nube',
+        btn: '🤗 Cariño de Nube',
         idle: [
           "Cuido a Che-Che en silencio, como un angelito. ☁️",
           "Me gusta que estemos todos juntos y a salvo. 💛",
