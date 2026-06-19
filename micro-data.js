@@ -77,12 +77,12 @@ window.PLAN = {
     { moment:'hogar', group:'Sala', type:'area', icon:'🛋️', freq:'diario', micro:[
       'Barrer piso','Pasar coleto','Despejar muebles','Limpiar mesa del televisor',
     ]},
-    { moment:'hogar', group:'Baño', type:'area', icon:'🚿', freq:'semanal', micro:[
+    { moment:'hogar', group:'Baño', type:'area', icon:'🚿', freq:'diario', micro:[
       'Lavar poceta','Lavar lavamanos','Lavar ducha','Limpiar paredes de la ducha','Limpiar piso',
       'Reponer papel higiénico','Sacar basura','Colocar aromatizante','Limpiar mueble bajo el lavamanos',
       'Reponer jabón líquido','Reponer jabón corporal','Reponer shampoo','Reponer acondicionador',
     ]},
-    { moment:'hogar', group:'Cuarto', type:'area', icon:'🛏️', freq:'semanal', micro:[
+    { moment:'hogar', group:'Cuarto', type:'area', icon:'🛏️', freq:'diario', micro:[
       'Cambiar sábanas','Cambiar fundas de almohadas','Doblar edredón','Guardar zapatos','Colgar ropa',
       'Colocar ropa sucia en cesta','Vaciar deshumidificador','Sacudir alfombras','Barrer piso','Pasar coleto',
     ]},
