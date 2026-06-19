@@ -76,6 +76,9 @@ function defaultState() {
   BC.CHILDREN.forEach((c) => (data[c.id] = freshChild()));
   return {
     pin: BC.DEFAULT_PIN,
+    // Canje de ahorro por dinero real: cuánto vale 1 punto en dinero real.
+    redeemRate: 1,
+    currency: "₡",
     goals: {
       mama: { name: "Mi meta de ahorro", target: 500, emoji: "🎯" },
       papa: { name: "Mi meta de ahorro", target: 500, emoji: "🎯" },
@@ -110,6 +113,8 @@ function mergeState(parsed) {
   if (!parsed || typeof parsed !== "object") return base;
   // merge defensivo
   base.pin = parsed.pin || base.pin;
+  base.redeemRate = (typeof parsed.redeemRate === "number") ? parsed.redeemRate : base.redeemRate;
+  base.currency = parsed.currency || base.currency;
   base.goals = Object.assign(base.goals, parsed.goals || {});
   base.budgets = (parsed.budgets && typeof parsed.budgets === "object") ? parsed.budgets : {};
   base.budgetPct = (parsed.budgetPct && typeof parsed.budgetPct === "object") ? parsed.budgetPct : {};
@@ -343,6 +348,25 @@ function StoreProvider({ children }) {
         ok = true;
       });
       return ok;
+    },
+    // Canjea puntos del ahorro por dinero real (sale del sistema): descuenta del
+    // ahorro y deja registro. Los padres entregan el dinero real equivalente.
+    redeemSavings(childId, amount) {
+      let ok = false;
+      update(childId, (child) => {
+        amount = Math.round(amount);
+        if (amount <= 0 || child.savings < amount) return;
+        child.savings -= amount;
+        log(child, { type: "expense", amount, label: "Canje por dinero real", cat: "canje", icon: "💵" });
+        ok = true;
+      });
+      return ok;
+    },
+    setMoney(patch) {
+      setState((prev) => Object.assign({}, prev, {
+        redeemRate: (patch.redeemRate != null ? Math.max(0, Number(patch.redeemRate) || 0) : prev.redeemRate),
+        currency: (patch.currency != null ? patch.currency : prev.currency),
+      }));
     },
     adjust(childId, amount, label) {
       update(childId, (child, month) => {

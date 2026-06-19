@@ -39,6 +39,7 @@ function ParentPanel({ onClose }) {
         <BudgetEditor child={cfg} state={state} actions={actions} fx={fx} />
         <EditGoal childId={cfg.id} goal={state.goals[cfg.id]} actions={actions} fx={fx} color={cfg.color} />
         <IvaConfig state={state} actions={actions} fx={fx} />
+        <MoneyConfig state={state} actions={actions} fx={fx} />
         <FundSpend state={state} actions={actions} fx={fx} />
 
         <Card className="bc-padmin">
@@ -268,6 +269,32 @@ function IvaConfig({ state, actions, fx }) {
           <button onClick={() => actions.setIva({ pct: Math.min(50, (pctInt + 1)) / 100 })}>+</button>
         </div>
       </div>
+    </Card>
+  );
+}
+
+function MoneyConfig({ state, actions, fx }) {
+  const rate = (typeof state.redeemRate === "number") ? state.redeemRate : 1;
+  const cur = state.currency || "₡";
+  const [draft, setDraft] = useState(String(rate));
+  useEffect(() => { setDraft(String(rate)); }, [rate]);
+  return (
+    <Card className="bc-padmin">
+      <div className="bc-padmin-title">💵 Canje de ahorro por dinero real</div>
+      <p className="bc-muted">Cuánto vale 1 punto en dinero real cuando los niños canjean su ahorro contigo.</p>
+      <div className="bc-exam-row">
+        <label>Moneda</label>
+        <input className="bc-input num" value={cur} onChange={(e) => actions.setMoney({ currency: e.target.value })} />
+      </div>
+      <div className="bc-exam-row">
+        <label>1 punto =</label>
+        <input className="bc-input num" type="number" step="0.01" inputMode="decimal" value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={() => actions.setMoney({ redeemRate: Number(draft) || 0 })}
+          onKeyDown={(e) => { if (e.key === "Enter") e.target.blur(); }} />
+        <span style={{ fontWeight: 800, color: "var(--text-soft)" }}>{cur}</span>
+      </div>
+      <div className="bc-muted" style={{ fontSize: ".85rem" }}>Ejemplo: 100 puntos = {cur}{Math.round(100 * rate).toLocaleString("en-US")}.</div>
     </Card>
   );
 }
