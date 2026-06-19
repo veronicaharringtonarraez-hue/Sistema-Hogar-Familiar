@@ -236,14 +236,18 @@ function Privileges({ pid, store, showToast }) {
   const screenThreshold = Math.ceil(possToday * cfg.screen.minPct / 100);
   const screenRemaining = Math.max(0, screenThreshold - earnToday);
 
-  // ---- Visita a los Titos (Lun..Vie) ----
+  // ---- Visita a los Titos — cuenta lo ACUMULADO de LUNES a JUEVES (memoria
+  //      del ledger) y el botón se activa el VIERNES si llegaron al 50%. ----
   const wk = window.weekMonFri(today);
-  const possWeek = window.possibleInRange(pid, wk.mon, wk.fri);
-  const earnWeek = window.earnedInRange(pid, store, wk.mon, wk.fri, true);
+  const thuEnd = wk.mon + 4 * 86400000 - 1;   // jueves 23:59:59.999
+  const possWeek = window.possibleInRange(pid, wk.mon, thuEnd);
+  const earnWeek = window.earnedInRange(pid, store, wk.mon, thuEnd);
   const pctWeek = possWeek ? (earnWeek / possWeek * 100) : 0;
   const titosOn = cfg.titos.enabled && cfg.titos.kids.includes(pid);
   const titosThreshold = Math.ceil(possWeek * cfg.titos.minPct / 100);
-  const titosUnlocked = titosOn && earnWeek >= titosThreshold && titosThreshold > 0;
+  const titosReached = earnWeek >= titosThreshold && titosThreshold > 0;     // 50% de Lun-Jue
+  const isTitosDay = today.getDay() === (cfg.titos.evalDay != null ? cfg.titos.evalDay : 5); // viernes
+  const titosUnlocked = titosOn && titosReached && isTitosDay;               // botón activo solo el viernes
   const titosState = !titosOn ? 'lock' : (titosUnlocked ? 'open' : 'prog');
   const titosRemaining = Math.max(0, titosThreshold - earnWeek);
 
@@ -291,11 +295,15 @@ function Privileges({ pid, store, showToast }) {
 
       {titosOn && (
         <PrivCard icon="👵" title="Visita a los Titos"
-          sub={'Lun a Vie: ' + earnWeek + '/' + possWeek + ' pts'}
+          sub={'Lun a Jue: ' + earnWeek + '/' + possWeek + ' pts'}
           pct={pctWeek} state={titosState} remaining={titosRemaining}>
           {titosUnlocked
             ? <button className="priv-action" onClick={avisarTita}>📩 Avisar a Tita</button>
-            : <div className="priv-prize">Junta el {cfg.titos.minPct}% de tu semana para el premio del viernes</div>}
+            : (isTitosDay
+              ? <div className="priv-prize">Te faltan {titosRemaining} pts de lun-jue para ir donde Tita hoy</div>
+              : (titosReached
+                ? <div className="priv-prize on">¡Vas genial! El viernes se activa tu visita a Tita 👵</div>
+                : <div className="priv-prize">Junta el {cfg.titos.minPct}% de lunes a jueves para ir el viernes</div>))}
         </PrivCard>
       )}
     </>
@@ -373,7 +381,7 @@ function PrivConfig({ store, onCfg }) {
 
       <div className="sub">
         <div className="sub-h">👵 Visita a los Titos <Toggle on={cfg.titos.enabled} onClick={() => onCfg('titos', 'enabled', !cfg.titos.enabled)} /></div>
-        <NumRow label="% requerido (Lun-Vie)" value={cfg.titos.minPct} step={5} onChange={v => onCfg('titos', 'minPct', v)} suffix="%" />
+        <NumRow label="% requerido (Lun-Jue)" value={cfg.titos.minPct} step={5} onChange={v => onCfg('titos', 'minPct', v)} suffix="%" />
         <div className="sub-h" style={{ marginTop: 8 }}>Teléfono (WhatsApp)</div>
         <input className="sel" value={cfg.titos.phone} onChange={e => onCfg('titos', 'phone', e.target.value)} />
         <div className="sub-h" style={{ marginTop: 8 }}>Mensaje (usa {'{nombre}'})</div>
