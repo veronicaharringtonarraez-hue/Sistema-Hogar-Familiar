@@ -475,8 +475,8 @@ window.PRIV_DEFAULTS = {
   },
   titos: {
     enabled: true,
-    kids: ['taylor', 'emmeth'],
-    minPct: 70,                     // % de Lun..Vie
+    kids: ['taylor', 'emmeth', 'christopher'],
+    minPct: 50,                     // % de Lun..Vie
     days: [1, 2, 3, 4, 5],
     evalDay: 5,                     // viernes
     phone: '+506 7231 2428',
