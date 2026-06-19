@@ -214,6 +214,13 @@ function ScreenAhorro({ child }) {
   const [wOpen, setWOpen] = useState(false);
   const [wErr, setWErr] = useState("");
   const [wAmt, setWAmt] = useState(5);
+  // canje por dinero real
+  const rate = (typeof state.redeemRate === "number") ? state.redeemRate : 1;
+  const cur = state.currency || "₡";
+  const realMoney = (pts) => cur + Math.round(pts * rate).toLocaleString("en-US");
+  const [rOpen, setROpen] = useState(false);
+  const [rErr, setRErr] = useState("");
+  const [rAmt, setRAmt] = useState(5);
 
   const save = () => {
     const ok = actions.saveToGoal(child.id, amt);
@@ -225,6 +232,12 @@ function ScreenAhorro({ child }) {
     const ok = actions.withdrawSavings(child.id, wAmt);
     if (ok) fx.toast(`Retiraste ${BC.money(wAmt)} del ahorro`);
     setWOpen(false); setWErr("");
+  };
+  const redeem = (pin) => {
+    if (pin !== state.pin) { setRErr("PIN incorrecto"); return; }
+    const ok = actions.redeemSavings(child.id, rAmt);
+    if (ok) { fx.celebrate(); fx.toast(`¡Canjeaste ${realMoney(rAmt)}! Pídeselo a Mamá/Papá 💵`); }
+    setROpen(false); setRErr("");
   };
 
   return (
@@ -270,6 +283,16 @@ function ScreenAhorro({ child }) {
         </button>
       </Card>
 
+      {/* Canjear ahorro por dinero real */}
+      <Card className="bc-redeem-box">
+        <div className="bc-save-title">💵 Usar mi ahorro (dinero real)</div>
+        <div className="bc-save-hint">Cambia tus puntos ahorrados por dinero real con Mamá o Papá. 1 punto = {realMoney(1)}.</div>
+        <button className="bc-btn-primary full" disabled={s.savings <= 0}
+          onClick={() => { setRAmt(Math.min(10, s.savings) || 1); setRErr(""); setROpen(true); }}>
+          {s.savings <= 0 ? "Aún no tienes ahorro" : "Canjear por dinero real 💵"}
+        </button>
+      </Card>
+
       <Modal open={wOpen} onClose={() => setWOpen(false)} title="Retirar del ahorro" accent={child.color}>
         <p className="bc-modal-note">Retirar del ahorro necesita permiso de un adulto.</p>
         <div className="bc-amount-row">
@@ -278,6 +301,22 @@ function ScreenAhorro({ child }) {
           <button onClick={() => setWAmt((a) => Math.min(s.savings, a + 1))}>+</button>
         </div>
         <PinPad onSubmit={withdraw} error={wErr} length={state.pin.length} prompt="PIN de Mamá/Papá para retirar" />
+      </Modal>
+
+      <Modal open={rOpen} onClose={() => setROpen(false)} title="Canjear por dinero real" accent={child.color}>
+        <p className="bc-modal-note">Cambias puntos de tu ahorro por dinero real. Lo entrega Mamá o Papá.</p>
+        <div className="bc-amount-row">
+          <button onClick={() => setRAmt((a) => Math.max(1, a - 1))}>−</button>
+          <div className="bc-amount-val">{BC.money(rAmt)}</div>
+          <button onClick={() => setRAmt((a) => Math.min(s.savings, a + 1))}>+</button>
+        </div>
+        <div className="bc-redeem-eq">= <strong style={{ color: child.color }}>{realMoney(rAmt)}</strong> en dinero real</div>
+        <div className="bc-chip-row" style={{ justifyContent: "center", marginBottom: 8 }}>
+          {[10, 20, 50].filter((v) => v <= s.savings).map((v) => (
+            <button key={v} className="bc-chip" onClick={() => setRAmt(v)}>{BC.money(v)}</button>
+          ))}
+        </div>
+        <PinPad onSubmit={redeem} error={rErr} length={state.pin.length} prompt="PIN de Mamá/Papá para canjear" />
       </Modal>
     </div>
   );
