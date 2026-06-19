@@ -481,6 +481,7 @@ window.PRIV_DEFAULTS = {
     evalDay: 5,                     // viernes
     phone: '+506 7231 2428',
     message: 'Hola Tita ❤️\n\nSoy {nombre}.\n\n¡Ya cumplí con todas mis responsabilidades de esta semana y obtuve los puntos necesarios para ganar mi premio! 🥳\n\n¿Puedo ir a pasar tiempo de calidad contigo este viernes? Me emociona mucho compartir contigo, ir a la piscina y jugar juntos.\n\n¡Te quiero mucho! 💕',
+    messageAlt: 'Hola Tita ❤️\n\nSoy {nombre}.\n\nEsta semana no alcancé la meta de limpieza y estudio 😅, pero igual me encantaría ir a visitarte.\n\n¡Estaré feliz de ayudarte a ordenar tu casa o de estudiar un ratito allá: leer un libro, practicar piano o algo así! Así desbloqueo mis últimos puntos para jugar en la piscina, usar el play, ir al parque o a la cabaña. 🏊🎮🌳\n\n¡Te quiero mucho! 💕',
   },
   pets: {
     enabled: true,
@@ -547,8 +548,8 @@ window.screenMinutes = (cfg, pct) => {
 };
 
 /* mensaje para los Titos con el nombre del niño */
-window.titosMessage = (cfg, name) => (cfg.titos.message || '').replace(/\{nombre\}/g, name);
-window.titosWaLink = (cfg, name) => {
+window.titosMessage = (cfg, name, alt) => ((alt ? cfg.titos.messageAlt : cfg.titos.message) || cfg.titos.message || '').replace(/\{nombre\}/g, name);
+window.titosWaLink = (cfg, name, alt) => {
   const phone = String(cfg.titos.phone || '').replace(/[^0-9]/g, '');
-  return 'https://wa.me/' + phone + '?text=' + encodeURIComponent(window.titosMessage(cfg, name));
+  return 'https://wa.me/' + phone + '?text=' + encodeURIComponent(window.titosMessage(cfg, name, alt));
 };

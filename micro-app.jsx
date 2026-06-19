@@ -259,10 +259,10 @@ function Privileges({ pid, store, showToast }) {
   const petsPct = cfg.pets.weeklyMin ? (earnFullWeek / cfg.pets.weeklyMin * 100) : 0;
   const petsRemaining = Math.max(0, cfg.pets.weeklyMin - earnFullWeek);
 
-  function avisarTita() {
-    const url = window.titosWaLink(cfg, REAL(p));
+  function avisarTita(alt) {
+    const url = window.titosWaLink(cfg, REAL(p), alt);
     window.open(url, '_blank');
-    showToast('Abriendo mensaje para Tita… un adulto confirma el envío 💕');
+    showToast(alt ? 'Abriendo mensaje para Tita (vas a ayudar) 💛' : 'Abriendo mensaje para Tita… un adulto confirma el envío 💕');
   }
 
   return (
@@ -298,9 +298,12 @@ function Privileges({ pid, store, showToast }) {
           sub={'Lun a Jue: ' + earnWeek + '/' + possWeek + ' pts'}
           pct={pctWeek} state={titosState} remaining={titosRemaining}>
           {titosUnlocked
-            ? <button className="priv-action" onClick={avisarTita}>📩 Avisar a Tita</button>
+            ? <button className="priv-action" onClick={() => avisarTita(false)}>📩 Avisar a Tita</button>
             : (isTitosDay
-              ? <div className="priv-prize">Te faltan {titosRemaining} pts de lun-jue para ir donde Tita hoy</div>
+              ? <>
+                  <div className="priv-prize">No llegaste al 50% de lun-jue, ¡pero igual puedes visitar a Tita y ayudarla a ordenar o estudiar un rato! 💛</div>
+                  <button className="priv-action" onClick={() => avisarTita(true)}>📩 Avisar a Tita (voy a ayudar)</button>
+                </>
               : (titosReached
                 ? <div className="priv-prize on">¡Vas genial! El viernes se activa tu visita a Tita 👵</div>
                 : <div className="priv-prize">Junta el {cfg.titos.minPct}% de lunes a jueves para ir el viernes</div>))}
@@ -384,8 +387,10 @@ function PrivConfig({ store, onCfg }) {
         <NumRow label="% requerido (Lun-Jue)" value={cfg.titos.minPct} step={5} onChange={v => onCfg('titos', 'minPct', v)} suffix="%" />
         <div className="sub-h" style={{ marginTop: 8 }}>Teléfono (WhatsApp)</div>
         <input className="sel" value={cfg.titos.phone} onChange={e => onCfg('titos', 'phone', e.target.value)} />
-        <div className="sub-h" style={{ marginTop: 8 }}>Mensaje (usa {'{nombre}'})</div>
+        <div className="sub-h" style={{ marginTop: 8 }}>Mensaje si SÍ llega al 50% (usa {'{nombre}'})</div>
         <textarea className="sel" rows={5} value={cfg.titos.message} onChange={e => onCfg('titos', 'message', e.target.value)} style={{ resize: 'vertical' }} />
+        <div className="sub-h" style={{ marginTop: 8 }}>Mensaje si NO llega al 50% (igual va a ayudar)</div>
+        <textarea className="sel" rows={5} value={cfg.titos.messageAlt || ''} onChange={e => onCfg('titos', 'messageAlt', e.target.value)} style={{ resize: 'vertical' }} />
       </div>
 
       <div className="sub">
