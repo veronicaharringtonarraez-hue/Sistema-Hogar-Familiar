@@ -250,11 +250,13 @@ window.PLAN = {
     ]},
     /* ---- Limpiezas profundas de Verónica (por día y semana del mes) ---- */
     { moment:'hogar', group:'Dormitorios · profunda', type:'area', icon:'🛏️', freq:'semanal', days:[1], micro:[
+      'Quitar telarañas (rincones y techo)',
       'Cambiar sábanas y fundas','Lavar edredón cuando corresponda','Aspirar y rotar colchón',
       'Limpiar mesas de noche y cabecera','Limpiar muebles por dentro/fuera y detrás',
       'Sacudir lámparas','Limpiar ventiladores','Aspirar debajo de la cama','Vaciar deshumidificador',
     ]},
     { moment:'hogar', group:'Cocina · profunda', type:'area', icon:'🍳', freq:'semanal', days:[2], weeks:[1,3], micro:[
+      'Quitar telarañas (rincones y techo)',
       'Horno por dentro','Desengrasar campana extractora','Parrillas y quemadores','Interior del microondas',
       'Desinfectar cafetera, licuadora, freidora y olla','Gabinetes: puertas, interiores y encima',
       'Destapar drenajes preventivamente','Detrás y debajo de electrodomésticos','Juntas de azulejos',
@@ -265,6 +267,7 @@ window.PLAN = {
       'Revisar signos de plagas','Limpiar recipientes herméticos por fuera',
     ]},
     { moment:'hogar', group:'Oficina · profunda', type:'area', icon:'💼', freq:'semanal', days:[2], weeks:[2], micro:[
+      'Quitar telarañas (rincones y techo)',
       'Limpiar monitor, teclado y mouse','Limpiar impresora','Desinfectar audífonos',
       'Organizar y archivar documentos','Eliminar documentos innecesarios','Limpiar cables','Limpiar libreros',
     ]},
@@ -278,20 +281,24 @@ window.PLAN = {
       'Desinfectar accesorios de alimentación','Reorganizar el almacenamiento',
     ]},
     { moment:'hogar', group:'Baño · profunda', type:'area', icon:'🚿', freq:'semanal', days:[4], micro:[
+      'Quitar telarañas (rincones y techo)',
       'Desinfectar inodoro, tanque y desincrustar sarro','Lavamanos: desagüe y pulir grifería',
       'Ducha: paredes, juntas, moho, puertas y desagüe','Vaciar y limpiar muebles y debajo del lavamanos',
       'Revisar y desechar productos vencidos','Limpiar espejo y desinfectar dispensadores','Limpiar extractor o ventilación',
     ]},
     { moment:'hogar', group:'Sala · profunda', type:'area', icon:'🛋️', freq:'semanal', days:[5], weeks:[1,3], micro:[
+      'Quitar telarañas (rincones y techo)',
       'Sacudir lámparas y pantallas','Limpiar cuadros, marcos e interruptores','Limpiar puertas, manijas y zócalos',
       'Limpiar mesas por debajo','Mueble del TV por dentro y detrás','Pantalla del TV con producto adecuado',
       'Aspirar el sofá y debajo de los cojines','Mover muebles y limpiar detrás/debajo','Aspirar o lavar alfombras',
     ]},
     { moment:'hogar', group:'Comedor · profunda', type:'area', icon:'🍽️', freq:'semanal', days:[5], weeks:[1,3], micro:[
+      'Quitar telarañas (rincones y techo)',
       'Limpiar patas y base de la mesa','Limpiar sillas completas (asiento, respaldo, patas)',
       'Lavar o cambiar el mantel','Limpiar centro de mesa y decoración','Zócalos y esquinas','Mover la mesa y limpiar debajo',
     ]},
     { moment:'hogar', group:'Lavandería · mantenimiento', type:'area', icon:'🧺', freq:'semanal', days:[5], weeks:[2,4], micro:[
+      'Quitar telarañas (rincones y techo)',
       'Limpiar interior de la lavadora','Limpiar filtro de la lavadora','Limpiar filtro de pelusas de la secadora',
       'Limpiar detrás de los equipos','Limpiar estantes','Revisar productos y organizar suministros',
     ]},
@@ -303,9 +310,11 @@ window.PLAN = {
       'Podar plantas','Retirar maleza','Limpiar muebles exteriores','Revisar drenajes','Limpiar macetas','Revisar agua estancada',
     ]},
     { moment:'hogar', group:'Ventanas · profunda', type:'area', icon:'🪟', freq:'semanal', days:[6], weeks:[2], micro:[
+      'Quitar telarañas (rincones y techo)',
       'Cristales interiores y exteriores','Limpiar marcos','Limpiar rieles','Limpiar persianas','Limpiar mosquiteros',
     ]},
     { moment:'hogar', group:'Closet · trimestral', type:'area', icon:'👕', freq:'semanal', days:[6], weeks:[3], micro:[
+      'Quitar telarañas (rincones y techo)',
       'Revisar tallas y probar ropa a los niños','Separar dañada, para donar y para vender',
       'Rotar ropa por temporada','Revisar zapatos, mochilas y accesorios',
       'Limpiar cajas organizadoras','Limpiar estantes y paredes internas','Revisar humedad o moho',
