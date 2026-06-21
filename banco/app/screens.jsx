@@ -166,13 +166,13 @@ function ScreenPagar({ child }) {
         <MoneyText amount={s.balance} className="big" style={{ color: child.color }} />
       </div>
       <div className="bc-screen-head tight">
-        <h2>🧾 Mis obligaciones</h2>
-        <p>Primero las obligaciones. {s.obligPaidCount} de {s.obligTotalCount} cubiertas esta quincena.</p>
+        <h2>🧾 Servicios de la casa</h2>
+        <p>Tu cuenta de la quincena. {s.obligPaidCount} de {s.obligTotalCount} pagadas. Total: {BC.money(s.obligTotal)}.</p>
       </div>
 
-      {s.income === 0 && (
-        <Card className="bc-iva-note">Cuando ganes puntos, aquí aparecerá cuánto destinar a cada cosa (es un % de lo que ganas).</Card>
-      )}
+      <Card className="bc-iva-note">
+        Tus cuentas son un % de tu <strong>salario esperado</strong> (lo que ganas si haces todas tus tareas). Se renueva cada quincena (1 y 16). Los bonos no cuentan aquí: ¡esos son para ahorrar! 🐷
+      </Card>
 
       <div className="bc-bill-list">
         {oblig.map((c) => {
@@ -414,7 +414,7 @@ function ScreenPresupuesto({ child }) {
         </div>
       </Card>
 
-      <div className="bc-section-title">Distribución sugerida (del neto)</div>
+      <div className="bc-section-title">Servicios de la casa · % del salario esperado</div>
       <div className="bc-rule-bars" style={{ marginBottom: 4 }}>
         {groups.map((g) => (
           <div key={g.name} className="bc-rule-seg" style={{ flex: g.pct, background: groupColors[g.name] || child.color }}><span>{g.pct}%</span></div>

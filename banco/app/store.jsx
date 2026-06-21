@@ -296,13 +296,13 @@ function StoreProvider({ children }) {
       });
     },
     // Paga (cubre) una categoría del presupuesto: descuenta del saldo el monto
-    // sugerido = % de la categoría sobre el ingreso NETO de la quincena.
+    // monto = % de la categoría sobre el SALARIO ESPERADO de la quincena.
     payBill(childId, catId) {
       const cat = BC.budgetCat(catId);
       let ok = false;
       update(childId, (child, month, mk, next) => {
         if (!cat || month.paid[catId]) return;
-        const amount = catAmount(next, month, catId);
+        const amount = catAmount(next, childId, catId);
         if (amount <= 0 || child.balance < amount) return;
         child.balance -= amount;
         month.paid[catId] = true;
@@ -506,9 +506,16 @@ function budgetPctOf(state, catId) {
   return c ? c.pct : 0;
 }
 
-// Monto sugerido de una categoría = % sobre el ingreso NETO de la quincena.
-function catAmount(state, month, catId) {
-  return Math.round((month.income || 0) * budgetPctOf(state, catId) / 100);
+// Salario esperado NETO de la quincena (lo que ganaría si hace TODAS sus tareas,
+// menos el IVA). Es el 100% sobre el que se calculan los pagos de servicios.
+function expectedNetOf(state, childId) {
+  return Math.round(BC.expectedSalaryGross(childId) * (1 - ivaPctState(state)));
+}
+
+// Monto a pagar de una categoría = % sobre el SALARIO ESPERADO (no sobre lo que
+// realmente ganó ni los bonos). Así el recibo de servicios es fijo por quincena.
+function catAmount(state, childId, catId) {
+  return Math.round(expectedNetOf(state, childId) * budgetPctOf(state, catId) / 100);
 }
 
 // Presupuesto del niño: las categorías con su % y su monto del periodo.
@@ -517,7 +524,7 @@ function childBudget(state, childId) {
   return BC.BUDGET_CATS.map((c) => ({
     id: c.id, label: c.label, icon: c.icon, desc: c.desc, group: c.group, kind: c.kind,
     pct: budgetPctOf(state, c.id),
-    amount: catAmount(state, month, c.id),
+    amount: catAmount(state, childId, c.id),
     paid: !!month.paid[c.id],
   }));
 }
