@@ -86,6 +86,9 @@ window.PLAN = {
       'Cambiar sábanas','Cambiar fundas de almohadas','Doblar edredón','Guardar zapatos','Colgar ropa',
       'Colocar ropa sucia en cesta','Vaciar deshumidificador','Sacudir alfombras','Barrer piso','Pasar coleto',
     ]},
+    { moment:'hogar', group:'Mi ropa', freq:'diario', items:[
+      ['Doblar y guardar mi ropa','🧺'],
+    ]},
     { moment:'noche', group:'Preparar para mañana', freq:'semanal', days:DOM_A_JUE, items:[
       ['Preparar uniforme escolar para mañana','👔'],
     ]},
@@ -135,6 +138,9 @@ window.PLAN = {
     { moment:'hogar', group:'Oficina de los niños', type:'area', icon:'📖', freq:'diario', micro:[
       'Guardar ropa','Guardar zapatos','Despejar escritorios','Barrer piso','Pasar coleto','Colgar ropa',
     ]},
+    { moment:'hogar', group:'Mi ropa', freq:'diario', items:[
+      ['Doblar y guardar mi ropa','🧺'],
+    ]},
     { moment:'noche', group:'Preparar para mañana', freq:'semanal', days:DOM_A_JUE, items:[
       ['Preparar uniforme escolar','👔'],
     ]},
@@ -166,6 +172,9 @@ window.PLAN = {
       ['Guardar juguetes','🧸'], ['Recoger basura del piso','🗑️'], ['Guardar zapatos','👟'],
       ['Colocar objetos donde pertenecen','📦'],
     ]},
+    { moment:'hogar', group:'Mi ropa', freq:'diario', items:[
+      ['Doblar y guardar mi ropa (con ayuda)','🧺'],
+    ]},
     { moment:'hogar', group:'Cochera', type:'area', icon:'🚗', freq:'semanal', micro:[
       'Recoger basura','Barrer piso','Guardar zapatos','Despejar área','Guardar ropa u objetos fuera de lugar',
     ]},
@@ -187,18 +196,8 @@ window.PLAN = {
       'Limpiar cocina','Limpiar utensilios','Barrer y coletear','Preparar la logística del día',
       'Hacer mercado','Botar la basura',
     ]},
-    { moment:'hogar', group:'Lavandería (lava: mar · vie · sáb)', type:'task', freq:'semanal', days:[2,5,6], items:[
-      ['Separar ropa blanca','⚪'], ['Separar ropa de color','🌈'], ['Cargar lavadora','🧺'],
-      ['Pasar ropa a secadora','🌀'], ['Llevar ropa limpia a la sala para doblar','🛋️'],
-    ]},
-    { moment:'hogar', group:'Qué lavar el martes', freq:'semanal', days:[2], items:[
-      ['Paños de cocina','🧽'], ['Manteles','🍽️'], ['Delantales','🥽'], ['Bayetas','🧼'],
-    ]},
-    { moment:'hogar', group:'Qué lavar el viernes', freq:'semanal', days:[5], items:[
-      ['Uniformes de fútbol (Emmeth y Christopher)','⚽'], ['Ropa deportiva','👟'], ['Ropa oscura','🌑'],
-    ]},
-    { moment:'hogar', group:'Qué lavar el sábado', freq:'semanal', days:[6], items:[
-      ['Ropa de iglesia','⛪'], ['Sábanas o edredones (según calendario)','🛏️'],
+    { moment:'hogar', group:'Mi ropa', freq:'diario', items:[
+      ['Doblar y guardar mi ropa','🧺'],
     ]},
     { moment:'hogar', group:'Basura (martes)', freq:'semanal', days:[2], items:[
       ['Sacar basura de cocina','🗑️'], ['Sacar basura de baños','🚮'],
@@ -229,20 +228,13 @@ window.PLAN = {
     { moment:'manana', group:'Bienestar', freq:'diario', items:[
       ['Hacer ejercicio (1 hora)','💪'],
     ]},
-    { moment:'hogar', group:'Lavandería (doblar)', freq:'diario', items:[
-      ['Doblar ropa','🧺'], ['Guardar ropa doblada','🗄️'],
+    { moment:'hogar', group:'Lavandería (lavar y secar de toda la casa)', freq:'diario', items:[
+      ['Separar ropa blanca','⚪'], ['Separar ropa de color','🌈'], ['Cargar lavadora','🧺'],
+      ['Pasar a la secadora (secar)','🌀'], ['Tender o colgar la ropa','🧷'],
+      ['Repartir la ropa limpia a cada quien para doblar','🧺'],
     ]},
-    { moment:'hogar', group:'Lavandería (lava: lun · mié · jue)', type:'task', freq:'semanal', days:[1,3,4], items:[
-      ['Separar ropa blanca','⚪'], ['Separar ropa de color','🌈'], ['Cargar lavadora','🧺'], ['Pasar ropa a secadora','🌀'],
-    ]},
-    { moment:'hogar', group:'Qué lavar el lunes', freq:'semanal', days:[1], items:[
-      ['Uniformes escolares','👔'], ['Ropa blanca','⚪'], ['Ropa interior','🩲'],
-    ]},
-    { moment:'hogar', group:'Qué lavar el miércoles', freq:'semanal', days:[3], items:[
-      ['Carga ligera si hace falta','🧺'], ['Ropa del bebé (prioridad)','👶'],
-    ]},
-    { moment:'hogar', group:'Qué lavar el jueves', freq:'semanal', days:[4], items:[
-      ['Ropa de gimnasia de Taylor','🤸'], ['Toallas de baño','🛁'],
+    { moment:'hogar', group:'Mi ropa', freq:'diario', items:[
+      ['Doblar y guardar mi ropa','🧺'],
     ]},
     { moment:'hogar', group:'Basura (viernes)', freq:'semanal', days:[5], items:[
       ['Sacar basura de cocina','🗑️'], ['Sacar basura de baños','🚮'],
