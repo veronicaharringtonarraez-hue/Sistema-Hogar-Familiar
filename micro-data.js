@@ -192,6 +192,9 @@ window.PLAN = {
       ['Descongelar carne','🥩'], ['Preparar alimentos','🔪'], ['Cocinar','🍳'], ['Servir comida','🍽️'],
       ['Limpiar encimeras','🧽'], ['Limpiar cocina después de cocinar','🧼'], ['Dejar fregadero despejado','🚰'],
     ]},
+    { moment:'hogar', group:'Despensa y mercado', freq:'diario', items:[
+      ['Guardar el mercado correctamente','🛒'], ['Organizar la despensa','🥫'], ['Hacer inventario','📋'],
+    ]},
     { moment:'hogar', group:'Manías', type:'area', icon:'🍳', freq:'diario', micro:[
       'Limpiar cocina','Limpiar utensilios','Barrer y coletear','Preparar la logística del día',
       'Hacer mercado','Botar la basura',
