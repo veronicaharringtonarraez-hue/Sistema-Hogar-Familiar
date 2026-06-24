@@ -195,6 +195,9 @@ window.PLAN = {
     { moment:'hogar', group:'Despensa y mercado', freq:'diario', items:[
       ['Guardar el mercado correctamente','🛒'], ['Organizar la despensa','🥫'], ['Hacer inventario','📋'],
     ]},
+    { moment:'semana', group:'Sábado en pareja', freq:'semanal', days:[6], items:[
+      ['Hacer el presupuesto','💰'], ['Inventario de comida','🥫'], ['Planificar el menú semanal','🗓️'],
+    ]},
     { moment:'hogar', group:'Manías', type:'area', icon:'🍳', freq:'diario', micro:[
       'Limpiar cocina','Limpiar utensilios','Barrer y coletear','Preparar la logística del día',
       'Hacer mercado','Botar la basura',
@@ -238,6 +241,9 @@ window.PLAN = {
     ]},
     { moment:'hogar', group:'Mi ropa', freq:'diario', items:[
       ['Doblar y guardar mi ropa','🧺'],
+    ]},
+    { moment:'semana', group:'Sábado en pareja', freq:'semanal', days:[6], items:[
+      ['Hacer el presupuesto','💰'], ['Inventario de comida','🥫'], ['Planificar el menú semanal','🗓️'],
     ]},
     { moment:'hogar', group:'Basura (viernes)', freq:'semanal', days:[5], items:[
       ['Sacar basura de cocina','🗑️'], ['Sacar basura de baños','🚮'],
