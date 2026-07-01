@@ -979,10 +979,23 @@ function bolsoProgress(bolso, sid, wd) {
   const doneMat = rec.materials.filter(m => m.done).length;
   return { done: doneSub + doneMat, total: subjects.length + rec.materials.length, subjects, rec };
 }
-/* estudiantes con el bolso de HOY pendiente (para el recordatorio de las 7pm) */
-function bolsoPendingToday(bolso) {
-  const wd = new Date().getDay();
-  if (wd < 1 || wd > 5) return [];
+/* Día que conviene preparar (1=lunes..5=viernes):
+   - Antes de las 7pm: el día escolar de hoy (o el próximo si es fin de semana).
+   - Desde las 7pm: el día siguiente, para dejar el bolso listo la noche anterior.
+   Siempre avanza hasta el próximo día con clases (lun–vie). */
+function bolsoDefaultWd(d = new Date()) {
+  const base = new Date(d);
+  if (base.getHours() >= 19) base.setDate(base.getDate() + 1);   // tras las 7pm: preparar mañana
+  for (let i = 0; i < 7; i++) {
+    const wd = base.getDay();
+    if (wd >= 1 && wd <= 5) return wd;
+    base.setDate(base.getDate() + 1);
+  }
+  return 1;
+}
+/* estudiantes con el bolso PENDIENTE del día a preparar (para el recordatorio) */
+function bolsoPendingPrep(bolso) {
+  const wd = bolsoDefaultWd();
   return window.BOLSO_STUDENTS.filter(st => {
     const p = bolsoProgress(bolso, st.id, wd);
     return p.total > 0 && p.done < p.total;
@@ -990,9 +1003,10 @@ function bolsoPendingToday(bolso) {
 }
 
 function BolsoStudentCard({ st, bolso, onPick }) {
-  const wd = new Date().getDay();
-  const isSchoolDay = wd >= 1 && wd <= 5;
-  const p = isSchoolDay ? bolsoProgress(bolso, st.id, wd) : { done: 0, total: 0 };
+  const wd = bolsoDefaultWd();
+  const dayLbl = window.BOLSO_DAY_LABELS[window.BOLSO_WEEKDAYS[wd]];
+  const forTomorrow = wd !== new Date().getDay();   // se está preparando el día siguiente
+  const p = bolsoProgress(bolso, st.id, wd);
   const pct = p.total ? Math.round(100 * p.done / p.total) : 0;
   const ready = p.total > 0 && p.done === p.total;
   return (
@@ -1008,18 +1022,17 @@ function BolsoStudentCard({ st, bolso, onPick }) {
         </div>
         <div style={{ fontSize: 26 }}>{ready ? '🎉' : '📚'}</div>
       </div>
-      {isSchoolDay ? (
-        <div style={{ marginTop: 12 }}>
-          <div className="bar" style={{ background: 'rgba(255,255,255,.35)' }}>
-            <i style={{ width: pct + '%', background: '#fff' }} />
-          </div>
-          <div style={{ fontWeight: 800, fontSize: 12.5, marginTop: 6 }}>
-            {ready ? '¡Bolso listo! 🎒' : p.total ? (p.done + ' de ' + p.total + ' listas · ' + pct + '%') : 'Sin materias hoy'}
-          </div>
+      <div style={{ marginTop: 12 }}>
+        <div style={{ fontWeight: 800, fontSize: 11.5, opacity: .95, marginBottom: 5 }}>
+          {(forTomorrow ? '🌙 Para el ' : 'Bolso del ') + dayLbl}
         </div>
-      ) : (
-        <div style={{ marginTop: 10, fontWeight: 700, fontSize: 12.5, opacity: .95 }}>Hoy no hay clases 🎉</div>
-      )}
+        <div className="bar" style={{ background: 'rgba(255,255,255,.35)' }}>
+          <i style={{ width: pct + '%', background: '#fff' }} />
+        </div>
+        <div style={{ fontWeight: 800, fontSize: 12.5, marginTop: 6 }}>
+          {ready ? '¡Bolso listo! 🎒' : p.total ? (p.done + ' de ' + p.total + ' listas · ' + pct + '%') : 'Sin materias'}
+        </div>
+      </div>
     </div>
   );
 }
@@ -1027,7 +1040,7 @@ function BolsoStudentCard({ st, bolso, onPick }) {
 function BolsoScreen({ bolso, setBolso, showToast }) {
   const [sid, setSid] = useState(null);
   const todayWd = new Date().getDay();
-  const [wd, setWd] = useState(todayWd >= 1 && todayWd <= 5 ? todayWd : 1);
+  const [wd, setWd] = useState(bolsoDefaultWd());   // desde las 7pm abre en el día siguiente
   const [newMat, setNewMat] = useState('');
 
   // Vista de selección de estudiante
@@ -1099,6 +1112,11 @@ function BolsoScreen({ bolso, setBolso, showToast }) {
             </option>
           ))}
         </select>
+        {wd !== todayWd && (
+          <div style={{ marginTop: 8, fontWeight: 700, fontSize: 12.5, color: tema.a }}>
+            🌙 Prepara esta noche el bolso para el {window.BOLSO_DAY_LABELS[window.BOLSO_WEEKDAYS[wd]]}, así mañana estarás listo.
+          </div>
+        )}
       </div>
 
       {/* Progreso */}
@@ -1252,15 +1270,16 @@ function App() {
       try {
         if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
         const now = new Date();
-        if (now.getDay() === 0 || now.getDay() === 6) return;      // fin de semana: sin clases
         if (now.getHours() < 19) return;                           // solo a partir de las 7pm
+        const tomorrowWd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getDay();
+        if (tomorrowWd < 1 || tomorrowWd > 5) return;              // mañana no hay clases
         const stamp = dayKey(now);
         if (localStorage.getItem('bolso_notified') === stamp) return;
-        const pend = bolsoPendingToday(bolso);
+        const pend = bolsoPendingPrep(bolso);                      // bolso de mañana
         if (!pend.length) return;
         localStorage.setItem('bolso_notified', stamp);
-        new Notification('📚 ¡Prepara tu bolso!', {
-          body: 'Aún falta guardar el bolso de ' + pend.join(' y ') + ' para mañana.',
+        new Notification('📚 ¡Prepara el bolso para mañana!', {
+          body: 'Deja listo esta noche el bolso de ' + pend.join(' y ') + '.',
         });
       } catch (e) {}
     }, 60000);
