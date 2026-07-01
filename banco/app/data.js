@@ -109,17 +109,47 @@
   }
 
   // ---- Quincena: el periodo del salario y el presupuesto ----
-  // Clave "AÑO-MES-MITAD" (mitad 1 = días 1-15, mitad 2 = 16-fin de mes).
-  function quincenaKey(d) { d = d || new Date(); return d.getFullYear() + "-" + d.getMonth() + "-" + (d.getDate() <= 15 ? 1 : 2); }
+  // Los servicios se reinician (y se vuelven a pagar) cada día 15 y cada día 30.
+  // Periodo "1" = del 15 al día 29 (o víspera del cierre de mes).
+  // Periodo "2" = del 30 (o último día del mes) al 14 del mes siguiente.
+  // Clave "AÑO-MES-MITAD". La mitad se ancla al mes en que inicia el periodo.
+  function daysInMonth(y, m) { return new Date(y, m + 1, 0).getDate(); }
+  // Día del segundo reinicio del mes: 30, o el último día si el mes es más corto.
+  function secondCut(y, m) { return Math.min(30, daysInMonth(y, m)); }
+  function quincenaKey(d) {
+    d = d || new Date();
+    const y = d.getFullYear(), m = d.getMonth(), day = d.getDate();
+    const cut2 = secondCut(y, m);
+    if (day >= 15 && day < cut2) return y + "-" + m + "-1";   // ciclo del 15
+    if (day >= cut2) return y + "-" + m + "-2";               // ciclo del 30
+    // Antes del 15: aún corre el ciclo del "30" que abrió el mes anterior.
+    const pm = m === 0 ? 11 : m - 1;
+    const py = m === 0 ? y - 1 : y;
+    return py + "-" + pm + "-2";
+  }
   function quincenaLabel(key) {
     const p = key.split("-").map(Number);
-    return (p[2] === 1 ? "1ª" : "2ª") + " quincena · " + MONTHS[p[1]] + " " + p[0];
+    const y = p[0], m = p[1], half = p[2];
+    const cut2 = secondCut(y, m);
+    if (half === 1) return "Del 15 al " + (cut2 - 1) + " · " + MONTHS[m] + " " + y;
+    const nm = m === 11 ? 0 : m + 1;
+    const ny = m === 11 ? y + 1 : y;
+    return "Del " + cut2 + " " + MONTHS[m] + " al 14 " + MONTHS[nm] + " " + ny;
   }
   function quincenaBounds(d) {
     d = d || new Date();
-    const y = d.getFullYear(), m = d.getMonth(), h = d.getDate() <= 15 ? 1 : 2;
-    const from = new Date(y, m, h === 1 ? 1 : 16, 0, 0, 0, 0);
-    const to = h === 1 ? new Date(y, m, 15, 23, 59, 59, 999) : new Date(y, m + 1, 0, 23, 59, 59, 999);
+    const p = quincenaKey(d).split("-").map(Number);
+    const y = p[0], m = p[1], half = p[2];
+    const cut2 = secondCut(y, m);
+    if (half === 1) {
+      const from = new Date(y, m, 15, 0, 0, 0, 0);
+      const to = new Date(y, m, cut2 - 1, 23, 59, 59, 999);
+      return { from: from.getTime(), to: to.getTime() };
+    }
+    const from = new Date(y, m, cut2, 0, 0, 0, 0);
+    const nm = m === 11 ? 0 : m + 1;
+    const ny = m === 11 ? y + 1 : y;
+    const to = new Date(ny, nm, 14, 23, 59, 59, 999);
     return { from: from.getTime(), to: to.getTime() };
   }
   // El periodo económico del niño es la quincena.
