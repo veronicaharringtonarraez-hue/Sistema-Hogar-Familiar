@@ -121,6 +121,7 @@ function loadState() {
     accum: s.accum || {},
     done: s.done || {},
     custom: s.custom || [],
+    bolso: s.bolso || {},
   };
 }
 
@@ -946,8 +947,260 @@ function AddTaskModal({ onClose, onSave }) {
 /* =========================================================
    BOTTOM NAV
    ========================================================= */
+/* =========================================================
+   📚 PANTALLA: BOLSO ESCOLAR
+   Los niños marcan las materias/materiales que ya guardaron en
+   el bolso según el día. El progreso se guarda solo (en el mismo
+   almacenamiento y nube que el resto de la app).
+   ========================================================= */
+/* lunes de la semana actual (base para el historial y las fechas) */
+function bolsoMonday(d = new Date()) {
+  const x = new Date(d); const w = x.getDay();
+  x.setDate(x.getDate() + (w === 0 ? -6 : 1 - w));
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+/* clave de fecha (AAAA-MM-DD) del día 'wd' (1=lunes..5=viernes) de esta semana */
+function bolsoDateKey(wd) {
+  const m = bolsoMonday(); const x = new Date(m);
+  x.setDate(m.getDate() + (wd - 1));
+  return dayKey(x);
+}
+/* registro guardado de un estudiante para una fecha */
+function bolsoRec(bolso, sid, dk) {
+  const r = (bolso[sid] || {})[dk] || {};
+  return { checks: r.checks || {}, materials: r.materials || [] };
+}
+/* progreso (hechos/total) para un estudiante en un día de la semana */
+function bolsoProgress(bolso, sid, wd) {
+  const subjects = window.bolsoSubjects(sid, window.BOLSO_WEEKDAYS[wd]);
+  const rec = bolsoRec(bolso, sid, bolsoDateKey(wd));
+  const doneSub = subjects.filter(s => rec.checks[s]).length;
+  const doneMat = rec.materials.filter(m => m.done).length;
+  return { done: doneSub + doneMat, total: subjects.length + rec.materials.length, subjects, rec };
+}
+/* estudiantes con el bolso de HOY pendiente (para el recordatorio de las 7pm) */
+function bolsoPendingToday(bolso) {
+  const wd = new Date().getDay();
+  if (wd < 1 || wd > 5) return [];
+  return window.BOLSO_STUDENTS.filter(st => {
+    const p = bolsoProgress(bolso, st.id, wd);
+    return p.total > 0 && p.done < p.total;
+  }).map(st => st.nombre);
+}
+
+function BolsoStudentCard({ st, bolso, onPick }) {
+  const wd = new Date().getDay();
+  const isSchoolDay = wd >= 1 && wd <= 5;
+  const p = isSchoolDay ? bolsoProgress(bolso, st.id, wd) : { done: 0, total: 0 };
+  const pct = p.total ? Math.round(100 * p.done / p.total) : 0;
+  const ready = p.total > 0 && p.done === p.total;
+  return (
+    <div className="card" onClick={() => onPick(st.id)}
+      style={{ padding: 16, cursor: 'pointer', color: '#fff',
+        background: 'linear-gradient(135deg,' + st.tema.a + ',' + st.tema.b + ')' }}>
+      <div className="row" style={{ gap: 13 }}>
+        <div style={{ width: 54, height: 54, borderRadius: '50%', flex: '0 0 auto',
+          display: 'grid', placeItems: 'center', fontSize: 30, background: 'rgba(255,255,255,.25)' }}>{st.emoji}</div>
+        <div className="grow">
+          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 20, lineHeight: 1.05 }}>{st.nombre}</div>
+          <div style={{ fontWeight: 700, fontSize: 13, opacity: .95 }}>{st.grado}</div>
+        </div>
+        <div style={{ fontSize: 26 }}>{ready ? '🎉' : '📚'}</div>
+      </div>
+      {isSchoolDay ? (
+        <div style={{ marginTop: 12 }}>
+          <div className="bar" style={{ background: 'rgba(255,255,255,.35)' }}>
+            <i style={{ width: pct + '%', background: '#fff' }} />
+          </div>
+          <div style={{ fontWeight: 800, fontSize: 12.5, marginTop: 6 }}>
+            {ready ? '¡Bolso listo! 🎒' : p.total ? (p.done + ' de ' + p.total + ' listas · ' + pct + '%') : 'Sin materias hoy'}
+          </div>
+        </div>
+      ) : (
+        <div style={{ marginTop: 10, fontWeight: 700, fontSize: 12.5, opacity: .95 }}>Hoy no hay clases 🎉</div>
+      )}
+    </div>
+  );
+}
+
+function BolsoScreen({ bolso, setBolso, showToast }) {
+  const [sid, setSid] = useState(null);
+  const todayWd = new Date().getDay();
+  const [wd, setWd] = useState(todayWd >= 1 && todayWd <= 5 ? todayWd : 1);
+  const [newMat, setNewMat] = useState('');
+
+  // Vista de selección de estudiante
+  if (!sid) {
+    return (
+      <div className="pad fade" style={{ paddingTop: 8 }}>
+        <div className="sec-h" style={{ marginTop: 10 }}><h2>📚 Bolso Escolar</h2></div>
+        <p className="muted" style={{ fontWeight: 600, fontSize: 13.5, margin: '-4px 0 14px' }}>
+          Marca las materias y materiales que ya guardaste en el bolso. 🎒
+        </p>
+        <div style={{ display: 'grid', gap: 12 }}>
+          {window.BOLSO_STUDENTS.map(st => (
+            <BolsoStudentCard key={st.id} st={st} bolso={bolso} onPick={setSid} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  const st = window.BOLSO_STUDENTS.find(s => s.id === sid);
+  const dk = bolsoDateKey(wd);
+  const { done, total, subjects, rec } = bolsoProgress(bolso, sid, wd);
+  const pct = total ? Math.round(100 * done / total) : 0;
+  const ready = total > 0 && done === total;
+  const tema = st.tema;
+
+  function update(mutate) {
+    setBolso(prev => {
+      const nx = { ...prev };
+      const stu = { ...(nx[sid] || {}) };
+      const base = stu[dk] || {};
+      const r = { checks: { ...(base.checks || {}) }, materials: (base.materials || []).map(m => ({ ...m })) };
+      mutate(r);
+      stu[dk] = r; nx[sid] = stu; return nx;
+    });
+  }
+  const toggleSub = s => update(r => { if (r.checks[s]) delete r.checks[s]; else r.checks[s] = true; });
+  const toggleMat = id => update(r => { const m = r.materials.find(x => x.id === id); if (m) m.done = !m.done; });
+  const delMat = id => update(r => { r.materials = r.materials.filter(x => x.id !== id); });
+  const addMat = () => {
+    const label = newMat.trim(); if (!label) return;
+    update(r => { r.materials.push({ id: 'm' + Date.now(), label, done: false }); });
+    setNewMat('');
+  };
+  const markAll = () => update(r => { subjects.forEach(s => { r.checks[s] = true; }); r.materials.forEach(m => { m.done = true; }); });
+  const clearAll = () => update(r => { r.checks = {}; r.materials.forEach(m => { m.done = false; }); });
+
+  return (
+    <div className="pad fade" style={{ paddingTop: 8, '--a': tema.a, '--b': tema.b, '--c': tema.c, '--tink': tema.ink }}>
+      <div className="row between" style={{ margin: '10px 0 12px' }}>
+        <button onClick={() => setSid(null)} style={{ border: 0, background: tema.c, color: tema.ink,
+          fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 14, borderRadius: 14, padding: '9px 14px', cursor: 'pointer' }}>← Volver</button>
+        <div className="row" style={{ gap: 8 }}>
+          <span style={{ fontSize: 22 }}>{st.emoji}</span>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 17, color: tema.ink, lineHeight: 1 }}>{st.nombre}</div>
+            <div className="muted" style={{ fontWeight: 700, fontSize: 12 }}>{st.grado}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Selector de día */}
+      <div className="fld" style={{ marginTop: 0 }}>
+        <label>Día de la semana</label>
+        <select className="day-select" value={wd} onChange={e => setWd(Number(e.target.value))}>
+          {[1, 2, 3, 4, 5].map(d => (
+            <option key={d} value={d}>
+              {window.BOLSO_DAY_LABELS[window.BOLSO_WEEKDAYS[d]]}{d === todayWd ? ' (hoy)' : ''}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Progreso */}
+      <div className="card" style={{ padding: 16, marginTop: 14 }}>
+        <div className="row between" style={{ marginBottom: 8 }}>
+          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 15, color: tema.ink }}>
+            {total ? (done + ' de ' + total + ' listas') : 'Sin materias este día'}
+          </div>
+          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 15, color: tema.a }}>{pct}%</div>
+        </div>
+        <div className="bar"><i style={{ width: pct + '%' }} /></div>
+        {ready && (
+          <div style={{ marginTop: 12, background: tema.c, color: tema.ink, borderRadius: 16,
+            padding: '12px 14px', textAlign: 'center', fontWeight: 800, fontSize: 14 }}>
+            🎉 ¡Excelente trabajo! Tu bolso está listo.
+          </div>
+        )}
+      </div>
+
+      {/* Botones marcar/desmarcar */}
+      {total > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 12 }}>
+          <button className="add-btn" style={{ margin: 0, borderColor: tema.a, color: tema.a }} onClick={markAll}>✅ Marcar todo</button>
+          <button className="add-btn" style={{ margin: 0 }} onClick={clearAll}>↺ Desmarcar todo</button>
+        </div>
+      )}
+
+      {/* Lista de materias */}
+      {subjects.length > 0 && (
+        <div style={{ marginTop: 16 }}>
+          <div className="eyebrow" style={{ marginBottom: 8 }}>Materias del día</div>
+          {subjects.map(s => {
+            const on = !!rec.checks[s];
+            return (
+              <div key={s} className={'mission' + (on ? ' done' : '')} onClick={() => toggleSub(s)}>
+                <div className="m-ic" style={{ background: tema.c }}>{window.bolsoIcon(s)}</div>
+                <div className="m-body"><div className="m-title">{s}</div></div>
+                <div className={'check' + (on ? ' on' : '')}>{on ? '✓' : ''}</div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Materiales especiales del día */}
+      <div style={{ marginTop: 8 }}>
+        <div className="eyebrow" style={{ marginBottom: 8 }}>Material especial del día</div>
+        {rec.materials.map(m => (
+          <div key={m.id} className={'mission' + (m.done ? ' done' : '')} onClick={() => toggleMat(m.id)}>
+            <div className="m-ic" style={{ background: tema.c }}>🎒</div>
+            <div className="m-body"><div className="m-title">{m.label}</div></div>
+            <div className={'check' + (m.done ? ' on' : '')}>{m.done ? '✓' : ''}</div>
+            <button className="del" onClick={e => { e.stopPropagation(); delMat(m.id); }}>×</button>
+          </div>
+        ))}
+        <div className="row" style={{ gap: 8, marginTop: 4 }}>
+          <input className="inp" style={{ flex: 1 }} placeholder="Cartulina, tijeras, uniforme…"
+            value={newMat} onChange={e => setNewMat(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') addMat(); }} />
+          <button onClick={addMat} style={{ border: 0, background: 'linear-gradient(135deg,' + tema.a + ',' + tema.b + ')',
+            color: '#fff', borderRadius: 14, width: 48, fontSize: 24, fontWeight: 800, cursor: 'pointer', flex: '0 0 auto' }}>＋</button>
+        </div>
+      </div>
+
+      {/* Historial semanal */}
+      <div className="card" style={{ padding: 16, marginTop: 18 }}>
+        <div className="eyebrow" style={{ marginBottom: 10 }}>Historial de la semana</div>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'space-between' }}>
+          {[1, 2, 3, 4, 5].map(d => {
+            const p = bolsoProgress(bolso, sid, d);
+            const complete = p.total > 0 && p.done === p.total;
+            const isToday = d === todayWd;
+            return (
+              <div key={d} style={{ textAlign: 'center', flex: 1 }}>
+                <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 12,
+                  color: isToday ? tema.a : 'var(--ink-2)' }}>{window.DAYS_SHORT[d]}</div>
+                <div style={{ marginTop: 4, width: 30, height: 30, margin: '4px auto 0', borderRadius: '50%',
+                  display: 'grid', placeItems: 'center', fontSize: 15,
+                  background: complete ? tema.a : '#eee',
+                  boxShadow: isToday ? ('0 0 0 2px ' + tema.a) : 'none' }}>
+                  {complete ? '✅' : (p.done > 0 ? '…' : '')}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Recordatorio 7pm */}
+      <button className="add-btn" style={{ marginTop: 16, borderColor: tema.a, color: tema.a }}
+        onClick={() => {
+          if (typeof Notification === 'undefined') { showToast && showToast('Tu dispositivo no admite avisos'); return; }
+          Notification.requestPermission().then(perm => {
+            showToast && showToast(perm === 'granted' ? '🔔 Te avisaré a las 7:00 p.m.' : 'Avisos desactivados');
+          });
+        }}>🔔 Recordarme a las 7:00 p.m.</button>
+    </div>
+  );
+}
+
 function BottomNav({ tab, go }) {
-  const items = [['inicio', '🏠', 'Inicio'], ['misiones', '🎯', 'Misiones'], ['mascotas', '🐾', 'Mascotas'], ['banco', '🏦', 'Banco'], ['familia', '👨‍👩‍👧‍👦', 'Familia']];
+  const items = [['inicio', '🏠', 'Inicio'], ['misiones', '🎯', 'Misiones'], ['mascotas', '🐾', 'Mascotas'], ['bolso', '📚', 'Bolso'], ['banco', '🏦', 'Banco'], ['familia', '👨‍👩‍👧‍👦', 'Familia']];
   return (
     <div className="nav">
       {items.map(([k, ic, l]) => (
@@ -968,11 +1221,12 @@ function App() {
   const [dist, setDist] = useState(init.dist);
   const [tab, setTab] = useState(() => {
     const h = (location.hash || '').replace('#', '');
-    return ['inicio', 'misiones', 'mascotas', 'banco', 'familia'].includes(h) ? h : init.tab;
+    return ['inicio', 'misiones', 'mascotas', 'bolso', 'banco', 'familia'].includes(h) ? h : init.tab;
   });
   useEffect(() => { if (location.hash) history.replaceState(null, '', location.pathname + location.search); }, []);
   const [done, setDone] = useState(init.done);
   const [custom, setCustom] = useState(init.custom);
+  const [bolso, setBolso] = useState(init.bolso);
   const [accum, setAccum] = useState(init.accum);
   const [day, setDay] = useState(init.day);
   const [missView, setMissView] = useState('persona');
@@ -989,8 +1243,29 @@ function App() {
   // persistir (fusionando con lo guardado para no pisar datos del panel de padres)
   useEffect(() => {
     let cur = {}; try { cur = JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch (e) {}
-    localStorage.setItem(STORE_KEY, JSON.stringify({ ...cur, profile, dist, tab, day, accum, done, custom }));
-  }, [profile, dist, tab, day, accum, done, custom]);
+    localStorage.setItem(STORE_KEY, JSON.stringify({ ...cur, profile, dist, tab, day, accum, done, custom, bolso }));
+  }, [profile, dist, tab, day, accum, done, custom, bolso]);
+
+  // 🔔 Recordatorio del bolso a las 7:00 p.m. (mientras la app esté abierta)
+  useEffect(() => {
+    const t = setInterval(() => {
+      try {
+        if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+        const now = new Date();
+        if (now.getDay() === 0 || now.getDay() === 6) return;      // fin de semana: sin clases
+        if (now.getHours() < 19) return;                           // solo a partir de las 7pm
+        const stamp = dayKey(now);
+        if (localStorage.getItem('bolso_notified') === stamp) return;
+        const pend = bolsoPendingToday(bolso);
+        if (!pend.length) return;
+        localStorage.setItem('bolso_notified', stamp);
+        new Notification('📚 ¡Prepara tu bolso!', {
+          body: 'Aún falta guardar el bolso de ' + pend.join(' y ') + ' para mañana.',
+        });
+      } catch (e) {}
+    }, 60000);
+    return () => clearInterval(t);
+  }, [bolso]);
 
   // reinicio a medianoche: acumula los puntos del día y desmarca todo
   useEffect(() => {
@@ -1057,13 +1332,14 @@ function App() {
     <div className="stage">
       <div className="phone">
         <TopBar person={person} points={points} onParents={() => setShowPin(true)} />
-        {tab !== 'banco' && <ProfileSwitcher active={profile} onPick={setProfile} done={done} dist={dist} />}
+        {tab !== 'banco' && tab !== 'bolso' && <ProfileSwitcher active={profile} onPick={setProfile} done={done} dist={dist} />}
         {tab === 'banco'
           ? <iframe className="bank-frame" src="banco/index.html" title="Banco de la Familia" />
           : <div className="scroll">
               {tab === 'inicio' && <HomeScreen person={person} dist={dist} done={done} toggle={toggle} go={setTab} onDelete={deleteTask} onAdd={() => setShowAdd(true)} />}
               {tab === 'misiones' && <MissionsScreen dist={dist} done={done} toggle={toggle} view={missView} setView={setMissView} onAdd={() => setShowAdd(true)} onDelete={deleteTask} />}
               {tab === 'mascotas' && <PetsScreen dist={dist} done={done} person={person} setProfile={setProfile} />}
+              {tab === 'bolso' && <BolsoScreen bolso={bolso} setBolso={setBolso} showToast={showToast} />}
               {tab === 'familia' && <FamilyScreen dist={dist} setDist={setDist} done={done} />}
             </div>}
         {toast && <div className="toast">{toast}</div>}
