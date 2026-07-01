@@ -171,7 +171,7 @@ function ScreenPagar({ child }) {
       </div>
 
       <Card className="bc-iva-note">
-        Tus cuentas son un % de tu <strong>salario esperado</strong> (lo que ganas si haces todas tus tareas). Se renueva cada quincena (1 y 16). Los bonos no cuentan aquí: ¡esos son para ahorrar! 🐷
+        Tus cuentas son un % de tu <strong>salario esperado</strong> (lo que ganas si haces todas tus tareas). Se renueva cada quincena (15 y 30). Los bonos no cuentan aquí: ¡esos son para ahorrar! 🐷
       </Card>
 
       <div className="bc-bill-list">
